@@ -36,3 +36,14 @@ export function ThemeToggle() {
     </div>
   );
 }
+
+/** Aplica el tema guardado (o el del sistema) en cualquier página, también fuera del área de negocio (login, cuenta…). */
+export function ThemeInit() {
+  useEffect(() => {
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("theme"); } catch { /* usa la preferencia del sistema */ }
+    const system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    applyTheme(saved === "dark" || saved === "light" ? saved : system, false);
+  }, []);
+  return null;
+}

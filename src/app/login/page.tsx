@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Logo } from "@/components/ui/logo";
 import { auth, signIn } from "@/lib/auth/config";
 
 export const metadata = { title: "Entrar" };
@@ -14,7 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-8 px-4 py-10 lg:grid-cols-2">
       <section className="panel hidden min-h-[28rem] flex-col justify-between lg:flex">
-        <div className="flex items-center gap-2"><span aria-hidden className="grid size-10 place-items-center rounded-full bg-accent font-bold text-[#0b1b3a]">M</span><span className="text-xl font-semibold">MiBolsillo</span></div>
+        <Logo tone="onDark" height={40} />
         <div className="space-y-3">
           <p className="text-4xl font-semibold leading-tight">Tus finanzas y tus negocios, en un solo lugar.</p>
           <p className="text-white/70">Gastos con foto de factura, estado de resultados, CAPEX y reservas de tu Airbnb.</p>
@@ -24,7 +25,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
       </section>
       <section className="card w-full space-y-6 text-center lg:text-left">
-        <div className="flex items-center justify-center gap-2 lg:hidden"><span aria-hidden className="grid size-12 place-items-center rounded-full bg-panel text-xl font-semibold text-accent">M</span></div>
+        <div className="flex justify-center lg:hidden"><Logo height={34} /></div>
         <div><h1 className="text-3xl font-semibold tracking-tight">Bienvenido</h1><p className="mt-1 text-muted">Entra con tu cuenta de Google para continuar.</p></div>
         <form action={async () => { "use server"; await signIn("google", { redirectTo: next }); }}>
           <button type="submit" className="btn btn-primary w-full !py-3">Continuar con Google</button>

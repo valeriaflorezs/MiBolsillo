@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
 import { Avatar } from "@/components/ui/avatar";
+import { Logo } from "@/components/ui/logo";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/permissions";
 import { deleteMyAccountAction } from "@/modules/core/crud-actions";
@@ -14,7 +15,7 @@ export default async function Account() {
   const mine = await prisma.workspaceMember.findMany({ where: { userId: user.id }, select: { role: true, workspace: { select: { id: true, name: true, type: true } } }, orderBy: { createdAt: "asc" } });
   return (
     <main className="mx-auto min-h-screen max-w-2xl space-y-6 px-4 py-8">
-      <Link href="/" className="text-sm underline">‹ Volver</Link>
+      <div className="flex items-center justify-between"><Link href="/" className="text-sm underline">‹ Volver</Link><Logo height={26} /></div>
       <section className="card flex items-center gap-4"><Avatar name={user.name ?? user.email} image={user.image} size={56} /><div><h1 className="text-2xl font-semibold">{user.name ?? "Mi cuenta"}</h1><p className="text-muted">{user.email}</p></div></section>
       <section className="card space-y-3">
         <h2 className="font-medium">Mis negocios</h2>

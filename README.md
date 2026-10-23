@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/brand/logo-on-dark.png">
+    <img src="public/brand/logo-on-light.png" alt="MiBolsillo" width="360">
+  </picture>
+</p>
+
 # MiBolsillo
 
 **Finanzas personales y control de emprendimientos en una sola aplicación web.**

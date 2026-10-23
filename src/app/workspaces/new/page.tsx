@@ -1,4 +1,5 @@
 import { ActionForm } from "@/components/forms/action-form";
+import { Logo } from "@/components/ui/logo";
 import { createWorkspaceAction } from "@/modules/core/actions";
 import { WORKSPACE_TYPE_LABEL } from "@/modules/core/defaults";
 import { requireUser } from "@/lib/auth/permissions";
@@ -8,7 +9,8 @@ export const metadata = { title: "Nuevo negocio" };
 export default async function NewWorkspace() {
   await requireUser();
   return (
-    <main className="mx-auto min-h-screen max-w-lg px-4 py-10">
+    <main className="mx-auto min-h-screen max-w-lg space-y-6 px-4 py-10">
+      <Logo height={34} />
       <section className="card space-y-6">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Crea tu negocio</h1>

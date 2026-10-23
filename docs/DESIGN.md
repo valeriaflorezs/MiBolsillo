@@ -33,3 +33,6 @@ Contraste ≥4.5:1 en texto; el celeste solo como relleno con texto oscuro; foco
 
 ## Navegación de escritorio (menú lateral)
 `SideNav` (`src/components/shell/side-nav.tsx`): riel de iconos de vidrio navy fijo a la izquierda (4,75 rem) que se despliega a 16 rem **sobre** el contenido con `:hover` y `:focus-within`; todas las secciones (principales, “más”, pendientes y cuenta) con iconos de lucide. La barra superior solo contiene negocio, acción “+ Movimiento”, pendientes y avatar, con `z-40` para que sus menús queden por encima de las tarjetas. En móvil se mantiene la barra inferior.
+
+## Marca
+Logotipos en `public/brand/` (PNG con fondo transparente, generados de los originales): `logo-on-dark.png` y `mark-on-dark.png` para superficies navy; `logo-on-light.png` y `mark-on-light.png` para superficies claras. El componente `Logo` (`src/components/ui/logo.tsx`) elige la versión: `tone="onDark"` fijo para barras y paneles navy, `tone="auto"` según el tema. El menú lateral muestra la marca “Mi” plegado y el logotipo completo al desplegarse. Favicon e icono de iOS: `src/app/icon.png` y `apple-icon.png`.

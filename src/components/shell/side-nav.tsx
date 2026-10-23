@@ -3,6 +3,7 @@
 import { BarChart3, BellRing, Building2, CalendarCheck, Gift, Hammer, LayoutDashboard, PiggyBank, Receipt, Repeat, Scale, Settings, Tags, UserRound, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "@/components/ui/logo";
 import type { NavIcon, Tab } from "@/lib/nav";
 
 const ICONS: Record<NavIcon, typeof Wallet> = {
@@ -42,9 +43,9 @@ export function SideNav({ workspaceId, primary, more, pending }: { workspaceId: 
       className="group fixed bottom-4 left-4 top-4 z-50 hidden w-[4.75rem] overflow-hidden rounded-[2rem] border border-white/20 bg-panel/80 p-2.5 text-white shadow-card backdrop-blur-2xl transition-[width] duration-200 ease-out hover:w-64 focus-within:w-64 md:block"
       style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .25), 0 14px 34px rgb(6 24 60 / .35)" }}>
       <div className="flex h-full flex-col">
-        <Link href="/" aria-label="MiBolsillo — inicio" className="mb-3 flex items-center gap-4 rounded-2xl px-2 py-1.5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-bold text-[#0b1b3a]">M</span>
-          <span className="whitespace-nowrap font-semibold opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">MiBolsillo</span>
+        <Link href="/" aria-label="MiBolsillo — inicio" className="mb-3 flex h-12 items-center rounded-2xl px-2.5">
+          <span className="group-focus-within:hidden group-hover:hidden"><Logo variant="mark" tone="onDark" height={30} /></span>
+          <span className="hidden group-focus-within:block group-hover:block"><Logo tone="onDark" height={26} /></span>
         </Link>
         <nav className="no-scrollbar flex-1 space-y-3 overflow-y-auto overflow-x-hidden">
           <ul className="space-y-1">{primary.map((t) => <Item key={t.href} t={t} />)}</ul>

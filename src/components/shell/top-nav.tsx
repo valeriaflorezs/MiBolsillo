@@ -4,6 +4,7 @@ import { Bell, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
+import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "./theme-toggle";
 
 type Props = {
@@ -22,7 +23,7 @@ export function TopNav({ workspaces, currentId, user, pending, signOutAction }: 
   return (
     <header className="relative z-40 rounded-[2rem] border border-white/20 bg-panel/80 px-3 py-2.5 text-white shadow-card backdrop-blur-xl" style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .25), 0 14px 34px rgb(6 24 60 / .3)" }}>
       <div className="flex items-center gap-2">
-        <Link href="/" aria-label="MiBolsillo — inicio" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent md:hidden font-bold text-[#0b1b3a]">M</Link>
+        <Link href="/" aria-label="MiBolsillo — inicio" className="shrink-0 px-1 md:hidden"><Logo variant="mark" tone="onDark" height={28} /></Link>
         <label className="sr-only" htmlFor="ws-switch">Negocio</label>
         <select id="ws-switch" value={currentId} className="max-w-[9.5rem] truncate rounded-pill border-0 bg-white/10 px-3 py-2 text-sm font-medium text-white sm:max-w-[13rem]"
           onChange={(e) => (e.target.value === "__new" ? router.push("/workspaces/new") : router.push(`/w/${e.target.value}`))}>
