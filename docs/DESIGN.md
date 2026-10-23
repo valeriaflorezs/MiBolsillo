@@ -30,3 +30,6 @@ Contraste ≥4.5:1 en texto; el celeste solo como relleno con texto oscuro; foco
 - **Carpetas:** `FolderCard` (pestaña a la izquierda con esquina cóncava, metadatos a la derecha) en detalle de movimientos y reservas, pendientes, próximas llegadas.
 - **Gráficos:** anillo con etiquetas sobre el arco (`RingGauge`), barras apiladas con rejilla punteada y eje a la derecha (`StackedBars`), listas con avatares de iniciales.
 - **Navegación móvil:** barra inferior de vidrio con botón central “+”.
+
+## Navegación de escritorio (menú lateral)
+`SideNav` (`src/components/shell/side-nav.tsx`): riel de iconos de vidrio navy fijo a la izquierda (4,75 rem) que se despliega a 16 rem **sobre** el contenido con `:hover` y `:focus-within`; todas las secciones (principales, “más”, pendientes y cuenta) con iconos de lucide. La barra superior solo contiene negocio, acción “+ Movimiento”, pendientes y avatar, con `z-40` para que sus menús queden por encima de las tarjetas. En móvil se mantiene la barra inferior.

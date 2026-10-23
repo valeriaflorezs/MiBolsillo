@@ -67,3 +67,6 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 
 ## Fotos de perfil
 Las imágenes de Google (`*.googleusercontent.com`) están permitidas en `img-src` de la CSP (`next.config.mjs`); `Avatar` muestra las iniciales si la foto no carga.
+
+## Navegación
+`lib/nav.ts` define las secciones por tipo de negocio y rol (con claves de icono); `SideNav` (escritorio) y `BottomNav` + `/w/[id]/more` (móvil) las consumen. Ocultar una sección en el menú no sustituye la autorización: cada página y acción valida el permiso.

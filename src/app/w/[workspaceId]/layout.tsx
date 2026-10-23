@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/shell/bottom-nav";
+import { SideNav } from "@/components/shell/side-nav";
 import { TopNav } from "@/components/shell/top-nav";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { prisma } from "@/lib/db";
@@ -28,15 +29,18 @@ export default async function WorkspaceLayout({ children, params }: { children: 
   const { primary, more } = tabsFor(workspaceId, ctx.workspace.type, ctx.role);
   return (
     <>
+      <SideNav workspaceId={workspaceId} primary={primary} more={more} pending={pending} />
+      <div className="md:pl-[5.75rem]">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-4 py-6 pb-32 md:pb-8">
         <TopNav
-          primary={primary} more={more} pending={pending}
+          pending={pending}
           workspaces={memberships.map((m) => m.workspace)} currentId={workspaceId}
           user={{ name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null }}
           signOutAction={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}
         />
         <main className="min-w-0 flex-1 space-y-7">{children}</main>
         <SiteFooter />
+      </div>
       </div>
       <BottomNav workspaceId={workspaceId} showStats={primary.some((t) => t.href.endsWith("/stats"))} />
     </>

@@ -44,7 +44,7 @@ Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de
 `<CORREO_DE_SOPORTE>`
 
 ## Novedades de la versión 2.0
-- **Navegación:** en el computador, la barra superior (con el menú **Más**); en el celular, la barra inferior con el botón **+** para registrar un movimiento. El menú de tu avatar cambia el tema claro/oscuro y cierra sesión.
+- **Navegación:** en el computador, un **menú lateral izquierdo** que muestra solo iconos y se despliega con los nombres al acercar el cursor (también al navegar con el teclado); arriba quedan el selector de negocio, el botón **+ Movimiento**, los pendientes y tu avatar. En el celular, la barra inferior con el botón **+**. El menú de tu avatar cambia el tema claro/oscuro y cierra sesión.
 - **Movimientos:** busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. Toca un movimiento para ver el detalle, abrir su comprobante, **editarlo** o **eliminarlo**. **Exportar CSV** descarga la lista filtrada.
   El Operador puede editar o eliminar sus propios gastos durante las 48 horas siguientes a registrarlos.
 - **Estadísticas (Administrador):** elige Hoy, Semana, Mes o Año; compara con el periodo anterior, mira los gastos por categoría y los mayores proveedores.
