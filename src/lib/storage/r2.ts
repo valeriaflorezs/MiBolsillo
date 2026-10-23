@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectsCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 
@@ -41,4 +41,11 @@ export const signedReadUrl = (key: string) =>
 export async function readObject(key: string): Promise<Uint8Array> {
   const out = await r2.send(new GetObjectCommand({ Bucket, Key: key }));
   return out.Body!.transformToByteArray();
+}
+
+/** Borra objetos de R2 (lotes de 1000). Usado al eliminar un negocio y al limpiar subidas huérfanas. */
+export async function deleteObjects(keys: string[]) {
+  for (let i = 0; i < keys.length; i += 1000) {
+    await r2.send(new DeleteObjectsCommand({ Bucket, Delete: { Objects: keys.slice(i, i + 1000).map((Key) => ({ Key })), Quiet: true } }));
+  }
 }

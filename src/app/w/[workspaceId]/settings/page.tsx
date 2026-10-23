@@ -2,13 +2,13 @@ import { headers } from "next/headers";
 import { ActionForm } from "@/components/forms/action-form";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
-import { changeMemberRoleAction, createInviteAction, removeMemberAction } from "@/modules/core/actions";
+import { changeMemberRoleAction, createInviteAction, deleteWorkspaceAction, removeMemberAction } from "@/modules/core/actions";
 
 export const metadata = { title: "Miembros" };
 
 export default async function SettingsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
-  const { userId } = await pageCtx(workspaceId, "member:manage");
+  const { userId, workspace } = await pageCtx(workspaceId, "member:manage");
   const [members, invites, h] = await Promise.all([
     prisma.workspaceMember.findMany({ where: { workspaceId }, include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.workspaceInvite.findMany({ where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } } }),
@@ -68,6 +68,16 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="card space-y-3 border border-negative/30">
+        <h2 className="font-medium text-negative">Eliminar este negocio</h2>
+        <p className="text-sm text-muted">Borra definitivamente movimientos, reservas, CAPEX, miembros y comprobantes. No se puede deshacer.</p>
+        <ActionForm action={deleteWorkspaceAction} submitLabel="Eliminar definitivamente" variant="ghost" resetOnSuccess={false}>
+          <input type="hidden" name="workspaceId" value={workspaceId} />
+          <label className="label" htmlFor="confirm">Escribe «{workspace.name}» para confirmar</label>
+          <input id="confirm" name="confirm" required autoComplete="off" className="input max-w-sm" />
+        </ActionForm>
       </section>
     </>
   );

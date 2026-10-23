@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { getOcrProvider } from "@/lib/ocr";
-import { createReceiptUpload, readObject, signedReadUrl } from "@/lib/storage/r2";
+import { createReceiptUpload, deleteObjects, readObject, signedReadUrl } from "@/lib/storage/r2";
 
 const UploadInput = z.object({
   workspaceId: z.string().cuid(),
@@ -30,6 +30,7 @@ export async function createReceiptUploadAction(raw: unknown) {
     const input = UploadInput.parse(raw);
     const { userId } = await requireWorkspace(input.workspaceId, "transaction:create");
     rateLimit(`upload:${userId}`, 30, 60_000);
+    await purgeOrphans(userId);
     const { key, url } = await createReceiptUpload(input.workspaceId, input.mimeType, input.sizeBytes);
     const att = await prisma.attachment.create({
       data: { workspaceId: input.workspaceId, uploadedById: userId, storageKey: key, fileType: input.mimeType, fileName: input.fileName, sizeBytes: input.sizeBytes },
@@ -83,4 +84,20 @@ export async function getReceiptUrlAction(raw: unknown) {
   const att = await prisma.attachment.findFirst({ where: { id: attachmentId, workspaceId }, select: { storageKey: true } });
   if (!att) throw new Error("NOT_FOUND");
   return { url: await signedReadUrl(att.storageKey) };
+}
+
+/** Limpieza oportunista: borra comprobantes subidos por el usuario hace >24 h que nunca se asociaron a un gasto. */
+async function purgeOrphans(userId: string) {
+  try {
+    const old = await prisma.attachment.findMany({
+      where: { uploadedById: userId, transactionId: null, createdAt: { lt: new Date(Date.now() - 86_400_000) } },
+      select: { id: true, storageKey: true },
+      take: 50,
+    });
+    if (!old.length) return;
+    await deleteObjects(old.map((a) => a.storageKey));
+    await prisma.attachment.deleteMany({ where: { id: { in: old.map((a) => a.id) } } });
+  } catch (e) {
+    console.error("purgeOrphans", e);
+  }
 }

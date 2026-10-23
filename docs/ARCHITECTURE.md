@@ -137,3 +137,9 @@ Total estimado: ~4–5 semanas para una persona. Postergar a post-MVP: módulos 
 - **Fuga entre tenants**: centralizar acceso en `modules/*`, tests de aislamiento, y valorar RLS de Postgres como segunda barrera.
 - **EBITDA visible a OPERATOR**: nunca calcular KPIs sensibles en componentes cliente; las queries de `dashboard:full`/`pyg:read` validan permiso en servidor.
 - **Costo/precisión OCR**: usar el modelo pequeño, limitar tamaño y reintentos, y exigir siempre confirmación humana.
+
+## 5. Estado y cambios respecto al diseño inicial (2026-10-23)
+- MVP construido (fases 0–4). Se usa **Next.js 16, Prisma 7 y Node 22** (versiones sin avisos críticos de `npm audit`).
+- **Sesiones JWT** sin adaptador de Prisma: el modelo `AuthAccount` y las tablas de sesión quedaron sin uso.
+- Las rutas reales cuelgan de `/w/[workspaceId]` y la lógica está en `src/modules/{core,airbnb}`.
+- Fuera del MVP: RLS en Postgres, paginación, módulos Personal/Gig avanzados, importación de extractos, CSP con nonces.

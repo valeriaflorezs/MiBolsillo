@@ -1,38 +1,55 @@
-# Gate de seguridad (protocolo-implementacion-web) — v0.1, 2026-10-23
+# Gate de seguridad (protocolo-implementacion-web) — v1.0 MVP, 2026-10-23
 
-**Stack:** Next.js 14 (App Router) + Prisma/PostgreSQL + Auth.js + Cloudflare R2, desplegado en Railway (Docker).
+**Stack:** Next.js 16 (App Router) + Prisma 7/PostgreSQL + Auth.js v5 (Google, sesión JWT) + Cloudflare R2, desplegado en Railway (Docker).
 Evidencia de detección: `next.config.mjs`, `prisma/schema.prisma`, `Dockerfile`, `railway.json`.
-Decisión del usuario (2026-10-23): login solo con Google en el MVP → puntos 10, 11 y 12 "No aplica" confirmados.
-Estado: **esqueleto**. "Cumple" = presente en el código del repo; lo que depende de la app aún no construida figura como "Pendiente".
+Decisión del usuario: login solo con Google en el MVP.
 
 | # | Punto | Estado | Evidencia o razón |
 |---|---|---|---|
-| 1 | Claves API ocultas | Cumple | Solo `process.env.*` (`src/lib/storage/r2.ts`, `ocr/providers/claude.ts`); `.env.example` sin valores |
-| 2 | Secretos fuera de Git | Cumple | `.env`/`.env.local` en `.gitignore` y `.dockerignore`; repo nuevo, sin historial previo. Falta correr `run_secret_scanning` antes de publicar |
-| 3 | Clave pública de DB en cliente | No aplica | No hay SDK de BD en el cliente; el navegador nunca habla con Postgres. Ninguna variable `NEXT_PUBLIC_` es secreta |
-| 4 | RLS | **Falta** (riesgo asumido para MVP) | Prisma usa un solo rol de BD, que no pasa por RLS. Aislamiento por `workspaceId` en código (`requireWorkspace`). Segunda barrera con RLS: fase 7 del plan |
-| 5 | Cifrado | Pendiente | Tránsito: HTTPS de Railway y TLS de R2. Reposo: confirmar cifrado de volumen de Railway y de R2 (R2 cifra por defecto) |
-| 6 | Autenticación en servidor | Cumple (patrón) | `requireWorkspace` en `receipt-actions.ts`; debe usarse en TODA acción nueva |
-| 7 | Acceso por registro (IDOR) | Cumple (patrón) | `getReceiptUrlAction` filtra por `workspaceId` y `id`; claves R2 bajo `ws/{workspaceId}/` |
-| 8 | Mass assignment | Cumple (patrón) | Esquemas zod con campos explícitos; `role`, `workspaceId`, `createdById` salen de la sesión, nunca del cliente |
-| 9 | Cookies de sesión | Pendiente | Auth.js usa HttpOnly/SameSite y `Secure` bajo HTTPS; verificar con `curl -I` tras el primer deploy |
-| 10 | Hash de contraseñas | No aplica | Login solo con Google OAuth en el MVP; `User.passwordHash` queda sin usar. Si se habilitan credenciales: argon2 |
-| 11 | Límite de intentos de login | No aplica (MVP) | Delegado a Google. `rateLimit` ya protege la subida de comprobantes |
-| 12 | Anti-bots | No aplica (MVP) | Sin formularios públicos; registro solo por OAuth. Añadir Turnstile si se abre un formulario público |
-| 13 | Monitoreo de consultas | Parcial | Prisma parametriza; `log: ["warn","error"]` en `db.ts`. Falta alerta de consultas lentas (métricas de Railway) |
-| 14 | Validación de entradas | Cumple (patrón) | zod en `receipt-actions.ts`; obligatorio por cada acción nueva |
-| 15 | XSS | Cumple | React escapa por defecto; prohibido `dangerouslySetInnerHTML` (regla de lint a añadir) |
-| 16 | Subida de archivos | Parcial | Lista blanca MIME, tamaño máximo, nombre aleatorio UUID y bucket privado. Falta verificar el tipo real (magic bytes) antes del OCR |
-| 17 | Respuestas de API | Parcial | Acciones devuelven solo los campos necesarios; falta paginación en listados (se implementa con cada listado) |
-| 18 | Cabeceras de seguridad | Cumple (config) | `next.config.mjs`: CSP, HSTS, nosniff, frame-ancestors/X-Frame-Options, Referrer-Policy. Verificar con `curl -I` en Railway. CSP aún usa `'unsafe-inline'` (mejora: nonce) |
-| 19 | HTTPS | Cumple (por plataforma) | Railway redirige a HTTPS y HSTS está configurado; verificar tras el deploy |
-| 20 | Dependencias | Cumple (config) | `npm audit --audit-level=high` en CI y `.github/dependabot.yml`. Aún no ejecutado: no existe `package-lock.json` |
+| 1 | Claves API ocultas | Cumple | Solo `process.env.*`; `.env.example` sin valores |
+| 2 | Secretos fuera de Git | Cumple | `.env*` en `.gitignore`/`.dockerignore`; repo nuevo sin secretos en historial |
+| 3 | Clave pública de DB en cliente | No aplica | El navegador nunca habla con Postgres; ninguna variable `NEXT_PUBLIC_` es secreta |
+| 4 | RLS | **Falta (riesgo asumido)** | Prisma usa un único rol de BD. Aislamiento por `workspaceId` en cada query + `requireWorkspace` + test de aislamiento (`queries.int.test.ts`). RLS como segunda barrera: post-MVP |
+| 5 | Cifrado | Parcial | Tránsito: HTTPS (Railway) y TLS a R2/Anthropic. Reposo: R2 cifra por defecto; confirmar cifrado de volumen de Postgres en Railway |
+| 6 | Autenticación en servidor | Cumple | `requireWorkspace` en toda Server Action; `pageCtx` en toda página; `/api/health` es el único endpoint público |
+| 7 | Acceso por registro (IDOR) | Cumple | Todo `findFirst/updateMany` filtra `workspaceId`; IDs relacionados verificados con `count` (`createTransactionAction`); OPERATOR limitado a sus gastos |
+| 8 | Mass assignment | Cumple | zod con campos explícitos; `role`, `workspaceId`, `createdById` salen de la sesión/URL validada, nunca del formulario |
+| 9 | Cookies de sesión | Pendiente de verificar en producción | Auth.js: HttpOnly, SameSite=Lax, Secure bajo HTTPS. Verificar con `curl -I` tras el deploy |
+| 10 | Hash de contraseñas | No aplica | Solo Google OAuth; `User.passwordHash` no se usa |
+| 11 | Límite de intentos de login | No aplica | Delegado a Google. `rateLimit` en subidas, OCR, transacciones, invitaciones y creación de negocios |
+| 12 | Anti-bots | No aplica | Sin formularios públicos; registro solo vía Google |
+| 13 | Monitoreo de consultas | Parcial | Prisma parametriza (sin SQL concatenado); logs `warn/error`. Falta alerta de consultas lentas |
+| 14 | Validación de entradas | Cumple | zod en todas las acciones; fechas/montos/enum acotados |
+| 15 | XSS | Cumple | React escapa; regla ESLint `react/no-danger` en error; sin `dangerouslySetInnerHTML` |
+| 16 | Subida de archivos | Cumple | Lista blanca MIME, máx. 8 MB, nombre UUID, bucket privado, **verificación por magic bytes** antes del OCR, limpieza de huérfanos a 24 h |
+| 17 | Respuestas de API | Cumple (MVP) | Acciones devuelven solo lo necesario; listados con `take` (300). Paginación real: post-MVP |
+| 18 | Cabeceras de seguridad | Cumple | CSP, HSTS, nosniff, frame-ancestors/X-Frame-Options, Referrer-Policy, Permissions-Policy (verificado con `curl -I` en local). CSP conserva `'unsafe-inline'` (mejora: nonces) |
+| 19 | HTTPS | Cumple | Railway + HSTS |
+| 20 | Dependencias | Cumple | `npm audit --audit-level=high` sin hallazgos altos/críticos; 3 moderados en Tailwind 3 (`postcss-selector-parser`); Dependabot semanal; CI falla si aparece uno alto |
 
 ## Riesgos asumidos / pendientes
-- Punto 4 (RLS) sin implementar; mitigar con tests de aislamiento entre workspaces.
-- `rateLimit` en memoria solo vale con una réplica.
-- Puntos "No aplica" para revisar: 3, 10, 11, 12 (dependen de que el login siga siendo solo Google).
-- Supuesto: el despliegue es una sola réplica web.
+- Punto 4 (RLS) y alertas de consultas lentas (13).
+- `rateLimit` en memoria: válido con una sola réplica.
+- Las facturas se envían a Anthropic para OCR: declarado en la política de privacidad.
+- Puntos "No aplica" para revisar si cambia el login: 3, 10, 11, 12.
 
-## Revisión previa a publicar (protocolo-revision-web)
-Aún no ejecutable: no hay UI. Pendientes que ya conocemos: política de privacidad, términos y política de cookies (Ley 1581 de 2012; los datos financieros y las facturas son personales; validar textos con un abogado), banner de consentimiento si se añade analítica, accesibilidad WCAG AA (contraste, teclado, `alt`), inventario de terceros (Google OAuth, Anthropic API para OCR, Cloudflare R2 — declarar en la política que las facturas se envían al proveedor de OCR), flujo real de eliminación de datos (tablas + R2), y manuales de usuario y sistema vigentes.
+## Revisión previa a publicar (protocolo-revision-web, 23 puntos) — veredicto: **Aprobar con condiciones**
+Jurisdicción asumida: Colombia (Ley 1581 de 2012, Ley 1480 de 2011).
+
+| Área | Estado |
+|---|---|
+| 1 Privacidad, 2 Términos | Borradores en `/privacidad` y `/terminos`, enlazados en login y pie. **Bloqueante antes de publicar:** completar razón social/NIT/contacto y validar con un abogado |
+| 3 Reembolsos | No aplica (no hay venta) |
+| 4–6 Cookies/consentimiento | Solo cookies esenciales de sesión + preferencia de tema en localStorage; sin analítica ni publicidad → no requiere banner. Si se añade analítica, hay que añadir consentimiento previo |
+| 5 Datos del negocio | Pendiente (placeholders en la política) |
+| 7–9 Formularios | Sin casillas de marketing; solo se piden los campos necesarios |
+| 8 Menores | Público adulto; declarar en términos |
+| 10 SDKs de terceros | Google OAuth, Railway, R2, Anthropic: declarados. Sin Google Fonts (fuentes del sistema) |
+| 11 Baja de correos | No aplica (la app no envía correos) |
+| 12 Eliminación de datos | Cumple: “Eliminar negocio” borra BD y comprobantes en R2; eliminación de la cuenta de usuario por solicitud al correo de contacto |
+| 13–15 Accesibilidad | `aria-label` en controles icono, etiquetas en formularios, foco visible, `prefers-reduced-motion`, tabla accesible del gráfico, contraste del acento naranja resuelto con `--brand-text`. **Pendiente:** auditoría con Lighthouse/axe en navegador y prueba de teclado completa |
+| 16–19 Honestidad comercial | No aplica (sin reseñas, ofertas ni cobros) |
+| 20 Licencias | Dependencias MIT/Apache; iconos Lucide (ISC); sin imágenes de terceros |
+| 21 Licencia “maseMTRn” | **No verificado: licencia sin identificar** |
+| 22 Manual de usuario | `docs/manual-usuario.md` v1.0 (sin capturas aún; prueba con una persona real pendiente) |
+| 23 Manual de sistema | `docs/manual-sistema.md` v1.0 (sin secretos) |

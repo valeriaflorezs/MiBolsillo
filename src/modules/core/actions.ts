@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireUser, requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { deleteObjects } from "@/lib/storage/r2";
 import { DEFAULT_CATEGORIES } from "./defaults";
 
 const id = z.string().cuid();
@@ -113,4 +114,22 @@ export async function acceptInvite(token: string) {
     prisma.workspaceInvite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } }),
   ]);
   return { workspaceId: invite.workspaceId };
+}
+
+/** Elimina un negocio y TODOS sus datos (incluidos los comprobantes en R2). Solo ADMIN, con confirmación por nombre. */
+export async function deleteWorkspaceAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const i = z.object({ workspaceId: id, confirm: z.string() }).parse(Object.fromEntries(fd));
+    const { workspace } = await requireWorkspace(i.workspaceId, "member:manage");
+    if (i.confirm.trim() !== workspace.name) throw userError("Escribe el nombre exacto del negocio para confirmar.");
+    const files = await prisma.attachment.findMany({ where: { workspaceId: i.workspaceId }, select: { storageKey: true } });
+    await deleteObjects(files.map((f) => f.storageKey));
+    // Orden explícito: las FKs de transacciones hacia cuentas/categorías no son en cascada.
+    await prisma.$transaction([
+      prisma.attachment.deleteMany({ where: { workspaceId: i.workspaceId } }),
+      prisma.transaction.deleteMany({ where: { workspaceId: i.workspaceId } }),
+      prisma.workspace.delete({ where: { id: i.workspaceId } }),
+    ]);
+    redirect("/");
+  });
 }

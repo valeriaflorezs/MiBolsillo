@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/lib/auth/config";
 
@@ -21,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form action={async () => { "use server"; await signIn("google", { redirectTo: next }); }}>
           <button type="submit" className="btn btn-primary w-full !py-3">Continuar con Google</button>
         </form>
-        <p className="text-xs text-muted">Al continuar aceptas el tratamiento de tus datos según la política de privacidad.</p>
+        <p className="text-xs text-muted">Al continuar aceptas los <Link className="underline" href="/terminos">términos</Link> y la <Link className="underline" href="/privacidad">política de privacidad</Link>.</p>
       </section>
     </main>
   );

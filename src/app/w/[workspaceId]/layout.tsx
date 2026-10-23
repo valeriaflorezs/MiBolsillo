@@ -1,4 +1,5 @@
 import { SideRail } from "@/components/shell/side-rail";
+import { SiteFooter } from "@/components/ui/site-footer";
 import { TopNav } from "@/components/shell/top-nav";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
@@ -17,6 +18,7 @@ export default async function WorkspaceLayout({ children, params }: { children: 
     orderBy: { createdAt: "asc" },
   });
   return (
+    <>
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-6">
       <TopNav
         tabs={tabsFor(workspaceId, ctx.workspace.type, ctx.role)}
@@ -30,5 +32,7 @@ export default async function WorkspaceLayout({ children, params }: { children: 
         <main className="min-w-0 flex-1 space-y-6">{children}</main>
       </div>
     </div>
+      <SiteFooter />
+    </>
   );
 }
