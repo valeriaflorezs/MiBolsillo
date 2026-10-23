@@ -1,5 +1,5 @@
 # Manual de sistema — MiBolsillo
-**Versión:** 1.0 · **Fecha:** 2026-10-23 · **Cambios:** 1.0 MVP completo.
+**Versión:** 2.0 · **Fecha:** 2026-10-23 · **Cambios:** 2.0 CRUD completo, estadísticas, rediseño, pruebas end-to-end.
 
 ## Arquitectura y stack
 Next.js 16 (App Router, Server Actions, salida `standalone`), React 19, TypeScript, Tailwind 3, Prisma 7 (adaptador `pg`), PostgreSQL 16, Auth.js v5 (Google, sesión JWT), Cloudflare R2, OCR con Claude (intercambiable en `src/lib/ocr`). Node 22. Diseño y plan: `docs/ARCHITECTURE.md`, `docs/DESIGN.md`.
@@ -50,3 +50,14 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 - *Login vuelve a /login:* revisar `AUTH_SECRET`, `AUTH_URL` y la URI de redirección en Google.
 - *Subida de comprobantes falla:* CORS del bucket, variables `R2_*` y CSP `connect-src`.
 - *OCR falla:* revisar `ANTHROPIC_API_KEY`; el formulario sigue funcionando a mano.
+
+## Rutas (v2.0)
+`/w/[id]`: resumen · `transactions` (lista+detalle, `[txId]/edit`, `export` CSV) · `expenses/new` · `pending` · `stats` · `accounts` · `categories` · `budget` · `wishlist` · `settings` · `more` · Airbnb: `capex` (+`[itemId]/edit`), `pyg`, `reservations` (+`[resId]/edit`), `fixed` (+`[fixedId]/edit`), `properties`. Globales: `/login`, `/workspaces/new`, `/invite/[token]`, `/account`, `/privacidad`, `/terminos`, `/api/health`.
+
+## Acciones del servidor
+`modules/core/{actions,finance-actions,crud-actions,receipt-actions}.ts` y `modules/airbnb/{actions,crud-actions}.ts`. Reglas comunes: zod → `requireWorkspace(permiso)` → verificación de pertenencia de cada ID relacionado → operación filtrada por `workspaceId`. `canMutateTx` (en `lib/auth/rbac.ts`) decide quién edita/elimina un movimiento (ADMIN todo; OPERATOR sus gastos < 48 h).
+
+## Pruebas
+- Unitarias: `rbac.test.ts`, `pyg.test.ts`, `period.test.ts`.
+- Integración (Postgres): `queries.int.test.ts` (PyG, filtros, alcance del operador, aislamiento entre negocios).
+- Verificación end-to-end (manual con Playwright contra Postgres local y sesiones JWT firmadas): creación/edición/eliminación de movimientos, transferencias, reservas, CAPEX, gastos fijos, categorías, cuentas, presupuesto, invitaciones, estadísticas por periodo, exportación CSV, degradación del OCR sin R2 y restricciones del Operador.

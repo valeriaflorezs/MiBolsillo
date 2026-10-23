@@ -6,8 +6,9 @@ import { accountOptions, categoryOptions } from "@/modules/core/queries";
 
 export const metadata = { title: "Nuevo gasto" };
 
-export default async function NewExpense({ params }: { params: Promise<{ workspaceId: string }> }) {
+export default async function NewExpense({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ type?: string }> }) {
   const { workspaceId } = await params;
+  const { type } = await searchParams;
   const ctx = await pageCtx(workspaceId, "transaction:create");
   const isAdmin = ctx.role === "ADMIN";
   const [accounts, categories, properties] = await Promise.all([
@@ -19,7 +20,7 @@ export default async function NewExpense({ params }: { params: Promise<{ workspa
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Registrar movimiento</h1>
       <section className="card max-w-3xl">
-        <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} accounts={accounts} properties={properties} action={createTransactionAction}
+        <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts} properties={properties} action={createTransactionAction}
           categories={categories.filter((c) => isAdmin || c.expenseKind !== null)} />
       </section>
     </>

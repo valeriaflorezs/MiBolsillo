@@ -80,8 +80,9 @@ export async function processReceiptAction(raw: unknown) {
 /** URL de lectura firmada, solo si el adjunto pertenece al workspace del usuario (anti-IDOR). */
 export async function getReceiptUrlAction(raw: unknown) {
   const { workspaceId, attachmentId } = z.object({ workspaceId: z.string().cuid(), attachmentId: z.string().cuid() }).parse(raw);
-  await requireWorkspace(workspaceId, "transaction:create");
-  const att = await prisma.attachment.findFirst({ where: { id: attachmentId, workspaceId }, select: { storageKey: true } });
+  const { userId, role } = await requireWorkspace(workspaceId, "transaction:create");
+  // El OPERATOR solo accede a los comprobantes que él subió.
+  const att = await prisma.attachment.findFirst({ where: { id: attachmentId, workspaceId, ...(role === "ADMIN" ? {} : { uploadedById: userId }) }, select: { storageKey: true } });
   if (!att) throw new Error("NOT_FOUND");
   return { url: await signedReadUrl(att.storageKey) };
 }

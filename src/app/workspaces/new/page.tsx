@@ -11,7 +11,7 @@ export default async function NewWorkspace() {
     <main className="mx-auto min-h-screen max-w-lg px-4 py-10">
       <section className="card space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Crea tu primer negocio</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Crea tu negocio</h1>
           <p className="mt-1 text-muted">Un negocio es un espacio separado: por ejemplo “Apto 302” o “Finanzas personales”.</p>
         </div>
         <ActionForm action={createWorkspaceAction} submitLabel="Crear negocio" resetOnSuccess={false}>

@@ -3,39 +3,57 @@
 @tailwind utilities;
 
 :root {
-  --canvas: 238 238 243;   /* fondo gris-lavanda */
-  --surface: 255 255 255;  /* tarjetas */
-  --ink: 17 17 24;
-  --muted: 100 100 115;    /* 5.3:1 sobre blanco */
-  --line: 229 229 236;
-  --brand: 242 101 52;     /* naranja: SOLO rellenos, barras, anillos */
-  --brand-text: 194 65 12; /* naranja oscuro para texto (≥4.5:1 sobre blanco) */
+  --canvas: 220 235 250;
+  --surface: 255 255 255;
+  --ink: 11 27 58;
+  --muted: 70 90 124;        /* ≥5:1 sobre blanco y sobre el celeste de fondo */
+  --line: 198 216 240;
+  --brand: 29 78 156;        /* azul principal */
+  --brand-text: 29 78 156;
+  --accent: 125 180 238;     /* celeste: rellenos y gráficos, con texto oscuro encima */
+  --panel: 11 38 84;         /* navy profundo */
+  --panel2: 22 62 124;
   --positive: 4 120 87;
   --negative: 185 28 28;
+  --bg-grad: linear-gradient(180deg, #eaf3fd 0%, #d4e6f9 40%, #b9d5f2 100%);
+  --glass: 255 255 255;
+  --glass-alpha: .72;
 }
 [data-theme="dark"] {
-  --canvas: 12 12 16;
-  --surface: 24 24 32;
-  --ink: 244 244 248;
-  --muted: 160 160 175;
-  --line: 44 44 56;
-  --brand: 255 122 77;
-  --brand-text: 255 154 118;
+  --canvas: 5 12 28;
+  --surface: 14 28 56;
+  --ink: 232 240 252;
+  --muted: 150 170 202;
+  --line: 32 54 94;
+  --brand: 96 154 238;
+  --brand-text: 150 192 246;
+  --accent: 125 180 238;
+  --panel: 6 20 46;
+  --panel2: 18 46 92;
   --positive: 52 211 153;
   --negative: 248 113 113;
+  --bg-grad: linear-gradient(180deg, #07142e 0%, #050c1c 60%, #040914 100%);
+  --glass: 20 38 74;
+  --glass-alpha: .6;
 }
 
-body { @apply bg-canvas text-ink antialiased; }
-.card { @apply rounded-card bg-surface shadow-card p-6; }
+body { @apply bg-canvas text-ink antialiased; background-image: var(--bg-grad); background-attachment: fixed; min-height: 100vh; }
 :focus-visible { outline: 2px solid rgb(var(--brand-text)); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-pill px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50; }
-  .btn-primary { @apply bg-ink text-surface hover:opacity-90; }
-  .btn-ghost { @apply border border-line text-ink hover:bg-canvas; }
+  .card { @apply rounded-card border border-white/60 p-5 shadow-card backdrop-blur-md sm:p-6; background-color: rgb(var(--glass) / var(--glass-alpha)); }
+  [data-theme="dark"] .card { @apply border-white/10; }
+  .panel { @apply rounded-card bg-gradient-to-br from-panel2 to-panel p-5 text-white shadow-card sm:p-6; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-pill px-4 py-2 text-sm font-medium transition disabled:opacity-50; }
+  .btn-primary { @apply bg-brand text-white shadow-glow hover:opacity-90; }
+  .btn-dark { @apply bg-ink text-surface hover:opacity-90; }
+  .btn-accent { @apply bg-accent text-[#0b1b3a] hover:opacity-90; }
+  .btn-ghost { @apply border border-line bg-surface text-ink hover:bg-canvas; }
+  .btn-danger { @apply border border-negative/40 text-negative hover:bg-negative/10; }
   .input { @apply w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted; }
   .label { @apply mb-1 block text-sm font-medium; }
   .th { @apply px-3 py-2 text-left text-xs font-medium text-muted; }
-  .td { @apply px-3 py-2 text-sm; }
+  .td { @apply px-3 py-2.5 text-sm; }
+  .chip { @apply inline-flex items-center rounded-pill px-2.5 py-0.5 text-xs font-medium; }
 }

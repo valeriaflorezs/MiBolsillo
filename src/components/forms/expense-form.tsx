@@ -11,13 +11,14 @@ type Props = {
   accounts: Opt[];
   categories: Opt[];
   properties: Opt[];
+  defaultType?: "EXPENSE" | "INCOME" | "TRANSFER";
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
 };
 
 const OK = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties, action }: Props) {
+export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties, defaultType = "EXPENSE", action }: Props) {
   const [attachmentId, setAttachmentId] = useState("");
   const [file, setFile] = useState("");
   const [ocr, setOcr] = useState<{ msg: string; kind: "info" | "error" | "ok" } | null>(null);
@@ -81,7 +82,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
         {isAdmin && (
           <div>
             <label className="label" htmlFor="type">Tipo</label>
-            <select id="type" name="type" className="input" defaultValue="EXPENSE">
+            <select id="type" name="type" className="input" defaultValue={defaultType}>
               <option value="EXPENSE">Gasto</option><option value="INCOME">Ingreso</option><option value="TRANSFER">Transferencia</option>
             </select>
           </div>

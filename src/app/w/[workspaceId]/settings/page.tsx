@@ -1,5 +1,8 @@
 import { headers } from "next/headers";
 import { ActionForm } from "@/components/forms/action-form";
+import { DeleteButton } from "@/components/forms/delete-button";
+import { Avatar } from "@/components/ui/avatar";
+import { revokeInviteAction } from "@/modules/core/crud-actions";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { changeMemberRoleAction, createInviteAction, deleteWorkspaceAction, removeMemberAction } from "@/modules/core/actions";
@@ -24,10 +27,11 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
         <ul className="divide-y divide-line">
           {members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <div>
+              <div className="flex items-center gap-3">
+                <Avatar name={m.user.name ?? m.user.email} size={40} /><div>
                 <p className="font-medium">{m.user.name ?? m.user.email}</p>
                 <p className="text-sm text-muted">{m.user.email}</p>
-              </div>
+              </div></div>
               {m.userId === userId ? <span className="text-sm text-muted">Tú · {m.role === "ADMIN" ? "Administrador" : "Operador"}</span> : (
                 <div className="flex flex-wrap items-center gap-2">
                   <ActionForm action={changeMemberRoleAction} submitLabel="Cambiar" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
@@ -64,6 +68,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
               <li key={i.id} className="rounded-xl bg-canvas p-3">
                 <span className="font-medium">{i.email}</span> · {i.role === "ADMIN" ? "Administrador" : "Operador"}
                 <code className="mt-1 block break-all text-xs text-muted">{origin}/invite/{i.token}</code>
+                <div className="mt-2"><DeleteButton action={revokeInviteAction} fields={{ workspaceId, inviteId: i.id }} label="Revocar" confirmText="¿Revocar esta invitación?" /></div>
               </li>
             ))}
           </ul>

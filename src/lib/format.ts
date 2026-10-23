@@ -17,3 +17,6 @@ export const monthLabel = (key: string) =>
 export const fmtDate = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", timeZone: "UTC" });
 export const inputDate = (d: Date) => d.toISOString().slice(0, 10);
 export const num = (d: { toString(): string } | null | undefined) => (d == null ? 0 : Number(d.toString()));
+/** Fecha dentro de `n` días (aislada para no llamar a Date.now() directamente en componentes). */
+export const daysFromNow = (n: number) => new Date(Date.now() + n * 86_400_000);
+export const todayUtc = () => new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");

@@ -1,10 +1,11 @@
 import { ActionForm } from "@/components/forms/action-form";
-import { Filters } from "@/components/ui/filters";
+import { MonthNav } from "@/components/ui/filters";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { cop, monthRange, num, pct } from "@/lib/format";
 import { budgetExecution } from "@/modules/airbnb/queries";
 import { saveBudgetAction } from "@/modules/core/finance-actions";
+import { copyBudgetAction } from "@/modules/core/crud-actions";
 
 export const metadata = { title: "Presupuesto" };
 
@@ -20,7 +21,10 @@ export default async function Budget({ params, searchParams }: { params: Promise
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Presupuesto</h1>
-      <Filters base={`/w/${workspaceId}/budget`} month={key} showStatus={false} />
+      <MonthNav base={`/w/${workspaceId}/budget`} month={key} />
+      <ActionForm action={copyBudgetAction} submitLabel="Copiar presupuesto del mes anterior" variant="ghost" resetOnSuccess={false} className="flex">
+        <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="month" value={key} />
+      </ActionForm>
       <section className="card !p-4">
         <ActionForm action={saveBudgetAction} submitLabel="Guardar presupuesto" resetOnSuccess={false}>
           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="month" value={key} />

@@ -1,29 +1,25 @@
-# Dirección de diseño — basada en "Dashboard V14" (referencia en video)
+# Dirección de diseño — referencia "Nexora" (azules + vidrio)
 
-## Lo que se observa en la referencia
-- **Shell:** barra superior flotante con logo, pestañas en píldora (Overview, Activity, Manage…), búsqueda, notificaciones y avatar; **rail lateral** de iconos con selector claro/oscuro.
-- **Superficies:** fondo gris-lavanda claro, tarjetas blancas muy redondeadas (~20 px), sombra suave, mucho aire.
-- **Color:** neutro + **un solo acento naranja** (barra destacada, anillos, interruptores, "Add money"). Positivos en verde sutil. Botón primario negro en píldora.
-- **Datos:** cifra grande + delta en chip verde; barras mensuales con el último mes resaltado; anillos de progreso con % y meta; toggles para reglas automáticas; tarjetas de contacto con avatar de iniciales en degradé.
-- **Interacción:** hover con elevación (`whileHover y:-5`), skeleton/blur al cargar. Stack de la demo: Tailwind + framer-motion + lucide-react.
+## Paleta (tokens en `src/app/globals.css`)
+| Token | Claro | Uso |
+|---|---|---|
+| `canvas` / fondo | degradado celeste `#eaf3fd → #b9d5f2` | fondo de la app |
+| `surface` | blanco al 72 % + desenfoque (vidrio) | tarjetas `.card` |
+| `ink` | `#0b1b3a` | texto |
+| `muted` | `#465a7c` (≥5:1) | texto secundario |
+| `brand` | `#1d4e9c` | acciones primarias, selección |
+| `accent` | `#7db4ee` | gráficos, botón “+ Movimiento”, resaltados (siempre con texto oscuro) |
+| `panel` / `panel2` | `#0b2654` / `#163e7c` | paneles navy (`.panel`), barra superior |
+| `positive` / `negative` | `#047857` / `#b91c1c` | deltas y alertas |
 
-## Mapeo a MiBolsillo
-| Referencia | Pantalla nuestra |
-|---|---|
-| Tarjeta de cifra + delta | KPIs: flujo de caja, margen de contribución, EBITDA (solo ADMIN) |
-| Barras mensuales con mes actual en naranja | Ingresos vs gastos por mes; ejecución del presupuesto |
-| Anillos de progreso con meta | Checklist CAPEX (% comprado) y "Wishlist" |
-| Tarjetas de "Savings & Goals" | Una tarjeta por Workspace/propiedad en el selector |
-| Toggles "Auto-save" | Gastos fijos recurrentes (activar/pausar) |
-| Pestañas en píldora | Resumen · Transacciones · CAPEX · PyG · Reservas |
-| Tarjetas "Contacts" | Cuentas (Nequi, bancos) |
-| Switch claro/oscuro | Tema con `data-theme` (tokens en `globals.css`) |
+Tema oscuro: mismos nombres con valores navy profundo (`data-theme="dark"`), alternable desde el menú del avatar.
 
-## Reglas de accesibilidad (protocolo-revision, puntos 13–15)
-- El naranja de marca (`--brand`) no llega a 4.5:1 como texto: úsalo en rellenos y gráficos; el texto de acento usa `--brand-text`.
-- Gráficos: etiqueta con texto/valor, no solo color (barra resaltada también lleva etiqueta); tablas alternativas accesibles.
-- Foco visible, navegación por teclado en pestañas, rail y toggles (`role="switch"`), `prefers-reduced-motion` respetado.
-- Iconos-botón con `aria-label`.
+## Patrones
+- **Barra superior navy** con selector de negocio, pestañas en píldora (activa = azul), menú “Más”, campana de pendientes y avatar.
+- **Navegación inferior flotante en móvil** con botón central “+”.
+- **Resumen:** panel de saldo (cuentas + accesos rápidos), KPIs con sparkline, ocupación/ADR/RevPAR (Airbnb), barras 6 meses, dona por categoría, actividad reciente.
+- **Lista + detalle** (Movimientos y Reservas): lista navy a la izquierda, detalle en vidrio a la derecha.
+- Gráficos con alternativa textual (tabla `sr-only`, leyendas con valores).
 
-## Implementación
-Tokens en `tailwind.config.ts` y `src/app/globals.css`. Dependencias a añadir: `framer-motion`, `lucide-react`. Componentes base por construir en `src/components/ui`: `Card`, `KpiCard`, `PillTabs`, `Switch`, `ProgressRing`, `BarChart` (SVG propio, ligero y accesible), `Avatar`.
+## Accesibilidad
+Contraste ≥4.5:1 en texto; el celeste solo como relleno con texto oscuro; foco visible; `prefers-reduced-motion`; etiquetas en todos los controles; `aria-current` en navegación y listas.

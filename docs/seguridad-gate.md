@@ -1,4 +1,4 @@
-# Gate de seguridad (protocolo-implementacion-web) — v1.0 MVP, 2026-10-23
+# Gate de seguridad (protocolo-implementacion-web) — v2.0, 2026-10-23
 
 **Stack:** Next.js 16 (App Router) + Prisma 7/PostgreSQL + Auth.js v5 (Google, sesión JWT) + Cloudflare R2, desplegado en Railway (Docker).
 Evidencia de detección: `next.config.mjs`, `prisma/schema.prisma`, `Dockerfile`, `railway.json`.
@@ -12,7 +12,7 @@ Decisión del usuario: login solo con Google en el MVP.
 | 4 | RLS | **Falta (riesgo asumido)** | Prisma usa un único rol de BD. Aislamiento por `workspaceId` en cada query + `requireWorkspace` + test de aislamiento (`queries.int.test.ts`). RLS como segunda barrera: post-MVP |
 | 5 | Cifrado | Parcial | Tránsito: HTTPS (Railway) y TLS a R2/Anthropic. Reposo: R2 cifra por defecto; confirmar cifrado de volumen de Postgres en Railway |
 | 6 | Autenticación en servidor | Cumple | `requireWorkspace` en toda Server Action; `pageCtx` en toda página; `/api/health` es el único endpoint público |
-| 7 | Acceso por registro (IDOR) | Cumple | Todo `findFirst/updateMany` filtra `workspaceId`; IDs relacionados verificados con `count` (`createTransactionAction`); OPERATOR limitado a sus gastos |
+| 7 | Acceso por registro (IDOR) | Cumple (verificado en navegador: edición ajena → 404, CSV del operador solo con lo suyo, comprobantes solo del autor u ADMIN) | Todo `findFirst/updateMany` filtra `workspaceId`; IDs relacionados verificados con `count` (`createTransactionAction`); OPERATOR limitado a sus gastos |
 | 8 | Mass assignment | Cumple | zod con campos explícitos; `role`, `workspaceId`, `createdById` salen de la sesión/URL validada, nunca del formulario |
 | 9 | Cookies de sesión | Pendiente de verificar en producción | Auth.js: HttpOnly, SameSite=Lax, Secure bajo HTTPS. Verificar con `curl -I` tras el deploy |
 | 10 | Hash de contraseñas | No aplica | Solo Google OAuth; `User.passwordHash` no se usa |
@@ -22,7 +22,7 @@ Decisión del usuario: login solo con Google en el MVP.
 | 14 | Validación de entradas | Cumple | zod en todas las acciones; fechas/montos/enum acotados |
 | 15 | XSS | Cumple | React escapa; regla ESLint `react/no-danger` en error; sin `dangerouslySetInnerHTML` |
 | 16 | Subida de archivos | Cumple | Lista blanca MIME, máx. 8 MB, nombre UUID, bucket privado, **verificación por magic bytes** antes del OCR, limpieza de huérfanos a 24 h |
-| 17 | Respuestas de API | Cumple (MVP) | Acciones devuelven solo lo necesario; listados con `take` (300). Paginación real: post-MVP |
+| 17 | Respuestas de API | Cumple | Movimientos paginados (20/pág.), CSV acotado a 5000 filas y con neutralización de fórmulas (`=`, `+`, `-`, `@`) |
 | 18 | Cabeceras de seguridad | Cumple | CSP, HSTS, nosniff, frame-ancestors/X-Frame-Options, Referrer-Policy, Permissions-Policy (verificado con `curl -I` en local). CSP conserva `'unsafe-inline'` (mejora: nonces) |
 | 19 | HTTPS | Cumple | Railway + HSTS |
 | 20 | Dependencias | Cumple | `npm audit --audit-level=high` sin hallazgos altos/críticos; 3 moderados en Tailwind 3 (`postcss-selector-parser`); Dependabot semanal; CI falla si aparece uno alto |
@@ -53,3 +53,9 @@ Jurisdicción asumida: Colombia (Ley 1581 de 2012, Ley 1480 de 2011).
 | 21 Licencia “maseMTRn” | **No verificado: licencia sin identificar** |
 | 22 Manual de usuario | `docs/manual-usuario.md` v1.0 (sin capturas aún; prueba con una persona real pendiente) |
 | 23 Manual de sistema | `docs/manual-sistema.md` v1.0 (sin secretos) |
+
+## Actualización v2.0
+- Nuevas superficies: edición/eliminación de movimientos, cuentas, categorías, propiedades, CAPEX, reservas y gastos fijos; exportación CSV; eliminación de cuenta de usuario. Todas pasan por zod + `requireWorkspace` + verificación de pertenencia.
+- `deleteMyAccountAction` está limitado (3/h), exige escribir el correo y reasigna los registros a otro administrador o elimina el negocio y sus comprobantes en R2.
+- `npm audit`: 0 altos/críticos (3 moderados en Tailwind 3). Pruebas: 15 pasan (unitarias + integración).
+- Punto 12 (revisión): el flujo de eliminación de datos ya existe en la app (Mi cuenta) además del correo de contacto.

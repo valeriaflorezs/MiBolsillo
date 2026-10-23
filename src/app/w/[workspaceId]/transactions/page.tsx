@@ -1,54 +1,117 @@
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
-import { Filters } from "@/components/ui/filters";
-import { pageCtx } from "@/lib/auth/permissions";
+import { DeleteButton } from "@/components/forms/delete-button";
+import { ReceiptLink } from "@/components/forms/receipt-link";
+import { Chip } from "@/components/ui/chip";
+import { MonthNav } from "@/components/ui/filters";
+import { can, pageCtx } from "@/lib/auth/permissions";
+import { canMutateTx } from "@/lib/auth/rbac";
 import { cop, fmtDate, monthRange } from "@/lib/format";
+import { deleteTransactionAction } from "@/modules/core/crud-actions";
 import { markPaidAction } from "@/modules/core/finance-actions";
-import { listTransactions } from "@/modules/core/queries";
+import { accountOptions, categoryOptions, getTransactionDetail, searchTransactions } from "@/modules/core/queries";
 
-export const metadata = { title: "Gastos" };
+export const metadata = { title: "Movimientos" };
+type SP = { month?: string; status?: string; q?: string; cat?: string; acc?: string; type?: string; page?: string; sel?: string };
+const TYPE = { INCOME: "Ingreso", EXPENSE: "Gasto", TRANSFER: "Transferencia" } as const;
 
-export default async function Transactions({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ month?: string; status?: string }> }) {
+export default async function Transactions({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<SP> }) {
   const { workspaceId } = await params;
   const sp = await searchParams;
   const ctx = await pageCtx(workspaceId, "transaction:create");
+  const admin = can(ctx.role, "dashboard:full");
   const { key, start, end } = monthRange(sp.month);
   const status = sp.status === "PENDING" ? "PENDING" : sp.status === "PAID" ? "PAID" : undefined;
-  const rows = await listTransactions({ workspaceId, role: ctx.role, userId: ctx.userId, start, end, status });
-  const sign = (t: { type: string }) => (t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔");
+  const type = sp.type === "INCOME" || sp.type === "EXPENSE" || sp.type === "TRANSFER" ? sp.type : undefined;
+  const filter = { workspaceId, role: ctx.role, userId: ctx.userId, start, end, status, type, q: sp.q?.trim() || undefined, categoryId: sp.cat || undefined, accountId: sp.acc || undefined, page: Number(sp.page) || 1 } as const;
+  const [data, cats, accs] = await Promise.all([searchTransactions(filter), categoryOptions(workspaceId), accountOptions(workspaceId)]);
+  const selId = sp.sel ?? data.rows[0]?.id; // en escritorio se muestra el primer movimiento por defecto
+  const selected = selId ? await getTransactionDetail(workspaceId, selId, ctx.role, ctx.userId) : null;
+  const base = `/w/${workspaceId}/transactions`;
+  const qs = (o: Partial<SP>) => { const p = new URLSearchParams(Object.entries({ ...sp, ...o }).filter(([, v]) => v) as [string, string][]); return `${base}?${p}`; };
+  const exportHref = `${base}/export?${new URLSearchParams(Object.entries({ month: key, status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, type: sp.type }).filter(([, v]) => v) as [string, string][])}`;
+  const mutable = selected ? canMutateTx(ctx.role, { createdById: selected.createdById, type: selected.type, createdAt: selected.createdAt }, ctx.userId) : false;
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">Movimientos</h1>
-        <Link href={`/w/${workspaceId}/expenses/new`} className="btn btn-primary">+ Nuevo</Link>
+        <div className="flex gap-2">
+          <a href={exportHref} className="btn btn-ghost">Exportar CSV</a>
+          <Link href={`/w/${workspaceId}/expenses/new`} className="btn btn-primary">+ Nuevo</Link>
+        </div>
       </div>
-      <Filters base={`/w/${workspaceId}/transactions`} month={key} status={sp.status ?? "ALL"} />
-      <section className="card overflow-x-auto !p-2">
-        {rows.length === 0 ? <p className="p-6 text-center text-muted">Sin movimientos en este filtro.</p> : (
-          <table className="w-full">
-            <thead><tr><th className="th">Fecha</th><th className="th">Detalle</th><th className="th">Categoría</th><th className="th">Cuenta</th><th className="th text-right">Monto</th><th className="th"><span className="sr-only">Acciones</span></th></tr></thead>
-            <tbody className="divide-y divide-line">
-              {rows.map((t) => (
-                <tr key={t.id}>
-                  <td className="td whitespace-nowrap">{fmtDate(t.date)}</td>
-                  <td className="td">{t.vendor ?? t.description ?? "—"} {t.hasReceipt && <span title="Con comprobante" aria-label="Con comprobante">📎</span>}{t.status === "PENDING" && <span className="ml-2 rounded-pill bg-canvas px-2 py-0.5 text-xs">Por pagar</span>}</td>
-                  <td className="td">{t.category ? `${t.category.emoji ?? ""} ${t.category.name}` : "—"}</td>
-                  <td className="td">{t.account}</td>
-                  <td className={`td whitespace-nowrap text-right font-medium ${t.type === "INCOME" ? "text-positive" : ""}`}>{sign(t)} {cop(t.amount)}</td>
-                  <td className="td">
-                    {t.status === "PENDING" && (
-                      <ActionForm action={markPaidAction} submitLabel="Pagado" variant="ghost" className="flex">
-                        <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} />
-                      </ActionForm>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+
+      <form className="card grid gap-3 sm:grid-cols-2 lg:grid-cols-6" role="search" aria-label="Filtrar movimientos">
+        <input type="hidden" name="month" value={key} />
+        <div className="lg:col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Proveedor o nota" className="input" /></div>
+        <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}</select></div>
+        {admin && <div><label className="label" htmlFor="acc">Cuenta</label><select id="acc" name="acc" defaultValue={sp.acc ?? ""} className="input"><option value="">Todas</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>}
+        <div><label className="label" htmlFor="status">Estado</label><select id="status" name="status" defaultValue={sp.status ?? ""} className="input"><option value="">Todos</option><option value="PAID">Pagado / cobrado</option><option value="PENDING">Por pagar / cobrar</option></select></div>
+        {admin && <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" defaultValue={sp.type ?? ""} className="input"><option value="">Todos</option><option value="EXPENSE">Gastos</option><option value="INCOME">Ingresos</option><option value="TRANSFER">Transferencias</option></select></div>}
+        <div className="flex items-end"><button className="btn btn-dark w-full">Filtrar</button></div>
+      </form>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <MonthNav base={base} month={key} extra={Object.entries({ status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, type: sp.type }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("")} />
+        <p className="text-sm text-muted">{data.total} movimiento(s){admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+        <section className="panel space-y-2 !p-3 sm:!p-4" aria-label="Lista de movimientos">
+          {data.rows.length === 0 && <p className="p-6 text-center text-white/70">Sin movimientos con estos filtros.</p>}
+          <ul className="space-y-1.5">
+            {data.rows.map((t) => (
+              <li key={t.id}>
+                <Link href={qs({ sel: t.id })} aria-current={selId === t.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${selId === t.id ? "bg-brand shadow-glow" : "bg-white/5 hover:bg-white/15"}`}>
+                  <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span>
+                    <span className="min-w-0"><span className="block truncate font-medium">{t.vendor ?? t.description ?? t.category?.name ?? TYPE[t.type]} {t.hasReceipt && <span aria-label="Con comprobante">📎</span>}</span><span className="block text-xs text-white/60">{fmtDate(t.date)} · {t.account}{t.status === "PENDING" ? " · Pendiente" : ""}</span></span></span>
+                  <span className={`shrink-0 font-medium ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {data.pages > 1 && (
+            <nav aria-label="Paginación" className="flex items-center justify-between px-1 pt-2 text-sm">
+              {data.page > 1 ? <Link href={qs({ page: String(data.page - 1) })} className="underline">‹ Anterior</Link> : <span />}
+              <span className="text-white/70">Página {data.page} de {data.pages}</span>
+              {data.page < data.pages ? <Link href={qs({ page: String(data.page + 1) })} className="underline">Siguiente ›</Link> : <span />}
+            </nav>
+          )}
+        </section>
+
+        <section className="card min-h-64 space-y-4" aria-label="Detalle del movimiento">
+          {!selected ? <p className="grid h-full place-items-center py-12 text-center text-muted">Selecciona un movimiento para ver su detalle.</p> : (
+            <>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap gap-2"><Chip tone="brand">{TYPE[selected.type]}</Chip><Chip tone={selected.status === "PAID" ? "positive" : "negative"}>{selected.status === "PAID" ? "Pagado" : "Por pagar"}</Chip></div>
+                  <p className="mt-3 text-4xl font-semibold tracking-tight">{cop(selected.amount)}</p>
+                  <p className="mt-1 text-muted">{selected.vendor ?? selected.category?.name ?? "Sin proveedor"}</p>
+                </div>
+                <span aria-hidden className="grid size-14 place-items-center rounded-2xl bg-canvas/70 text-2xl">{selected.category?.emoji ?? "💳"}</span>
+              </div>
+              <dl className="grid gap-3 rounded-2xl bg-canvas/60 p-4 text-sm sm:grid-cols-2">
+                <div><dt className="text-muted">Fecha</dt><dd className="font-medium">{fmtDate(selected.date)}</dd></div>
+                <div><dt className="text-muted">Categoría</dt><dd className="font-medium">{selected.category ? `${selected.category.emoji ?? ""} ${selected.category.name}` : "—"}</dd></div>
+                <div><dt className="text-muted">Cuenta</dt><dd className="font-medium">{selected.account}{selected.transferAccount ? ` → ${selected.transferAccount}` : ""}</dd></div>
+                <div><dt className="text-muted">Registrado por</dt><dd className="font-medium">{selected.createdBy}</dd></div>
+                {selected.property && <div><dt className="text-muted">Propiedad</dt><dd className="font-medium">{selected.property}</dd></div>}
+                {selected.description && <div className="sm:col-span-2"><dt className="text-muted">Nota</dt><dd className="font-medium">{selected.description}</dd></div>}
+              </dl>
+              {selected.attachments.map((a) => <ReceiptLink key={a.id} workspaceId={workspaceId} attachmentId={a.id} name={a.fileName ?? "Ver comprobante"} />)}
+              <div className="flex flex-wrap items-center gap-2">
+                {selected.status === "PENDING" && (
+                  <ActionForm action={markPaidAction} submitLabel="Marcar como pagado" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={selected.id} /></ActionForm>
+                )}
+                {mutable && <Link href={`${base}/${selected.id}/edit`} className="btn btn-ghost">Editar</Link>}
+                {mutable && <DeleteButton action={deleteTransactionAction} fields={{ workspaceId, transactionId: selected.id }} confirmText="¿Eliminar este movimiento y su comprobante?" />}
+              </div>
+              {!mutable && <p className="text-xs text-muted">Solo el administrador puede modificar este movimiento.</p>}
+            </>
+          )}
+        </section>
+      </div>
     </>
   );
 }

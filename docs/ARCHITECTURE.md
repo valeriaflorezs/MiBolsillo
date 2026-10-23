@@ -143,3 +143,4 @@ Total estimado: ~4–5 semanas para una persona. Postergar a post-MVP: módulos 
 - **Sesiones JWT** sin adaptador de Prisma: el modelo `AuthAccount` y las tablas de sesión quedaron sin uso.
 - Las rutas reales cuelgan de `/w/[workspaceId]` y la lógica está en `src/modules/{core,airbnb}`.
 - Fuera del MVP: RLS en Postgres, paginación, módulos Personal/Gig avanzados, importación de extractos, CSP con nonces.
+- **v2.0:** rediseño Nexora (ver `docs/DESIGN.md`), CRUD completo, estadísticas por periodo, KPIs de Airbnb (ocupación/ADR/RevPAR), pendientes, categorías editables, exportación CSV, eliminación de cuenta.

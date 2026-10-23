@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
-import { Filters } from "@/components/ui/filters";
+import { MonthNav } from "@/components/ui/filters";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { cop, monthRange, num } from "@/lib/format";
@@ -22,7 +23,7 @@ export default async function Fixed({ params, searchParams }: { params: Promise<
     <>
       <div><h1 className="text-3xl font-semibold tracking-tight">Gastos fijos (OPEX)</h1><p className="text-muted">Mensual recurrente: {cop(monthly)}</p></div>
       <section className="card flex flex-wrap items-center justify-between gap-3">
-        <Filters base={`/w/${workspaceId}/fixed`} month={key} showStatus={false} />
+        <MonthNav base={`/w/${workspaceId}/fixed`} month={key} />
         <ActionForm action={generateFixedAction} submitLabel="Generar gastos del mes" variant="ghost" resetOnSuccess={false} className="flex items-center gap-3">
           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="month" value={key} />
         </ActionForm>
@@ -37,7 +38,7 @@ export default async function Fixed({ params, searchParams }: { params: Promise<
                   <td className="td">{r.name}<p className="text-xs text-muted">{r.property.name}</p></td>
                   <td className="td">{CONCEPT[r.concept]}</td><td className="td">{FREQ[r.frequency]}</td>
                   <td className="td text-right">{cop(num(r.amount))}</td>
-                  <td className="td"><ActionForm action={toggleFixedAction} submitLabel={r.active ? "Pausar" : "Activar"} variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="fixedId" value={r.id} /></ActionForm></td>
+                  <td className="td"><div className="flex items-center gap-2"><Link href={`/w/${workspaceId}/fixed/${r.id}/edit`} className="btn btn-ghost">Editar</Link><ActionForm action={toggleFixedAction} submitLabel={r.active ? "Pausar" : "Activar"} variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="fixedId" value={r.id} /></ActionForm></div></td>
                 </tr>
               ))}
             </tbody>

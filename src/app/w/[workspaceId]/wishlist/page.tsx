@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { cop, num } from "@/lib/format";
 import { addWishAction, toggleWishAction } from "@/modules/core/finance-actions";
+import { DeleteButton } from "@/components/forms/delete-button";
+import { deleteWishAction } from "@/modules/core/crud-actions";
 
 export const metadata = { title: "Lista de deseos" };
 
@@ -32,9 +34,12 @@ export default async function Wishlist({ params }: { params: Promise<{ workspace
               <div className={i.status === "PURCHASED" ? "text-muted line-through" : ""}>
                 <p className="font-medium">{i.itemName}</p><p className="text-sm text-muted">{i.store ?? "—"} · {cop(num(i.estimatedPrice))}</p>
               </div>
-              <ActionForm action={toggleWishAction} submitLabel={i.status === "PENDING" ? "Comprado" : "Deshacer"} variant="ghost" className="flex">
-                <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="wishId" value={i.id} />
-              </ActionForm>
+              <div className="flex items-center gap-2">
+                <ActionForm action={toggleWishAction} submitLabel={i.status === "PENDING" ? "Comprado" : "Deshacer"} variant="ghost" className="flex">
+                  <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="wishId" value={i.id} />
+                </ActionForm>
+                <DeleteButton action={deleteWishAction} fields={{ workspaceId, wishId: i.id }} label="Quitar" confirmText="¿Quitar este artículo?" />
+              </div>
             </li>
           ))}
         </ul>

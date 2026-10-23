@@ -1,5 +1,5 @@
 # Manual de usuario — MiBolsillo
-**Versión:** 1.0 · **Fecha:** 2026-10-23 · **Cambios:** 1.0 primera versión completa (pendiente añadir capturas).
+**Versión:** 2.0 · **Fecha:** 2026-10-23 · **Cambios:** 2.0 rediseño, edición/eliminación de todo, estadísticas, pendientes, categorías, exportación CSV y eliminación de cuenta (pendiente añadir capturas).
 
 ## Qué es
 Una aplicación web para llevar tus finanzas personales y las de tus negocios (por ejemplo, un apartamento en Airbnb). Funciona en el computador y en el celular. Solo necesitas un navegador y una cuenta de Google.
@@ -42,3 +42,15 @@ Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de
 
 ## Soporte
 `<CORREO_DE_SOPORTE>`
+
+## Novedades de la versión 2.0
+- **Navegación:** en el computador, la barra superior (con el menú **Más**); en el celular, la barra inferior con el botón **+** para registrar un movimiento. El menú de tu avatar cambia el tema claro/oscuro y cierra sesión.
+- **Movimientos:** busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. Toca un movimiento para ver el detalle, abrir su comprobante, **editarlo** o **eliminarlo**. **Exportar CSV** descarga la lista filtrada.
+  El Operador puede editar o eliminar sus propios gastos durante las 48 horas siguientes a registrarlos.
+- **Estadísticas (Administrador):** elige Hoy, Semana, Mes o Año; compara con el periodo anterior, mira los gastos por categoría y los mayores proveedores.
+- **Pendientes (campana):** lo que debes pagar (con los vencidos marcados) y lo que te deben; márcalos como pagados o cobrados desde ahí.
+- **Airbnb:** el resumen muestra ocupación, tarifa media por noche (ADR) y RevPAR. En **Reservas** ves el detalle con el neto para ti; en **Propiedades** administras tus apartamentos.
+- **Categorías (Administrador):** crea y edita categorías; la “línea del PyG” decide dónde suma cada gasto en el estado de resultados.
+- **Cuentas:** edita nombre, tipo y saldo inicial, o archiva una cuenta.
+- **Presupuesto:** copia el presupuesto del mes anterior con un clic.
+- **Mi cuenta (avatar → Mi cuenta y privacidad):** ver tus negocios y **eliminar tu cuenta**. Si eres el único administrador de un negocio, ese negocio se elimina con todo; si hay otro administrador, los registros pasan a esa persona.

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
 import { ProgressRing } from "@/components/ui/charts";
 import { KpiCard } from "@/components/ui/kpi-card";
@@ -41,7 +42,7 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
             <tbody className="divide-y divide-line">
               {rows.map((r) => (
                 <tr key={r.id} className={r.status === "PURCHASED" ? "bg-canvas/50" : ""}>
-                  <td className="td"><p className="font-medium">{r.itemDescription}</p><p className="text-xs text-muted">{CAT[r.capexCategory]} · {r.property.name}{r.store ? ` · ${r.store}` : ""}</p></td>
+                  <td className="td"><p className="font-medium">{r.itemDescription}{admin && <> <Link href={`/w/${workspaceId}/capex/${r.id}/edit`} className="text-xs font-normal text-brand-text underline">Editar</Link></>}</p><p className="text-xs text-muted">{CAT[r.capexCategory]} · {r.property.name}{r.store ? ` · ${r.store}` : ""}</p></td>
                   <td className="td">{r.quantity}</td>
                   <td className="td text-right">{cop(num(r.budgetedUnitPrice))}</td>
                   <td className="td text-right">{cop(r.v.budgeted)}</td>
