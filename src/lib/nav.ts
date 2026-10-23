@@ -1,5 +1,5 @@
 import type { Role, WorkspaceType } from "@/generated/prisma/client";
-import { can } from "@/lib/auth/permissions";
+import { can } from "@/lib/auth/rbac";
 
 export type Tab = { href: string; label: string };
 

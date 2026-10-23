@@ -29,8 +29,8 @@ const line = (rows: PygExpenseRow[], l: PygLine) => sum(rows.filter((r) => r.pyg
  * Ingresos brutos = noches + tarifa de aseo cobrada al huésped.
  * Comisión de plataforma viene de la reserva; el resto de costos, de transacciones EXPENSE.
  */
-export function buildPyg(reservations: PygReservationRow[], expenses: PygExpenseRow[]): Pyg {
-  const grossRevenue = sum(reservations.map((r) => r.grossAmount + r.cleaningFeeCharged));
+export function buildPyg(reservations: PygReservationRow[], expenses: PygExpenseRow[], otherRevenue = 0): Pyg {
+  const grossRevenue = sum(reservations.map((r) => r.grossAmount + r.cleaningFeeCharged)) + otherRevenue;
 
   const commissions = sum(reservations.map((r) => r.platformCommission)) + line(expenses, "COMMISSION");
   const cleaning = line(expenses, "CLEANING");
