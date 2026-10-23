@@ -18,7 +18,10 @@ const config: Config = {
       },
       borderRadius: { card: "1.25rem", pill: "9999px" },
       boxShadow: { card: "0 1px 2px rgb(0 0 0 / .04), 0 8px 24px rgb(0 0 0 / .05)" },
-      fontFamily: { sans: ["var(--font-sans)", "system-ui", "sans-serif"] },
+      fontFamily: {
+        // Pila del sistema: sin descargas externas (no se envía la IP del visitante a Google Fonts).
+        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+      },
     },
   },
   plugins: [],
