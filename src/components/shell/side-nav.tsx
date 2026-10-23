@@ -1,15 +1,10 @@
 "use client";
 
-import { BarChart3, BellRing, Building2, CalendarCheck, Gift, Hammer, LayoutDashboard, PiggyBank, Receipt, Repeat, Scale, Settings, Tags, UserRound, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
-import type { NavIcon, Tab } from "@/lib/nav";
-
-const ICONS: Record<NavIcon, typeof Wallet> = {
-  home: LayoutDashboard, tx: Receipt, stats: BarChart3, capex: Hammer, pyg: Scale, res: CalendarCheck, fixed: Repeat, props: Building2,
-  accounts: Wallet, budget: PiggyBank, cats: Tags, wish: Gift, settings: Settings, pending: BellRing, account: UserRound,
-};
+import type { Tab } from "@/lib/nav";
+import { NAV_ICONS as ICONS } from "./nav-icons";
 
 /**
  * Menú lateral de escritorio: colapsado muestra solo iconos; al acercar el cursor (o enfocar con teclado)

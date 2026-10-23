@@ -31,7 +31,7 @@ export default async function WorkspaceLayout({ children, params }: { children: 
     <>
       <SideNav workspaceId={workspaceId} primary={primary} more={more} pending={pending} />
       <div className="md:pl-[5.75rem]">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-4 py-6 pb-32 md:pb-8">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-4 py-6 pb-44 md:pb-8">
         <TopNav
           pending={pending}
           workspaces={memberships.map((m) => m.workspace)} currentId={workspaceId}

@@ -43,14 +43,14 @@ export default async function Transactions({ params, searchParams }: { params: P
         </div>
       </div>
 
-      <form className="card grid gap-3 sm:grid-cols-2 lg:grid-cols-6" role="search" aria-label="Filtrar movimientos">
+      <form className="card grid grid-cols-2 gap-3 lg:grid-cols-6" role="search" aria-label="Filtrar movimientos">
         <input type="hidden" name="month" value={key} />
-        <div className="lg:col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Proveedor o nota" className="input" /></div>
+        <div className="col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Proveedor o nota" className="input" /></div>
         <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}</select></div>
         {admin && <div><label className="label" htmlFor="acc">Cuenta</label><select id="acc" name="acc" defaultValue={sp.acc ?? ""} className="input"><option value="">Todas</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>}
         <div><label className="label" htmlFor="status">Estado</label><select id="status" name="status" defaultValue={sp.status ?? ""} className="input"><option value="">Todos</option><option value="PAID">Pagado / cobrado</option><option value="PENDING">Por pagar / cobrar</option></select></div>
         {admin && <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" defaultValue={sp.type ?? ""} className="input"><option value="">Todos</option><option value="EXPENSE">Gastos</option><option value="INCOME">Ingresos</option><option value="TRANSFER">Transferencias</option></select></div>}
-        <div className="flex items-end"><button className="btn btn-dark w-full">Filtrar</button></div>
+        <div className="col-span-2 flex items-end lg:col-span-1"><button className="btn btn-dark w-full">Filtrar</button></div>
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

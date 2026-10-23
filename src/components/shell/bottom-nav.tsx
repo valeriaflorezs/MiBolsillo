@@ -19,8 +19,8 @@ export function BottomNav({ workspaceId, showStats }: { workspaceId: string; sho
     );
   };
   return (
-    <nav aria-label="Navegación móvil" className="fixed inset-x-4 bottom-4 z-40 md:hidden">
-      <ul className="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/30 bg-panel/75 px-3 py-2 shadow-card backdrop-blur-2xl" style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .35), 0 14px 34px rgb(6 24 60 / .4)" }}>
+    <nav aria-label="Navegación móvil" className="fixed inset-x-4 z-40 md:hidden" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+      <ul className="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/25 bg-panel/[.97] px-3 py-2 shadow-card" style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .35), 0 14px 34px rgb(6 24 60 / .4)" }}>
         {item(b, "Resumen", Home)}
         {item(`${b}/transactions`, "Movimientos", Receipt)}
         <li>
