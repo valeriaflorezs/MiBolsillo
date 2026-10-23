@@ -24,6 +24,7 @@ enum WorkspaceType {
 enum Role {
   ADMIN    // acceso total (incluye EBITDA, PyG, presupuestos, miembros)
   OPERATOR // registra gastos/insumos/aseo; sin acceso a EBITDA ni PyG
+  VIEWER   // solo lectura de todo el negocio; no registra, edita ni borra nada
 }
 
 enum AccountType {
@@ -129,10 +130,11 @@ enum OcrStatus {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
+  username      String?   @unique // solo cuentas con usuario/contraseña creadas por un ADMIN (rol VIEWER)
   name          String?
   emailVerified DateTime?
   image         String?
-  passwordHash  String? // solo si usas credenciales; con OAuth/magic link queda null
+  passwordHash  String? // scrypt; null en cuentas de Google
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

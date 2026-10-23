@@ -2,7 +2,7 @@
 
 **Stack:** Next.js 16 (App Router) + Prisma 7/PostgreSQL + Auth.js v5 (Google, sesión JWT) + Cloudflare R2, desplegado en Railway (Docker).
 Evidencia de detección: `next.config.mjs`, `prisma/schema.prisma`, `Dockerfile`, `railway.json`.
-Decisión del usuario: login solo con Google en el MVP.
+Login: Google para dueños/operadores; usuario y contraseña únicamente para cuentas de solo lectura (rol VIEWER) creadas por un ADMIN. Limitación: restablecer la contraseña no cierra las sesiones ya abiertas (JWT, 14 días); quitar al miembro sí corta el acceso al instante.
 
 | # | Punto | Estado | Evidencia o razón |
 |---|---|---|---|
@@ -15,8 +15,8 @@ Decisión del usuario: login solo con Google en el MVP.
 | 7 | Acceso por registro (IDOR) | Cumple (verificado en navegador: edición ajena → 404, CSV del operador solo con lo suyo, comprobantes solo del autor u ADMIN) | Todo `findFirst/updateMany` filtra `workspaceId`; IDs relacionados verificados con `count` (`createTransactionAction`); OPERATOR limitado a sus gastos |
 | 8 | Mass assignment | Cumple | zod con campos explícitos; `role`, `workspaceId`, `createdById` salen de la sesión/URL validada, nunca del formulario |
 | 9 | Cookies de sesión | Pendiente de verificar en producción | Auth.js: HttpOnly, SameSite=Lax, Secure bajo HTTPS. Verificar con `curl -I` tras el deploy |
-| 10 | Hash de contraseñas | No aplica | Solo Google OAuth; `User.passwordHash` no se usa |
-| 11 | Límite de intentos de login | No aplica | Delegado a Google. `rateLimit` en subidas, OCR, transacciones, invitaciones y creación de negocios |
+| 10 | Hash de contraseñas | Cumple | Solo cuentas de solo lectura (usuario/contraseña): scrypt con sal por usuario (`src/lib/auth/credentials.ts`), contraseña generada por el servidor (14 caracteres) y mostrada una vez; comparación a tiempo constante, también con usuario inexistente |
+| 11 | Límite de intentos de login | Cumple | Login con contraseña: 8 intentos/15 min por usuario y 30 por IP (en memoria, una réplica). Google delegado. `rateLimit` en subidas, OCR, transacciones, invitaciones y creación de negocios |
 | 12 | Anti-bots | No aplica | Sin formularios públicos; registro solo vía Google |
 | 13 | Monitoreo de consultas | Parcial | Prisma parametriza (sin SQL concatenado); logs `warn/error`. Falta alerta de consultas lentas |
 | 14 | Validación de entradas | Cumple | zod en todas las acciones; fechas/montos/enum acotados |

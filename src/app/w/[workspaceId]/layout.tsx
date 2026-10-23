@@ -7,6 +7,7 @@ import { can, pageCtx } from "@/lib/auth/permissions";
 import { auth, signOut } from "@/lib/auth/config";
 import { tabsFor } from "@/lib/nav";
 import { daysFromNow } from "@/lib/format";
+import { CRED_DOMAIN } from "@/lib/auth/credentials-shared";
 
 export const dynamic = "force-dynamic";
 
@@ -23,17 +24,19 @@ export default async function WorkspaceLayout({ children, params }: { children: 
     }),
     // Pendientes vencidos o que vencen en 7 días (el OPERATOR solo cuenta los suyos).
     prisma.transaction.count({
-      where: { workspaceId, status: "PENDING", type: "EXPENSE", date: { lte: soon }, ...(can(ctx.role, "dashboard:full") ? {} : { createdById: ctx.userId }) },
+      where: { workspaceId, status: "PENDING", type: "EXPENSE", date: { lte: soon }, ...(can(ctx.role, "finance:read") ? {} : { createdById: ctx.userId }) },
     }),
   ]);
   const { primary, more } = tabsFor(workspaceId, ctx.workspace.type, ctx.role);
+  const canWrite = can(ctx.role, "transaction:create");
+  const managed = Boolean(session?.user?.email?.endsWith(CRED_DOMAIN)); // cuentas con usuario/contraseña no crean negocios
   return (
     <>
       <SideNav workspaceId={workspaceId} primary={primary} more={more} pending={pending} />
       <div className="md:pl-[5.75rem]">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-4 py-6 pb-44 md:pb-8">
         <TopNav
-          pending={pending}
+          pending={pending} canWrite={canWrite} canCreateWorkspace={!managed}
           workspaces={memberships.map((m) => m.workspace)} currentId={workspaceId}
           user={{ name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null }}
           signOutAction={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}
@@ -42,7 +45,7 @@ export default async function WorkspaceLayout({ children, params }: { children: 
         <SiteFooter />
       </div>
       </div>
-      <BottomNav workspaceId={workspaceId} showStats={primary.some((t) => t.href.endsWith("/stats"))} />
+      <BottomNav workspaceId={workspaceId} showStats={primary.some((t) => t.href.endsWith("/stats"))} canWrite={canWrite} />
     </>
   );
 }

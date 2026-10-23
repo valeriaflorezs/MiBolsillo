@@ -44,7 +44,7 @@ function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
     ...(f.accountId ? { OR: [{ accountId: f.accountId }, { transferAccountId: f.accountId }] } : {}),
     ...(f.q ? { AND: [{ OR: [{ vendor: { contains: f.q, mode: "insensitive" } }, { description: { contains: f.q, mode: "insensitive" } }] }] } : {}),
     // El OPERATOR solo ve los GASTOS que él mismo registró.
-    ...(can(f.role, "dashboard:full") ? {} : { createdById: f.userId, type: "EXPENSE" }),
+    ...(can(f.role, "finance:read") ? {} : { createdById: f.userId, type: "EXPENSE" }),
   };
 }
 
@@ -75,7 +75,7 @@ export async function searchTransactions(f: TxFilter) {
 
 export async function getTransactionDetail(workspaceId: string, id: string, role: Role, userId: string) {
   const t = await prisma.transaction.findFirst({
-    where: { id, workspaceId, ...(can(role, "dashboard:full") ? {} : { createdById: userId, type: "EXPENSE" }) },
+    where: { id, workspaceId, ...(can(role, "finance:read") ? {} : { createdById: userId, type: "EXPENSE" }) },
     include: {
       ...txInclude,
       attachments: { select: { id: true, fileName: true, fileType: true } },
@@ -96,7 +96,7 @@ export async function getTransactionDetail(workspaceId: string, id: string, role
 /** Gastos por pagar, vencidos primero. El OPERATOR solo ve los suyos. */
 export async function pendingPayables(workspaceId: string, role: Role, userId: string, take = 50) {
   const rows = await prisma.transaction.findMany({
-    where: { workspaceId, status: "PENDING", type: { in: ["EXPENSE", "INCOME"] }, ...(can(role, "dashboard:full") ? {} : { createdById: userId, type: "EXPENSE" }) },
+    where: { workspaceId, status: "PENDING", type: { in: ["EXPENSE", "INCOME"] }, ...(can(role, "finance:read") ? {} : { createdById: userId, type: "EXPENSE" }) },
     include: txInclude, orderBy: { date: "asc" }, take,
   });
   return rows.map(toRow);

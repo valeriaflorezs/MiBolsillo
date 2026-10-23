@@ -13,6 +13,7 @@ export default function Privacidad() {
       <h2 className="text-xl font-medium">Con quién se comparten</h2>
       <ul className="list-disc pl-6">
         <li>Google (inicio de sesión).</li>
+        <li>Las cuentas de solo lectura entran con usuario y contraseña; guardamos únicamente el usuario y un hash de la contraseña.</li>
         <li>Railway (alojamiento de la aplicación y base de datos).</li>
         <li>Cloudflare R2 (almacenamiento de comprobantes).</li>
         <li>Anthropic (lectura OCR: el comprobante se envía para extraer monto, fecha y proveedor; no se usa para entrenar modelos según sus términos de API).</li>

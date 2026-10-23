@@ -15,7 +15,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
   const { workspaceId } = await params;
   let ctx;
   try {
-    ctx = await requireWorkspace(workspaceId, "transaction:create");
+    ctx = await requireWorkspace(workspaceId, "data:read");
   } catch {
     return new Response("No autorizado", { status: 403 });
   }

@@ -15,7 +15,8 @@ const CAT = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION
 
 export default async function Capex({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
-  const ctx = await pageCtx(workspaceId, "capex:update");
+  const ctx = await pageCtx(workspaceId, "data:read");
+  const canBuy = can(ctx.role, "capex:update");
   const admin = can(ctx.role, "airbnb:manage");
   const [items, properties] = await Promise.all([
     prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } } }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { capexCategory: "asc" }] }),
@@ -51,11 +52,11 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
                   <td className="td text-right">{r.v.actual == null ? "—" : cop(r.v.actual)}</td>
                   <td className={`td text-right font-medium ${r.v.variance == null ? "" : r.v.variance < 0 ? "text-negative" : "text-positive"}`}>{r.v.variance == null ? "—" : cop(r.v.variance)}</td>
                   <td className="td">
-                    <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Deshacer" : "Comprado ✓"} variant={r.status === "PURCHASED" ? "ghost" : "primary"} className="flex items-center gap-2" resetOnSuccess={false}>
+                    {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Deshacer" : "Comprado ✓"} variant={r.status === "PURCHASED" ? "ghost" : "primary"} className="flex items-center gap-2" resetOnSuccess={false}>
                       <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} />
                       <input type="hidden" name="intent" value={r.status === "PURCHASED" ? "undo" : "buy"} />
                       {r.status === "PENDING" && <><label className="sr-only" htmlFor={`p${r.id}`}>Precio unitario real</label><input id={`p${r.id}`} name="actualUnitPrice" type="number" min="0" step="any" placeholder="Precio real" className="input !w-28" /></>}
-                    </ActionForm>
+                    </ActionForm>}
                   </td>
                 </tr>
               ))}

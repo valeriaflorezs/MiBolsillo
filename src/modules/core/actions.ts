@@ -9,6 +9,8 @@ import { run, userError, type ActionState } from "@/lib/actions";
 import { requireUser, requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { deleteObjects } from "@/lib/storage/r2";
+import { CRED_DOMAIN, credentialEmail } from "@/lib/auth/credentials-shared";
+import { generatePassword, hashPassword, USERNAME_RE } from "@/lib/auth/credentials";
 import { DEFAULT_CATEGORIES } from "./defaults";
 
 const id = z.string().cuid();
@@ -16,6 +18,7 @@ const id = z.string().cuid();
 export async function createWorkspaceAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const user = await requireUser();
+    if (user.email?.endsWith(CRED_DOMAIN)) throw userError("Esta cuenta es de solo lectura y no puede crear negocios.");
     rateLimit(`ws:${user.id}`, 10, 3_600_000);
     const input = z
       .object({
@@ -52,7 +55,7 @@ export async function createWorkspaceAction(_: ActionState, fd: FormData): Promi
 export async function createInviteAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const input = z
-      .object({ workspaceId: id, email: z.string().trim().toLowerCase().email("Correo inválido"), role: z.enum(["ADMIN", "OPERATOR"]) })
+      .object({ workspaceId: id, email: z.string().trim().toLowerCase().email("Correo inválido"), role: z.enum(["ADMIN", "OPERATOR", "VIEWER"]) })
       .parse(Object.fromEntries(fd));
     const { userId } = await requireWorkspace(input.workspaceId, "member:manage");
     rateLimit(`invite:${userId}`, 20, 3_600_000);
@@ -70,10 +73,11 @@ export async function createInviteAction(_: ActionState, fd: FormData): Promise<
 
 export async function changeMemberRoleAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
-    const input = z.object({ workspaceId: id, memberId: id, role: z.enum(["ADMIN", "OPERATOR"]) }).parse(Object.fromEntries(fd));
+    const input = z.object({ workspaceId: id, memberId: id, role: z.enum(["ADMIN", "OPERATOR", "VIEWER"]) }).parse(Object.fromEntries(fd));
     await requireWorkspace(input.workspaceId, "member:manage");
-    const target = await prisma.workspaceMember.findFirst({ where: { id: input.memberId, workspaceId: input.workspaceId } });
+    const target = await prisma.workspaceMember.findFirst({ where: { id: input.memberId, workspaceId: input.workspaceId }, include: { user: { select: { username: true } } } });
     if (!target) throw new Error("NOT_FOUND");
+    if (target.user.username && input.role !== "VIEWER") throw userError("Las cuentas con usuario y contraseña solo pueden ser de solo lectura.");
     if (target.role === "ADMIN" && input.role !== "ADMIN") await assertOtherAdmin(input.workspaceId, target.id);
     await prisma.workspaceMember.update({ where: { id: target.id }, data: { role: input.role } });
     revalidatePath(`/w/${input.workspaceId}/settings`);
@@ -89,6 +93,9 @@ export async function removeMemberAction(_: ActionState, fd: FormData): Promise<
     if (!target) throw new Error("NOT_FOUND");
     if (target.role === "ADMIN") await assertOtherAdmin(input.workspaceId, target.id);
     await prisma.workspaceMember.delete({ where: { id: target.id } });
+    // Las cuentas de usuario/contraseña existen solo para este acceso: se eliminan si no les queda ningún negocio.
+    const left = await prisma.workspaceMember.count({ where: { userId: target.userId } });
+    if (!left) await prisma.user.deleteMany({ where: { id: target.userId, username: { not: null } } });
     revalidatePath(`/w/${input.workspaceId}/settings`);
     return "Miembro eliminado";
   });
@@ -131,5 +138,47 @@ export async function deleteWorkspaceAction(_: ActionState, fd: FormData): Promi
       prisma.workspace.delete({ where: { id: i.workspaceId } }),
     ]);
     redirect("/");
+  });
+}
+
+/** Crea una cuenta de solo lectura con usuario y contraseña generada. La contraseña se muestra una sola vez. */
+export async function createViewerAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const input = z
+      .object({
+        workspaceId: id,
+        name: z.string().trim().min(2, "Pon el nombre de la persona").max(60),
+        username: z.string().trim().toLowerCase().regex(USERNAME_RE, "Usuario de 4 a 30 caracteres: letras minúsculas, números, punto, guion o guion bajo."),
+      })
+      .parse(Object.fromEntries(fd));
+    const { userId } = await requireWorkspace(input.workspaceId, "member:manage");
+    rateLimit(`viewer:${userId}`, 20, 3_600_000);
+    if (await prisma.user.findUnique({ where: { username: input.username }, select: { id: true } })) throw userError("Ese usuario ya existe. Elige otro.");
+    const password = generatePassword();
+    await prisma.user.create({
+      data: {
+        username: input.username,
+        email: credentialEmail(input.username),
+        name: input.name,
+        passwordHash: await hashPassword(password),
+        memberships: { create: { workspaceId: input.workspaceId, role: "VIEWER" } },
+      },
+    });
+    revalidatePath(`/w/${input.workspaceId}/settings`);
+    return `Cuenta creada. Usuario: ${input.username} · Contraseña: ${password} — cópiala ahora, no se vuelve a mostrar.`;
+  });
+}
+
+/** Genera una contraseña nueva para una cuenta de solo lectura . */
+export async function resetViewerPasswordAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const input = z.object({ workspaceId: id, memberId: id }).parse(Object.fromEntries(fd));
+    const { userId } = await requireWorkspace(input.workspaceId, "member:manage");
+    rateLimit(`viewer:${userId}`, 20, 3_600_000);
+    const target = await prisma.workspaceMember.findFirst({ where: { id: input.memberId, workspaceId: input.workspaceId, role: "VIEWER" }, include: { user: { select: { id: true, username: true } } } });
+    if (!target?.user.username) throw new Error("NOT_FOUND");
+    const password = generatePassword();
+    await prisma.user.update({ where: { id: target.user.id }, data: { passwordHash: await hashPassword(password) } });
+    return `Nueva contraseña de ${target.user.username}: ${password} — cópiala ahora, no se vuelve a mostrar.`;
   });
 }

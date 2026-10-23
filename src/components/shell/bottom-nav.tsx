@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /** Navegación inferior flotante para móvil (botón central = nuevo movimiento). */
-export function BottomNav({ workspaceId, showStats }: { workspaceId: string; showStats: boolean }) {
+export function BottomNav({ workspaceId, showStats, canWrite }: { workspaceId: string; showStats: boolean; canWrite: boolean }) {
   const pathname = usePathname();
   const b = `/w/${workspaceId}`;
   const item = (href: string, label: string, Icon: typeof Home) => {
@@ -23,10 +23,10 @@ export function BottomNav({ workspaceId, showStats }: { workspaceId: string; sho
       <ul className="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/25 bg-panel/[.97] px-3 py-2 shadow-card" style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .35), 0 14px 34px rgb(6 24 60 / .4)" }}>
         {item(b, "Resumen", Home)}
         {item(`${b}/transactions`, "Movimientos", Receipt)}
-        <li>
+        {canWrite && <li>
           <Link href={`${b}/expenses/new`} aria-label="Nuevo movimiento" className="-mt-7 grid size-14 place-items-center rounded-full bg-accent text-[#0b1b3a] shadow-glow ring-4 ring-white/30"><Plus size={26} aria-hidden /></Link>
-        </li>
-        {showStats ? item(`${b}/stats`, "Estadísticas", BarChart3) : item(`${b}/wishlist`, "Deseos", BarChart3)}
+        </li>}
+        {showStats ? item(`${b}/stats`, "Estadísticas", BarChart3) : canWrite ? item(`${b}/wishlist`, "Deseos", BarChart3) : null}
         {item(`${b}/more`, "Más", LayoutGrid)}
       </ul>
     </nav>

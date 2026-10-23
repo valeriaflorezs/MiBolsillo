@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Logo } from "@/components/ui/logo";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/permissions";
+import { ROLE_LABEL } from "@/lib/auth/rbac";
 import { deleteMyAccountAction } from "@/modules/core/crud-actions";
 import { WORKSPACE_TYPE_LABEL } from "@/modules/core/defaults";
 
@@ -20,7 +21,7 @@ export default async function Account() {
       <section className="card space-y-3">
         <h2 className="font-medium">Mis negocios</h2>
         <ul className="divide-y divide-line">
-          {mine.map((m) => <li key={m.workspace.id} className="flex items-center justify-between py-3"><Link className="font-medium underline" href={`/w/${m.workspace.id}`}>{m.workspace.name}</Link><span className="text-sm text-muted">{WORKSPACE_TYPE_LABEL[m.workspace.type]} · {m.role === "ADMIN" ? "Administrador" : "Operador"}</span></li>)}
+          {mine.map((m) => <li key={m.workspace.id} className="flex items-center justify-between py-3"><Link className="font-medium underline" href={`/w/${m.workspace.id}`}>{m.workspace.name}</Link><span className="text-sm text-muted">{WORKSPACE_TYPE_LABEL[m.workspace.type]} · {ROLE_LABEL[m.role]}</span></li>)}
           {mine.length === 0 && <li className="py-3 text-muted">Aún no tienes negocios.</li>}
         </ul>
       </section>

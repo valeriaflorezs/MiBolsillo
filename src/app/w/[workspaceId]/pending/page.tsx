@@ -13,11 +13,12 @@ export const metadata = { title: "Pendientes" };
 
 export default async function Pending({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
-  const ctx = await pageCtx(workspaceId, "transaction:create");
+  const ctx = await pageCtx(workspaceId, "data:read");
+  const canWrite = can(ctx.role, "transaction:create");
   const today = todayUtc();
   const [rows, receivables] = await Promise.all([
     pendingPayables(workspaceId, ctx.role, ctx.userId, 100),
-    can(ctx.role, "airbnb:manage") ? prisma.reservation.findMany({ where: { workspaceId, status: { not: "CANCELLED" }, payoutStatus: "PENDING" }, include: { property: { select: { name: true } } }, orderBy: { checkIn: "asc" }, take: 50 }) : [],
+    (can(ctx.role, "airbnb:manage") || can(ctx.role, "finance:read")) ? prisma.reservation.findMany({ where: { workspaceId, status: { not: "CANCELLED" }, payoutStatus: "PENDING" }, include: { property: { select: { name: true } } }, orderBy: { checkIn: "asc" }, take: 50 }) : [],
   ]);
   const pay = rows.filter((r) => r.type === "EXPENSE");
   const incoming = rows.filter((r) => r.type === "INCOME");
@@ -35,7 +36,7 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
               <p className="text-sm text-muted">{fmtDate(t.date)} {overdue(t.date) && <Chip tone="negative">Vencido</Chip>}</p>
             </Link>
             <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong>
-              <ActionForm action={markPaidAction} submitLabel="Pagado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm></div>
+              {canWrite && <ActionForm action={markPaidAction} submitLabel="Pagado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}</div>
           </div>
         ))}
         </div>
@@ -45,11 +46,11 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
           <div className="space-y-2">
           {incoming.map((t) => (
             <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl inset px-4 py-3"><span>{t.vendor ?? t.category?.name ?? "Ingreso"} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
-              <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong><ActionForm action={markPaidAction} submitLabel="Cobrado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm></div></div>
+              <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong>{canWrite && <ActionForm action={markPaidAction} submitLabel="Cobrado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}</div></div>
           ))}
           {receivables.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl inset px-4 py-3"><span>{r.guestName ?? "Reserva"} <span className="text-sm text-muted">· {r.property.name} · {fmtDate(r.checkIn)}</span></span>
-              <div className="flex items-center gap-3"><strong>{cop(num(r.grossAmount) + num(r.cleaningFeeCharged) - num(r.platformCommission))}</strong><ActionForm action={reservationStatusAction} submitLabel="Cobrada" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={r.id} /><input type="hidden" name="intent" value="received" /></ActionForm></div></div>
+              <div className="flex items-center gap-3"><strong>{cop(num(r.grossAmount) + num(r.cleaningFeeCharged) - num(r.platformCommission))}</strong>{canWrite && <ActionForm action={reservationStatusAction} submitLabel="Cobrada" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={r.id} /><input type="hidden" name="intent" value="received" /></ActionForm>}</div></div>
           ))}
           </div>
         </FolderCard>

@@ -19,8 +19,9 @@ const TYPE = { INCOME: "Ingreso", EXPENSE: "Gasto", TRANSFER: "Transferencia" } 
 export default async function Transactions({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<SP> }) {
   const { workspaceId } = await params;
   const sp = await searchParams;
-  const ctx = await pageCtx(workspaceId, "transaction:create");
-  const admin = can(ctx.role, "dashboard:full");
+  const ctx = await pageCtx(workspaceId, "data:read");
+  const admin = can(ctx.role, "finance:read");
+  const canWrite = can(ctx.role, "transaction:create");
   const { key, start, end } = monthRange(sp.month);
   const status = sp.status === "PENDING" ? "PENDING" : sp.status === "PAID" ? "PAID" : undefined;
   const type = sp.type === "INCOME" || sp.type === "EXPENSE" || sp.type === "TRANSFER" ? sp.type : undefined;
@@ -39,7 +40,7 @@ export default async function Transactions({ params, searchParams }: { params: P
         <h1 className="text-3xl font-semibold tracking-tight">Movimientos</h1>
         <div className="flex gap-2">
           <a href={exportHref} className="btn btn-ghost">Exportar CSV</a>
-          <Link href={`/w/${workspaceId}/expenses/new`} className="btn btn-primary">+ Nuevo</Link>
+          {canWrite && <Link href={`/w/${workspaceId}/expenses/new`} className="btn btn-primary">+ Nuevo</Link>}
         </div>
       </div>
 
@@ -102,13 +103,14 @@ export default async function Transactions({ params, searchParams }: { params: P
               </dl>
               {selected.attachments.map((a) => <ReceiptLink key={a.id} workspaceId={workspaceId} attachmentId={a.id} name={a.fileName ?? "Ver comprobante"} />)}
               <div className="flex flex-wrap items-center gap-3 pt-1">
-                {selected.status === "PENDING" && (
+                {canWrite && selected.status === "PENDING" && (
                   <ActionForm action={markPaidAction} submitLabel="Marcar como pagado" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={selected.id} /></ActionForm>
                 )}
                 {mutable && <Link href={`${base}/${selected.id}/edit`} className="btn btn-ghost">Editar</Link>}
                 {mutable && <DeleteButton action={deleteTransactionAction} fields={{ workspaceId, transactionId: selected.id }} confirmText="¿Eliminar este movimiento y su comprobante?" />}
               </div>
-              {!mutable && <p className="text-xs text-muted">Solo el administrador puede modificar este movimiento.</p>}
+              {!mutable && canWrite && <p className="text-xs text-muted">Solo el administrador puede modificar este movimiento.</p>}
+              {!canWrite && <p className="text-xs text-muted">Tu acceso es de solo lectura.</p>}
             </div>
           )}
         </FolderCard>

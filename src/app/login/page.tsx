@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
 import { auth, signIn } from "@/lib/auth/config";
+import { CredentialsForm } from "./credentials-form";
 
 export const metadata = { title: "Entrar" };
 
@@ -26,10 +27,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
       <section className="card w-full space-y-6 text-center lg:text-left">
         <div className="flex justify-center lg:hidden"><Logo height={34} /></div>
-        <div><h1 className="text-3xl font-semibold tracking-tight">Bienvenido</h1><p className="mt-1 text-muted">Entra con tu cuenta de Google para continuar.</p></div>
+        <div><h1 className="text-3xl font-semibold tracking-tight">Bienvenido</h1><p className="mt-1 text-muted">Entra con Google o con el usuario que te dieron.</p></div>
         <form action={async () => { "use server"; await signIn("google", { redirectTo: next }); }}>
           <button type="submit" className="btn btn-primary w-full !py-3">Continuar con Google</button>
         </form>
+        <div className="flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-line" />o con usuario y contraseña<span className="h-px flex-1 bg-line" /></div>
+        <CredentialsForm next={next} />
         <p className="text-xs text-muted">Al continuar aceptas los <Link className="underline" href="/terminos">términos</Link> y la <Link className="underline" href="/privacidad">política de privacidad</Link>.</p>
       </section>
     </main>

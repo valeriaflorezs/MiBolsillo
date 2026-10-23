@@ -22,7 +22,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
   const base = `/w/${workspaceId}`;
 
   // OPERATOR: solo sus propios gastos; nunca KPIs (EBITDA, margen, ingresos, saldos).
-  if (!can(ctx.role, "dashboard:full")) {
+  if (!can(ctx.role, "finance:read")) {
     const [mine, pending] = await Promise.all([
       searchTransactions({ workspaceId, role: ctx.role, userId: ctx.userId, start, end, pageSize: 8 }),
       pendingPayables(workspaceId, ctx.role, ctx.userId, 5),
@@ -56,6 +56,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
     isAirbnb ? airbnbMetrics(workspaceId, start, end) : null,
     isAirbnb ? upcomingReservations(workspaceId) : [],
   ]);
+  const canWrite = can(ctx.role, "transaction:create");
   const { pyg } = sum;
   const expense = pyg.variableCosts.total + pyg.fixedOpex.total;
   const totalBalance = balances.reduce((a, b) => a + b.balance, 0);
@@ -76,11 +77,11 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
           <span className="chip-outline"><TrendingUp size={12} className="mr-1" aria-hidden />{delta === null ? "Sin comparación" : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}% vs. mes anterior`}</span>
           <span className="chip-outline">{sum.cashFlow >= 0 ? "+" : "−"}{cop(Math.abs(sum.cashFlow))} · flujo del filtro</span>
         </div>
-        <div className="mt-7 grid grid-cols-3 gap-3 sm:gap-4">
+        {canWrite && <div className="mt-7 grid grid-cols-3 gap-3 sm:gap-4">
           {[
             { t: "EXPENSE", l: "Gasto", Icon: ArrowUpFromLine }, { t: "INCOME", l: "Ingreso", Icon: ArrowDownToLine }, { t: "TRANSFER", l: "Transferir", Icon: ArrowLeftRight },
           ].map(({ t, l, Icon }) => <Link key={t} href={`${base}/expenses/new?type=${t}`} className="glass-btn"><Icon size={18} aria-hidden />{l}</Link>)}
-        </div>
+        </div>}
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[2fr_3fr]">

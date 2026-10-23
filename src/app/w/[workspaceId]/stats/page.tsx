@@ -21,7 +21,7 @@ function Delta({ now, before, invert }: { now: number; before: number; invert?: 
 export default async function Stats({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ p?: string; o?: string; status?: string }> }) {
   const { workspaceId } = await params;
   const sp = await searchParams;
-  await pageCtx(workspaceId, "dashboard:full");
+  await pageCtx(workspaceId, "finance:read");
   const period = parsePeriod(sp.p);
   const offset = Math.min(0, Math.max(-60, Number(sp.o) || 0)) || 0;
   const status = parseStatus(sp.status ?? "ALL");

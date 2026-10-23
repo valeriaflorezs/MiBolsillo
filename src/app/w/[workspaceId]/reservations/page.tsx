@@ -5,7 +5,7 @@ import { Chip } from "@/components/ui/chip";
 import { FolderCard } from "@/components/ui/folder-card";
 import { MonthNav } from "@/components/ui/filters";
 import { prisma } from "@/lib/db";
-import { pageCtx } from "@/lib/auth/permissions";
+import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, inputDate, monthRange, num } from "@/lib/format";
 import { createReservationAction, reservationStatusAction } from "@/modules/airbnb/actions";
 import { deleteReservationAction } from "@/modules/airbnb/crud-actions";
@@ -17,7 +17,8 @@ const CHANNEL = { AIRBNB: "Airbnb", BOOKING: "Booking", DIRECT: "Directo", OTHER
 export default async function Reservations({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ month?: string; sel?: string }> }) {
   const { workspaceId } = await params;
   const sp = await searchParams;
-  await pageCtx(workspaceId, "airbnb:manage");
+  const ctx = await pageCtx(workspaceId, "data:read");
+  const canEdit = can(ctx.role, "airbnb:manage");
   const { key, start, end } = monthRange(sp.month);
   const [rows, properties] = await Promise.all([
     prisma.reservation.findMany({ where: { workspaceId, checkIn: { gte: start, lt: end } }, include: { property: { select: { name: true } } }, orderBy: { checkIn: "asc" } }),
@@ -35,7 +36,7 @@ export default async function Reservations({ params, searchParams }: { params: P
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><h1 className="text-3xl font-semibold tracking-tight">Reservas</h1><p className="text-muted">Ingresos del mes <strong className="text-ink">{cop(gross)}</strong> · Por cobrar <strong className="text-ink">{cop(pending)}</strong></p></div>
-        <a href="#nueva" className="btn btn-primary">+ Nueva reserva</a>
+        {canEdit && <a href="#nueva" className="btn btn-primary">+ Nueva reserva</a>}
       </div>
       <MonthNav base={base} month={key} />
 
@@ -64,18 +65,18 @@ export default async function Reservations({ params, searchParams }: { params: P
                 ))}
               </div>
               <p className="text-sm text-muted">Tarifa media por noche: <strong className="text-ink">{cop(num(sel.grossAmount) / nights)}</strong>{sel.externalCode && <> · Código {sel.externalCode}</>}</p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              {canEdit && <div className="flex flex-wrap items-center gap-3 pt-1">
                 {sel.status !== "CANCELLED" && sel.payoutStatus === "PENDING" && <ActionForm action={reservationStatusAction} submitLabel="Marcar cobrada" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={sel.id} /><input type="hidden" name="intent" value="received" /></ActionForm>}
                 {sel.status !== "CANCELLED" && <ActionForm action={reservationStatusAction} submitLabel="Cancelar reserva" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={sel.id} /><input type="hidden" name="intent" value="cancel" /></ActionForm>}
                 <Link href={`${base}/${sel.id}/edit`} className="btn btn-ghost">Editar</Link>
                 <DeleteButton action={deleteReservationAction} fields={{ workspaceId, reservationId: sel.id }} confirmText="¿Eliminar esta reserva?" />
-              </div>
+              </div>}
             </div>
           )}
         </FolderCard>
       </div>
 
-      <section id="nueva" className="card space-y-4">
+      {canEdit && <section id="nueva" className="card space-y-4">
         <h2 className="font-medium">Nueva reserva</h2>
         <ActionForm action={createReservationAction} submitLabel="Guardar reserva">
           <input type="hidden" name="workspaceId" value={workspaceId} />
@@ -92,7 +93,7 @@ export default async function Reservations({ params, searchParams }: { params: P
             <div><label className="label" htmlFor="payoutStatus">Cobro</label><select id="payoutStatus" name="payoutStatus" className="input"><option value="PENDING">Por cobrar</option><option value="RECEIVED">Cobrado</option></select></div>
           </div>
         </ActionForm>
-      </section>
+      </section>}
     </>
   );
 }

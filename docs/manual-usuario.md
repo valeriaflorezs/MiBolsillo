@@ -13,6 +13,10 @@ Una aplicación web para llevar tus finanzas personales y las de tus negocios (p
 - **Administrador:** ve y hace todo, incluido el Estado de resultados, el presupuesto, las cuentas y las reservas.
 - **Operador:** registra gastos, insumos y facturas de aseo y marca compras del CAPEX. No ve ingresos, EBITDA ni PyG, y solo ve los gastos que él registró.
 
+- **Solo lectura:** ve el resumen, movimientos, CAPEX, reservas, PyG y estadísticas, pero no puede agregar, editar ni borrar nada.
+
+**Dar acceso de solo lectura con usuario y contraseña** (por ejemplo, a un familiar sin cuenta de Google): **Miembros → Dar acceso de solo lectura**. Escribe el nombre y elige un usuario; la app genera la contraseña y la muestra **una sola vez** (cópiala y compártela por un canal privado). La persona entra desde la pantalla de inicio, en «o con usuario y contraseña». Si la pierde, usa **Nueva contraseña**; para cortar el acceso, usa **Quitar**. Estas cuentas no pueden crear negocios propios.
+
 Para invitar a alguien: **Miembros → Invitar**. Copia el enlace y envíaselo; solo sirve para el correo de Google que invitaste y vence en 7 días.
 
 ## Registrar un gasto con foto de la factura

@@ -8,17 +8,19 @@ export type Tab = { href: string; label: string; icon: NavIcon };
 export function tabsFor(workspaceId: string, type: WorkspaceType, role: Role): { primary: Tab[]; more: Tab[] } {
   const b = `/w/${workspaceId}`;
   const admin = can(role, "dashboard:full");
+  const reader = can(role, "finance:read");
+  const writer = can(role, "transaction:create");
   const primary: Tab[] = [{ href: b, label: "Resumen", icon: "home" }, { href: `${b}/transactions`, label: "Movimientos", icon: "tx" }];
   const more: Tab[] = [];
-  if (admin) primary.push({ href: `${b}/stats`, label: "Estadísticas", icon: "stats" });
+  if (reader) primary.push({ href: `${b}/stats`, label: "Estadísticas", icon: "stats" });
   if (type === "AIRBNB") {
     primary.push({ href: `${b}/capex`, label: "CAPEX", icon: "capex" });
     if (can(role, "pyg:read")) primary.push({ href: `${b}/pyg`, label: "PyG", icon: "pyg" });
-    if (can(role, "airbnb:manage")) primary.push({ href: `${b}/reservations`, label: "Reservas", icon: "res" });
+    if (can(role, "data:read") && reader) primary.push({ href: `${b}/reservations`, label: "Reservas", icon: "res" });
     if (can(role, "airbnb:manage")) more.push({ href: `${b}/fixed`, label: "Gastos fijos", icon: "fixed" }, { href: `${b}/properties`, label: "Propiedades", icon: "props" });
   }
   if (admin) more.push({ href: `${b}/accounts`, label: "Cuentas", icon: "accounts" }, { href: `${b}/budget`, label: "Presupuesto", icon: "budget" }, { href: `${b}/categories`, label: "Categorías", icon: "cats" });
-  more.push({ href: `${b}/wishlist`, label: "Lista de deseos", icon: "wish" });
+  if (writer) more.push({ href: `${b}/wishlist`, label: "Lista de deseos", icon: "wish" });
   if (can(role, "member:manage")) more.push({ href: `${b}/settings`, label: "Miembros y ajustes", icon: "settings" });
   return { primary, more };
 }
