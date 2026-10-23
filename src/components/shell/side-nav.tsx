@@ -46,7 +46,7 @@ export function SideNav({ workspaceId, primary, more, pending }: { workspaceId: 
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-bold text-[#0b1b3a]">M</span>
           <span className="whitespace-nowrap font-semibold opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">MiBolsillo</span>
         </Link>
-        <nav className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden pr-0.5">
+        <nav className="no-scrollbar flex-1 space-y-3 overflow-y-auto overflow-x-hidden">
           <ul className="space-y-1">{primary.map((t) => <Item key={t.href} t={t} />)}</ul>
           {more.length > 0 && <hr className="border-white/15" />}
           <ul className="space-y-1">{more.map((t) => <Item key={t.href} t={t} />)}</ul>

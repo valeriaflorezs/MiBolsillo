@@ -9,7 +9,7 @@ const STATUS = [
 
 export function Segmented({ items, current, label }: { items: { href: string; label: string; key: string }[]; current: string; label: string }) {
   return (
-    <div role="group" aria-label={label} className="flex max-w-full gap-1 overflow-x-auto rounded-pill glass-pill p-1 shadow-card">
+    <div role="group" aria-label={label} className="no-scrollbar flex max-w-full gap-1 overflow-x-auto rounded-pill glass-pill p-1 shadow-card">
       {items.map((s) => (
         <Link key={s.key} href={s.href} aria-current={current === s.key ? "true" : undefined}
           className={`whitespace-nowrap rounded-pill px-3 py-1.5 text-sm transition-colors ${current === s.key ? "bg-panel text-white shadow-glow" : "text-muted hover:text-ink"}`}>{s.label}</Link>
