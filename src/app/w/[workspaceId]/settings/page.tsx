@@ -1,0 +1,74 @@
+import { headers } from "next/headers";
+import { ActionForm } from "@/components/forms/action-form";
+import { prisma } from "@/lib/db";
+import { pageCtx } from "@/lib/auth/permissions";
+import { changeMemberRoleAction, createInviteAction, removeMemberAction } from "@/modules/core/actions";
+
+export const metadata = { title: "Miembros" };
+
+export default async function SettingsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
+  const { workspaceId } = await params;
+  const { userId } = await pageCtx(workspaceId, "member:manage");
+  const [members, invites, h] = await Promise.all([
+    prisma.workspaceMember.findMany({ where: { workspaceId }, include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "asc" } }),
+    prisma.workspaceInvite.findMany({ where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } } }),
+    headers(),
+  ]);
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+
+  return (
+    <>
+      <h1 className="text-3xl font-semibold tracking-tight">Miembros</h1>
+      <section className="card space-y-3">
+        <h2 className="font-medium">Equipo</h2>
+        <ul className="divide-y divide-line">
+          {members.map((m) => (
+            <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div>
+                <p className="font-medium">{m.user.name ?? m.user.email}</p>
+                <p className="text-sm text-muted">{m.user.email}</p>
+              </div>
+              {m.userId === userId ? <span className="text-sm text-muted">Tú · {m.role === "ADMIN" ? "Administrador" : "Operador"}</span> : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <ActionForm action={changeMemberRoleAction} submitLabel="Cambiar" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
+                    <input type="hidden" name="workspaceId" value={workspaceId} />
+                    <input type="hidden" name="memberId" value={m.id} />
+                    <select name="role" defaultValue={m.role} aria-label="Rol" className="input !w-auto">
+                      <option value="ADMIN">Administrador</option>
+                      <option value="OPERATOR">Operador</option>
+                    </select>
+                  </ActionForm>
+                  <ActionForm action={removeMemberAction} submitLabel="Quitar" variant="ghost" className="flex items-center gap-2">
+                    <input type="hidden" name="workspaceId" value={workspaceId} />
+                    <input type="hidden" name="memberId" value={m.id} />
+                  </ActionForm>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card space-y-4">
+        <h2 className="font-medium">Invitar a alguien</h2>
+        <p className="text-sm text-muted">El <strong>Operador</strong> registra gastos, insumos y facturas de aseo, pero no ve ingresos, EBITDA ni PyG. Comparte el enlace; solo funciona con el correo invitado.</p>
+        <ActionForm action={createInviteAction} submitLabel="Crear invitación" className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <input type="hidden" name="workspaceId" value={workspaceId} />
+          <div><label className="label" htmlFor="email">Correo (Google)</label><input id="email" name="email" type="email" required className="input" /></div>
+          <div><label className="label" htmlFor="role">Rol</label>
+            <select id="role" name="role" className="input" defaultValue="OPERATOR"><option value="OPERATOR">Operador</option><option value="ADMIN">Administrador</option></select></div>
+        </ActionForm>
+        {invites.length > 0 && (
+          <ul className="space-y-2 text-sm">
+            {invites.map((i) => (
+              <li key={i.id} className="rounded-xl bg-canvas p-3">
+                <span className="font-medium">{i.email}</span> · {i.role === "ADMIN" ? "Administrador" : "Operador"}
+                <code className="mt-1 block break-all text-xs text-muted">{origin}/invite/{i.token}</code>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}

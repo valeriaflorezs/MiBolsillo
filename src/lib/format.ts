@@ -1,0 +1,19 @@
+const cop0 = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+export const cop = (n: number) => cop0.format(n);
+export const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+
+export const monthKey = (d = new Date()) => d.toISOString().slice(0, 7);
+export function monthRange(m?: string) {
+  const key = /^\d{4}-(0[1-9]|1[0-2])$/.test(m ?? "") ? (m as string) : monthKey();
+  const [y, mo] = key.split("-").map(Number);
+  return { key, start: new Date(Date.UTC(y, mo - 1, 1)), end: new Date(Date.UTC(y, mo, 1)) };
+}
+export function shiftMonth(key: string, delta: number) {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 7);
+}
+export const monthLabel = (key: string) =>
+  new Date(`${key}-01T00:00:00Z`).toLocaleDateString("es-CO", { month: "long", year: "numeric", timeZone: "UTC" });
+export const fmtDate = (d: Date) => d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", timeZone: "UTC" });
+export const inputDate = (d: Date) => d.toISOString().slice(0, 10);
+export const num = (d: { toString(): string } | null | undefined) => (d == null ? 0 : Number(d.toString()));
