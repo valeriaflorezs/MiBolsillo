@@ -36,6 +36,7 @@ jobs:
       - run: npm ci
       - run: npx prisma validate
       - run: npx prisma migrate deploy   # prueba que las migraciones aplican en limpio
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test --if-present
