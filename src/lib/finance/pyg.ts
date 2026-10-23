@@ -1,4 +1,4 @@
-import type { PygLine } from "@prisma/client";
+import type { PygLine } from "@/generated/prisma/client";
 
 /** Fila mínima ya filtrada por workspace/propiedad/mes y estado (PAID/PENDING según el selector). */
 export interface PygExpenseRow {

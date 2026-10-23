@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 # Next.js (output: "standalone") optimizado para Railway.
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 # Mantener igual a la versión de prisma en package.json
-ARG PRISMA_VERSION=6.16.0
+ARG PRISMA_VERSION=7.10.1
 
 # ── deps ──────────────────────────────────────────────
 FROM node:${NODE_VERSION}-bookworm-slim AS deps
@@ -11,6 +11,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-c
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npm ci
 
 # ── build ─────────────────────────────────────────────
@@ -35,6 +36,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./
 
 USER node
 EXPOSE 3000
