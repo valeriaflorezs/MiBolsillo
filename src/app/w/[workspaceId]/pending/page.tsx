@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
 import { Chip } from "@/components/ui/chip";
+import { FolderCard } from "@/components/ui/folder-card";
 import { prisma } from "@/lib/db";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, num, todayUtc } from "@/lib/format";
@@ -24,11 +25,11 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
   return (
     <>
       <div><h1 className="text-3xl font-semibold tracking-tight">Pendientes</h1><p className="text-muted">Lo que debes pagar y lo que te deben.</p></div>
-      <section className="card space-y-2">
-        <h2 className="font-medium">Por pagar · {cop(pay.reduce((a, r) => a + r.amount, 0))}</h2>
+      <FolderCard tab="Por pagar" meta={<>{cop(pay.reduce((a, r) => a + r.amount, 0))}</>}>
+        <div className="space-y-2">
         {pay.length === 0 && <p className="text-sm text-muted">Nada por pagar 🎉</p>}
         {pay.map((t) => (
-          <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-canvas/60 px-4 py-3">
+          <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/40 px-4 py-3">
             <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="min-w-0">
               <p className="truncate font-medium">{t.category?.emoji} {t.vendor ?? t.category?.name ?? "Gasto"}</p>
               <p className="text-sm text-muted">{fmtDate(t.date)} {overdue(t.date) && <Chip tone="negative">Vencido</Chip>}</p>
@@ -37,19 +38,21 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
               <ActionForm action={markPaidAction} submitLabel="Pagado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm></div>
           </div>
         ))}
-      </section>
+        </div>
+      </FolderCard>
       {(incoming.length > 0 || receivables.length > 0) && (
-        <section className="card space-y-2">
-          <h2 className="font-medium">Por cobrar</h2>
+        <FolderCard tab="Por cobrar" meta={<>{incoming.length + receivables.length} pendiente(s)</>}>
+          <div className="space-y-2">
           {incoming.map((t) => (
-            <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl bg-canvas/60 px-4 py-3"><span>{t.vendor ?? t.category?.name ?? "Ingreso"} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
+            <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/40 px-4 py-3"><span>{t.vendor ?? t.category?.name ?? "Ingreso"} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
               <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong><ActionForm action={markPaidAction} submitLabel="Cobrado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm></div></div>
           ))}
           {receivables.map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-canvas/60 px-4 py-3"><span>{r.guestName ?? "Reserva"} <span className="text-sm text-muted">· {r.property.name} · {fmtDate(r.checkIn)}</span></span>
+            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/40 px-4 py-3"><span>{r.guestName ?? "Reserva"} <span className="text-sm text-muted">· {r.property.name} · {fmtDate(r.checkIn)}</span></span>
               <div className="flex items-center gap-3"><strong>{cop(num(r.grossAmount) + num(r.cleaningFeeCharged) - num(r.platformCommission))}</strong><ActionForm action={reservationStatusAction} submitLabel="Cobrada" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={r.id} /><input type="hidden" name="intent" value="received" /></ActionForm></div></div>
           ))}
-        </section>
+          </div>
+        </FolderCard>
       )}
     </>
   );

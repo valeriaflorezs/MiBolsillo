@@ -12,7 +12,7 @@ export function BottomNav({ workspaceId, showStats }: { workspaceId: string; sho
     const active = href === b ? pathname === b : pathname.startsWith(href);
     return (
       <li key={href}>
-        <Link href={href} aria-current={active ? "page" : undefined} className={`flex flex-col items-center gap-0.5 rounded-2xl px-3 py-1.5 text-[11px] ${active ? "text-accent" : "text-white/70"}`}>
+        <Link href={href} aria-current={active ? "page" : undefined} className={`flex flex-col items-center gap-0.5 rounded-2xl px-3 py-1.5 text-[11px] transition-colors ${active ? "bg-white/20 text-white" : "text-white/65"}`}>
           <Icon size={20} aria-hidden />{label}
         </Link>
       </li>
@@ -20,11 +20,11 @@ export function BottomNav({ workspaceId, showStats }: { workspaceId: string; sho
   };
   return (
     <nav aria-label="Navegación móvil" className="fixed inset-x-4 bottom-4 z-40 md:hidden">
-      <ul className="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] bg-panel px-3 py-2 shadow-card">
+      <ul className="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/30 bg-panel/75 px-3 py-2 shadow-card backdrop-blur-2xl" style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .35), 0 14px 34px rgb(6 24 60 / .4)" }}>
         {item(b, "Resumen", Home)}
         {item(`${b}/transactions`, "Movimientos", Receipt)}
         <li>
-          <Link href={`${b}/expenses/new`} aria-label="Nuevo movimiento" className="-mt-7 grid size-14 place-items-center rounded-full bg-accent text-[#0b1b3a] shadow-glow ring-4 ring-canvas"><Plus size={26} aria-hidden /></Link>
+          <Link href={`${b}/expenses/new`} aria-label="Nuevo movimiento" className="-mt-7 grid size-14 place-items-center rounded-full bg-accent text-[#0b1b3a] shadow-glow ring-4 ring-white/30"><Plus size={26} aria-hidden /></Link>
         </li>
         {showStats ? item(`${b}/stats`, "Estadísticas", BarChart3) : item(`${b}/wishlist`, "Deseos", BarChart3)}
         {item(`${b}/more`, "Más", LayoutGrid)}

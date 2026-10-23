@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
 import { DeleteButton } from "@/components/forms/delete-button";
 import { Chip } from "@/components/ui/chip";
+import { FolderCard } from "@/components/ui/folder-card";
 import { MonthNav } from "@/components/ui/filters";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
@@ -42,16 +43,16 @@ export default async function Reservations({ params, searchParams }: { params: P
         <section className="panel space-y-1.5 !p-3 sm:!p-4" aria-label="Reservas del mes">
           {rows.length === 0 && <p className="p-6 text-center text-white/70">Sin reservas con entrada este mes.</p>}
           {rows.map((r) => (
-            <Link key={r.id} href={`${base}?month=${key}&sel=${r.id}`} aria-current={sel?.id === r.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm ${sel?.id === r.id ? "bg-brand shadow-glow" : "bg-white/5 hover:bg-white/15"} ${r.status === "CANCELLED" ? "opacity-60" : ""}`}>
+            <Link key={r.id} href={`${base}?month=${key}&sel=${r.id}`} aria-current={sel?.id === r.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm ${sel?.id === r.id ? "bg-brand shadow-glow" : "border border-white/10 bg-white/10 hover:bg-white/20"} ${r.status === "CANCELLED" ? "opacity-60" : ""}`}>
               <span className="min-w-0"><span className="block truncate font-medium">{r.guestName ?? "Huésped"}</span><span className="block text-xs text-white/60">{fmtDate(r.checkIn)} → {fmtDate(r.checkOut)} · {r.property.name}</span></span>
               <span className="shrink-0 text-right"><span className="block font-medium">{cop(total(r))}</span><span className="text-xs text-white/60">{r.status === "CANCELLED" ? "Cancelada" : r.payoutStatus === "RECEIVED" ? "Cobrada" : "Por cobrar"}</span></span>
             </Link>
           ))}
         </section>
 
-        <section className="card min-h-64 space-y-4" aria-label="Detalle de la reserva">
+        <FolderCard className="min-h-64" tab={sel ? CHANNEL[sel.channel] : "Detalle"} meta={sel ? <>{fmtDate(sel.checkIn)} → {fmtDate(sel.checkOut)}</> : undefined}>
           {!sel ? <p className="py-12 text-center text-muted">Selecciona una reserva para ver su detalle.</p> : (
-            <>
+            <div className="space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div><div className="flex flex-wrap gap-2"><Chip tone="brand">{CHANNEL[sel.channel]}</Chip>{sel.status === "CANCELLED" ? <Chip tone="negative">Cancelada</Chip> : <Chip tone={sel.payoutStatus === "RECEIVED" ? "positive" : "neutral"}>{sel.payoutStatus === "RECEIVED" ? "Cobrada" : "Por cobrar"}</Chip>}</div>
                   <p className="mt-3 text-2xl font-semibold">{sel.guestName ?? "Huésped"}</p><p className="text-muted">{sel.property.name} · {fmtDate(sel.checkIn)} → {fmtDate(sel.checkOut)} · {nights} noche(s)</p></div>
@@ -59,7 +60,7 @@ export default async function Reservations({ params, searchParams }: { params: P
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[["Noches", num(sel.grossAmount)], ["Tarifa de aseo", num(sel.cleaningFeeCharged)], ["Comisión", -num(sel.platformCommission)]].map(([l, v]) => (
-                  <div key={l as string} className="rounded-2xl bg-canvas/60 p-4"><p className="text-sm text-muted">{l}</p><p className="mt-1 text-lg font-semibold">{cop(v as number)}</p></div>
+                  <div key={l as string} className="rounded-2xl bg-white/40 p-4"><p className="text-sm text-muted">{l}</p><p className="mt-1 text-lg font-semibold">{cop(v as number)}</p></div>
                 ))}
               </div>
               <p className="text-sm text-muted">Tarifa media por noche: <strong className="text-ink">{cop(num(sel.grossAmount) / nights)}</strong>{sel.externalCode && <> · Código {sel.externalCode}</>}</p>
@@ -69,9 +70,9 @@ export default async function Reservations({ params, searchParams }: { params: P
                 <Link href={`${base}/${sel.id}/edit`} className="btn btn-ghost">Editar</Link>
                 <DeleteButton action={deleteReservationAction} fields={{ workspaceId, reservationId: sel.id }} confirmText="¿Eliminar esta reserva?" />
               </div>
-            </>
+            </div>
           )}
-        </section>
+        </FolderCard>
       </div>
 
       <section id="nueva" className="card space-y-4">

@@ -9,10 +9,10 @@ const STATUS = [
 
 export function Segmented({ items, current, label }: { items: { href: string; label: string; key: string }[]; current: string; label: string }) {
   return (
-    <div role="group" aria-label={label} className="flex max-w-full gap-1 overflow-x-auto rounded-pill bg-surface p-1 shadow-card">
+    <div role="group" aria-label={label} className="flex max-w-full gap-1 overflow-x-auto rounded-pill border border-white/60 bg-white/70 p-1 shadow-card backdrop-blur-xl">
       {items.map((s) => (
         <Link key={s.key} href={s.href} aria-current={current === s.key ? "true" : undefined}
-          className={`whitespace-nowrap rounded-pill px-3 py-1.5 text-sm transition-colors ${current === s.key ? "bg-brand text-white shadow-glow" : "text-muted hover:text-ink"}`}>{s.label}</Link>
+          className={`whitespace-nowrap rounded-pill px-3 py-1.5 text-sm transition-colors ${current === s.key ? "bg-panel text-white shadow-glow" : "text-muted hover:text-ink"}`}>{s.label}</Link>
       ))}
     </div>
   );
@@ -21,7 +21,7 @@ export function Segmented({ items, current, label }: { items: { href: string; la
 export function MonthNav({ base, month, extra = "" }: { base: string; month: string; extra?: string }) {
   const q = (m: string) => `${base}?month=${m}${extra}`;
   return (
-    <div className="flex items-center gap-1 rounded-pill bg-surface p-1 shadow-card">
+    <div className="flex w-fit items-center gap-1 rounded-pill border border-white/60 bg-white/70 p-1 shadow-card backdrop-blur-xl">
       <Link href={q(shiftMonth(month, -1))} aria-label="Mes anterior" className="grid size-8 place-items-center rounded-full hover:bg-canvas">‹</Link>
       <span className="min-w-36 text-center text-sm font-medium first-letter:uppercase">{monthLabel(month)}</span>
       <Link href={q(shiftMonth(month, 1))} aria-label="Mes siguiente" className="grid size-8 place-items-center rounded-full hover:bg-canvas">›</Link>

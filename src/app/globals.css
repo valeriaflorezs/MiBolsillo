@@ -3,57 +3,86 @@
 @tailwind utilities;
 
 :root {
-  --canvas: 220 235 250;
+  --canvas: 214 232 250;
   --surface: 255 255 255;
   --ink: 11 27 58;
-  --muted: 70 90 124;        /* ≥5:1 sobre blanco y sobre el celeste de fondo */
-  --line: 198 216 240;
-  --brand: 29 78 156;        /* azul principal */
+  --muted: 66 86 122;          /* ≥5:1 sobre las tarjetas de vidrio claras */
+  --line: 190 211 238;
+  --brand: 29 78 156;
   --brand-text: 29 78 156;
-  --accent: 125 180 238;     /* celeste: rellenos y gráficos, con texto oscuro encima */
-  --panel: 11 38 84;         /* navy profundo */
+  --accent: 125 180 238;       /* celeste */
+  --folder: 121 179 239;       /* carpeta (secciones con pestaña) */
+  --on-folder: 11 27 58;
+  --panel: 11 38 84;
   --panel2: 22 62 124;
   --positive: 4 120 87;
   --negative: 185 28 28;
-  --bg-grad: linear-gradient(180deg, #eaf3fd 0%, #d4e6f9 40%, #b9d5f2 100%);
+  --bg-grad: linear-gradient(180deg, #eef6ff 0%, #d6e8fb 20%, #a4c9ef 46%, #6197d8 68%, #26559f 86%, #0c2c62 100%);
   --glass: 255 255 255;
-  --glass-alpha: .72;
+  --glass-alpha: .8;
 }
 [data-theme="dark"] {
   --canvas: 5 12 28;
   --surface: 14 28 56;
   --ink: 232 240 252;
-  --muted: 150 170 202;
-  --line: 32 54 94;
+  --muted: 156 176 208;
+  --line: 40 64 108;
   --brand: 96 154 238;
   --brand-text: 150 192 246;
   --accent: 125 180 238;
+  --folder: 44 92 164;
+  --on-folder: 240 246 255;
   --panel: 6 20 46;
   --panel2: 18 46 92;
   --positive: 52 211 153;
   --negative: 248 113 113;
-  --bg-grad: linear-gradient(180deg, #07142e 0%, #050c1c 60%, #040914 100%);
-  --glass: 20 38 74;
-  --glass-alpha: .6;
+  --bg-grad: linear-gradient(180deg, #0d2250 0%, #0a1a3d 35%, #07122b 70%, #040a1a 100%);
+  --glass: 20 40 80;
+  --glass-alpha: .66;
 }
 
-body { @apply bg-canvas text-ink antialiased; background-image: var(--bg-grad); background-attachment: fixed; min-height: 100vh; }
+body { @apply bg-canvas text-ink antialiased; background-image: var(--bg-grad); min-height: 100vh; position: relative; }
+/* Ondas difuminadas como en la referencia: luces celestes arriba y masas navy abajo. */
+body::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; filter: blur(14px);
+  background:
+    radial-gradient(55% 22% at 8% 62%, rgb(255 255 255 / .35), transparent 70%),
+    radial-gradient(60% 26% at 95% 46%, rgb(255 255 255 / .28), transparent 70%),
+    radial-gradient(70% 30% at 20% 90%, rgb(18 70 150 / .55), transparent 72%),
+    radial-gradient(80% 26% at 85% 100%, rgb(5 24 62 / .8), transparent 72%); }
 :focus-visible { outline: 2px solid rgb(var(--brand-text)); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
 @layer components {
-  .card { @apply rounded-card border border-white/60 p-5 shadow-card backdrop-blur-md sm:p-6; background-color: rgb(var(--glass) / var(--glass-alpha)); }
+  /* Vidrio claro (tarjetas) */
+  .card { @apply rounded-card border border-white/60 p-5 shadow-card backdrop-blur-xl sm:p-6; background-color: rgb(var(--glass) / var(--glass-alpha)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), 0 12px 32px rgb(11 38 84 / .12); }
   [data-theme="dark"] .card { @apply border-white/10; }
-  .panel { @apply rounded-card bg-gradient-to-br from-panel2 to-panel p-5 text-white shadow-card sm:p-6; }
+  /* Vidrio oscuro (listas, gráficos) */
+  .panel { @apply rounded-card border border-white/15 p-5 text-white backdrop-blur-xl sm:p-6; background: linear-gradient(165deg, rgb(37 92 176 / .62) 0%, rgb(10 38 90 / .88) 55%, rgb(6 24 60 / .94) 100%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), 0 14px 36px rgb(6 24 60 / .28); }
+  /* Tarjeta principal: de celeste arriba a navy abajo */
+  .hero { @apply rounded-card border border-white/40 p-5 text-white backdrop-blur-xl sm:p-7; background: linear-gradient(180deg, rgb(170 208 250 / .88) 0%, rgb(70 128 208 / .88) 34%, rgb(14 48 112 / .95) 72%, rgb(7 30 76 / .98) 100%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), 0 18px 44px rgb(6 24 60 / .3); }
+  .glass-btn { @apply flex flex-col items-center gap-1.5 rounded-2xl border border-white/45 bg-white/10 px-3 py-3.5 text-sm text-white backdrop-blur-md transition hover:bg-white/25; box-shadow: inset 0 1px 0 rgb(255 255 255 / .4); }
+  .chip-outline { @apply inline-flex items-center rounded-pill border border-white/40 bg-white/10 px-3 py-1 text-xs text-white backdrop-blur; }
+  .chip-solid { @apply inline-flex items-center gap-1 rounded-pill bg-white/85 px-3 py-1 text-xs font-medium text-[#0b1b3a]; }
+
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-pill px-4 py-2 text-sm font-medium transition disabled:opacity-50; }
-  .btn-primary { @apply bg-brand text-white shadow-glow hover:opacity-90; }
-  .btn-dark { @apply bg-ink text-surface hover:opacity-90; }
+  .btn-primary { @apply bg-brand text-white hover:opacity-90; box-shadow: 0 8px 22px rgb(29 78 156 / .4), inset 0 1px 0 rgb(255 255 255 / .3); }
+  .btn-dark { @apply bg-panel text-white hover:opacity-90; }
   .btn-accent { @apply bg-accent text-[#0b1b3a] hover:opacity-90; }
-  .btn-ghost { @apply border border-line bg-surface text-ink hover:bg-canvas; }
-  .btn-danger { @apply border border-negative/40 text-negative hover:bg-negative/10; }
-  .input { @apply w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted; }
+  .btn-ghost { @apply border border-white/60 bg-white/60 text-ink backdrop-blur hover:bg-white/80; }
+  [data-theme="dark"] .btn-ghost { @apply border-white/15 bg-white/10 hover:bg-white/20; }
+  .btn-danger { @apply border border-negative/40 bg-white/50 text-negative hover:bg-negative/10; }
+  .input { @apply w-full rounded-xl border border-white/70 bg-white/70 px-3 py-2 text-sm text-ink backdrop-blur placeholder:text-muted; }
+  [data-theme="dark"] .input { @apply border-white/10 bg-white/10; }
   .label { @apply mb-1 block text-sm font-medium; }
   .th { @apply px-3 py-2 text-left text-xs font-medium text-muted; }
   .td { @apply px-3 py-2.5 text-sm; }
   .chip { @apply inline-flex items-center rounded-pill px-2.5 py-0.5 text-xs font-medium; }
+
+  /* Sección en forma de carpeta: pestaña a la izquierda, metadatos a la derecha y esquina cóncava */
+  .folder-head { @apply flex items-end justify-between gap-3; }
+  .folder-tab { @apply relative inline-flex items-center gap-2 rounded-t-3xl px-5 pb-2.5 pt-3 text-sm font-semibold; background: rgb(var(--folder)); color: rgb(var(--on-folder)); }
+  .folder-tab::after { content: ""; position: absolute; right: -1.5rem; bottom: 0; width: 1.5rem; height: 1.5rem; background: radial-gradient(circle at 100% 0, transparent 1.5rem, rgb(var(--folder)) calc(1.5rem + .5px)); }
+  .folder-meta { @apply mb-1.5 inline-flex items-center gap-2 rounded-pill bg-panel/75 px-3 py-1 text-xs text-white backdrop-blur; }
+  .folder-body { @apply rounded-b-3xl rounded-tr-3xl p-5 sm:p-6; background: rgb(var(--folder)); color: rgb(var(--on-folder)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), 0 14px 32px rgb(11 38 84 / .18); }
+  .folder-body .text-muted { color: rgb(var(--on-folder) / .72); }
 }

@@ -15,7 +15,7 @@ export function KpiCard({ title, value, hint, tone, trend, icon, children }: Pro
     <section className="card flex flex-col justify-between gap-3">
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-sm text-muted">{title}</h2>
-        {icon && <span aria-hidden className="grid size-8 place-items-center rounded-full bg-canvas text-brand-text">{icon}</span>}
+        {icon && <span aria-hidden className="grid size-8 place-items-center rounded-full bg-white/70 text-brand-text">{icon}</span>}
       </div>
       <div>
         <p className={`text-2xl font-semibold tracking-tight sm:text-3xl ${tone === "negative" ? "text-negative" : tone === "positive" ? "text-positive" : ""}`}>{value}</p>

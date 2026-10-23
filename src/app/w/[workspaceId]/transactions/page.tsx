@@ -3,6 +3,7 @@ import { ActionForm } from "@/components/forms/action-form";
 import { DeleteButton } from "@/components/forms/delete-button";
 import { ReceiptLink } from "@/components/forms/receipt-link";
 import { Chip } from "@/components/ui/chip";
+import { FolderCard } from "@/components/ui/folder-card";
 import { MonthNav } from "@/components/ui/filters";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { canMutateTx } from "@/lib/auth/rbac";
@@ -63,7 +64,7 @@ export default async function Transactions({ params, searchParams }: { params: P
           <ul className="space-y-1.5">
             {data.rows.map((t) => (
               <li key={t.id}>
-                <Link href={qs({ sel: t.id })} aria-current={selId === t.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${selId === t.id ? "bg-brand shadow-glow" : "bg-white/5 hover:bg-white/15"}`}>
+                <Link href={qs({ sel: t.id })} aria-current={selId === t.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${selId === t.id ? "bg-brand shadow-glow" : "border border-white/10 bg-white/10 hover:bg-white/20"}`}>
                   <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span>
                     <span className="min-w-0"><span className="block truncate font-medium">{t.vendor ?? t.description ?? t.category?.name ?? TYPE[t.type]} {t.hasReceipt && <span aria-label="Con comprobante">📎</span>}</span><span className="block text-xs text-white/60">{fmtDate(t.date)} · {t.account}{t.status === "PENDING" ? " · Pendiente" : ""}</span></span></span>
                   <span className={`shrink-0 font-medium ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
@@ -80,18 +81,18 @@ export default async function Transactions({ params, searchParams }: { params: P
           )}
         </section>
 
-        <section className="card min-h-64 space-y-4" aria-label="Detalle del movimiento">
-          {!selected ? <p className="grid h-full place-items-center py-12 text-center text-muted">Selecciona un movimiento para ver su detalle.</p> : (
-            <>
+        <FolderCard className="min-h-64" tab={selected ? TYPE[selected.type] : "Detalle"} meta={selected ? <>{fmtDate(selected.date)} · {selected.status === "PAID" ? "Pagado" : "Por pagar"}</> : undefined}>
+          {!selected ? <p className="py-12 text-center text-muted">Selecciona un movimiento para ver su detalle.</p> : (
+            <div className="space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap gap-2"><Chip tone="brand">{TYPE[selected.type]}</Chip><Chip tone={selected.status === "PAID" ? "positive" : "negative"}>{selected.status === "PAID" ? "Pagado" : "Por pagar"}</Chip></div>
                   <p className="mt-3 text-4xl font-semibold tracking-tight">{cop(selected.amount)}</p>
                   <p className="mt-1 text-muted">{selected.vendor ?? selected.category?.name ?? "Sin proveedor"}</p>
                 </div>
-                <span aria-hidden className="grid size-14 place-items-center rounded-2xl bg-canvas/70 text-2xl">{selected.category?.emoji ?? "💳"}</span>
+                <span aria-hidden className="grid size-14 place-items-center rounded-2xl bg-white/50 text-2xl">{selected.category?.emoji ?? "💳"}</span>
               </div>
-              <dl className="grid gap-3 rounded-2xl bg-canvas/60 p-4 text-sm sm:grid-cols-2">
+              <dl className="grid gap-3 rounded-2xl bg-white/40 p-4 text-sm sm:grid-cols-2">
                 <div><dt className="text-muted">Fecha</dt><dd className="font-medium">{fmtDate(selected.date)}</dd></div>
                 <div><dt className="text-muted">Categoría</dt><dd className="font-medium">{selected.category ? `${selected.category.emoji ?? ""} ${selected.category.name}` : "—"}</dd></div>
                 <div><dt className="text-muted">Cuenta</dt><dd className="font-medium">{selected.account}{selected.transferAccount ? ` → ${selected.transferAccount}` : ""}</dd></div>
@@ -108,9 +109,9 @@ export default async function Transactions({ params, searchParams }: { params: P
                 {mutable && <DeleteButton action={deleteTransactionAction} fields={{ workspaceId, transactionId: selected.id }} confirmText="¿Eliminar este movimiento y su comprobante?" />}
               </div>
               {!mutable && <p className="text-xs text-muted">Solo el administrador puede modificar este movimiento.</p>}
-            </>
+            </div>
           )}
-        </section>
+        </FolderCard>
       </div>
     </>
   );

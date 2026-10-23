@@ -44,3 +44,46 @@ export function ProgressRing({ value, label }: { value: number; label: string })
     </div>
   );
 }
+
+const shortMoney = (n: number) => (n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}k` : `$${Math.round(n)}`);
+
+/** Barras apiladas para panel oscuro: gastos (celeste) + resultado (translúcido) = ingresos. Rejilla punteada y eje a la derecha. */
+export function StackedBars({ data, current }: { data: { month: string; income: number; expense: number }[]; current: string }) {
+  const max = Math.max(1, ...data.map((d) => d.income));
+  const ticks = [1, 2 / 3, 1 / 3, 0];
+  const labels = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+  return (
+    <div>
+      <div className="relative h-44">
+        <div className="absolute inset-0 flex flex-col justify-between" aria-hidden>
+          {ticks.map((t) => <div key={t} className="flex items-center gap-2"><span className="h-px flex-1 border-t border-dashed border-white/25" /><span className="w-12 text-right text-[11px] text-white/70">{shortMoney(max * t)}</span></div>)}
+        </div>
+        <div className="absolute inset-y-0 left-0 right-14 flex items-end gap-2 sm:gap-4" aria-hidden>
+          {data.map((d) => {
+            const exp = Math.min(d.expense, d.income), res = Math.max(d.income - d.expense, 0);
+            return (
+              <div key={d.month} className="flex h-full flex-1 flex-col justify-end">
+                <div className="mx-auto flex w-full max-w-9 flex-col justify-end overflow-hidden rounded-md" style={{ height: `${(Math.max(d.income, d.expense) / max) * 100}%` }}>
+                  <div className="bg-white/35" style={{ flexGrow: res }} />
+                  <div className={d.month === current ? "bg-accent" : "bg-accent/80"} style={{ flexGrow: d.expense > d.income ? 1 : exp }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mr-14 mt-2 flex gap-2 text-center text-[11px] text-white/70 sm:gap-4" aria-hidden>
+        {data.map((d) => <span key={d.month} className="flex-1">{labels[Number(d.month.slice(5)) - 1]}</span>)}
+      </div>
+      <p className="mt-3 flex gap-4 text-xs text-white/70" aria-hidden>
+        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-accent" />Gastos</span>
+        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-white/35" />Resultado</span>
+      </p>
+      <table className="sr-only">
+        <caption>Ingresos, gastos y resultado por mes</caption>
+        <thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th></tr></thead>
+        <tbody>{data.map((d) => <tr key={d.month}><td>{monthLabel(d.month)}</td><td>{cop(d.income)}</td><td>{cop(d.expense)}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+}

@@ -23,3 +23,10 @@ Tema oscuro: mismos nombres con valores navy profundo (`data-theme="dark"`), alt
 
 ## Accesibilidad
 Contraste ≥4.5:1 en texto; el celeste solo como relleno con texto oscuro; foco visible; `prefers-reduced-motion`; etiquetas en todos los controles; `aria-current` en navegación y listas.
+
+## Actualización: fidelidad a la referencia
+- **Fondo:** degradado de cielo a navy con luces difuminadas (ondas) en `body::before`.
+- **Vidrio:** `.card` (claro, translúcido con desenfoque), `.panel` (navy translúcido), `.hero` (celeste → navy), `.glass-btn` y chips de contorno.
+- **Carpetas:** `FolderCard` (pestaña a la izquierda con esquina cóncava, metadatos a la derecha) en detalle de movimientos y reservas, pendientes, próximas llegadas.
+- **Gráficos:** anillo con etiquetas sobre el arco (`RingGauge`), barras apiladas con rejilla punteada y eje a la derecha (`StackedBars`), listas con avatares de iniciales.
+- **Navegación móvil:** barra inferior de vidrio con botón central “+”.

@@ -1,11 +1,12 @@
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CalendarDays, Moon, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CalendarDays, Moon, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { BarChart } from "@/components/ui/charts";
-import { Chip } from "@/components/ui/chip";
-import { Donut } from "@/components/ui/donut";
+import { Avatar } from "@/components/ui/avatar";
+import { StackedBars } from "@/components/ui/charts";
 import { Filters } from "@/components/ui/filters";
+import { FolderCard } from "@/components/ui/folder-card";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ProgressBar } from "@/components/ui/progress";
+import { RingGauge } from "@/components/ui/ring-gauge";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, monthRange, pct } from "@/lib/format";
 import { airbnbMetrics, budgetExecution, categoryBreakdown, parseStatus, periodSummary, sixMonthSeries, upcomingReservations } from "@/modules/airbnb/queries";
@@ -56,7 +57,10 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
     isAirbnb ? upcomingReservations(workspaceId) : [],
   ]);
   const { pyg } = sum;
+  const expense = pyg.variableCosts.total + pyg.fixedOpex.total;
   const totalBalance = balances.reduce((a, b) => a + b.balance, 0);
+  const prevCash = series.length > 1 ? series[series.length - 2].cash : 0;
+  const delta = prevCash ? (sum.cashFlow - prevCash) / Math.abs(prevCash) : null;
 
   return (
     <>
@@ -65,30 +69,28 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
       </div>
       <Filters base={base} month={key} status={sp.status} />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <section className="panel flex flex-col justify-between gap-5">
-          <div>
-            <p className="text-sm text-white/70">Saldo total en cuentas</p>
-            <p className="mt-1 text-4xl font-semibold tracking-tight">{cop(totalBalance)}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Chip tone="onDark">{sum.cashFlow >= 0 ? "▲" : "▼"} {cop(Math.abs(sum.cashFlow))} flujo del filtro</Chip>
-            </div>
-          </div>
-          <ul className="space-y-2 text-sm">
-            {balances.slice(0, 3).map((a) => (
-              <li key={a.id} className="flex items-center justify-between rounded-2xl bg-white/10 px-3 py-2"><span className="flex items-center gap-2"><Wallet size={14} aria-hidden />{a.name}</span><span>{cop(a.balance)}</span></li>
-            ))}
-          </ul>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { t: "EXPENSE", l: "Gasto", Icon: ArrowUpFromLine }, { t: "INCOME", l: "Ingreso", Icon: ArrowDownToLine }, { t: "TRANSFER", l: "Transferir", Icon: ArrowLeftRight },
-            ].map(({ t, l, Icon }) => (
-              <Link key={t} href={`${base}/expenses/new?type=${t}`} className="flex flex-col items-center gap-1 rounded-2xl bg-white/10 px-2 py-3 text-xs backdrop-blur hover:bg-white/20"><Icon size={18} aria-hidden />{l}</Link>
-            ))}
-          </div>
-        </section>
+      <section className="hero" aria-label="Saldo total">
+        <p className="text-sm text-white/80">Saldo total en cuentas</p>
+        <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{cop(totalBalance)}<span className="text-white/45">,00</span></p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="chip-outline"><TrendingUp size={12} className="mr-1" aria-hidden />{delta === null ? "Sin comparación" : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}% vs. mes anterior`}</span>
+          <span className="chip-outline">{sum.cashFlow >= 0 ? "+" : "−"}{cop(Math.abs(sum.cashFlow))} · flujo del filtro</span>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          {[
+            { t: "EXPENSE", l: "Gasto", Icon: ArrowUpFromLine }, { t: "INCOME", l: "Ingreso", Icon: ArrowDownToLine }, { t: "TRANSFER", l: "Transferir", Icon: ArrowLeftRight },
+          ].map(({ t, l, Icon }) => <Link key={t} href={`${base}/expenses/new?type=${t}`} className="glass-btn"><Icon size={18} aria-hidden />{l}</Link>)}
+        </div>
+      </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+        <section className="flex flex-col justify-center py-2" aria-label="Ingresos, gastos y resultado">
+          <RingGauge total={pyg.grossRevenue} expense={expense} label="Ingresos del mes">
+            <span className="chip-solid">Margen {pct(pyg.contributionMarginPct)}</span>
+            <span className="chip-solid">EBITDA {pct(pyg.ebitdaPct)}</span>
+          </RingGauge>
+        </section>
+        <div className="grid gap-4 sm:grid-cols-2">
           <KpiCard title="Flujo de caja" value={cop(sum.cashFlow)} tone={sum.cashFlow < 0 ? "negative" : "positive"} hint="Ingresos − gastos del filtro" trend={series.map((s) => s.cash)} icon={<TrendingUp size={16} />} />
           <KpiCard title="Margen de contribución" value={cop(pyg.contributionMargin)} hint={`${pct(pyg.contributionMarginPct)} de los ingresos`} trend={series.map((s) => s.margin)} icon={<TrendingUp size={16} />} />
           <KpiCard title="EBITDA operativo" value={cop(pyg.ebitda)} tone={pyg.ebitda < 0 ? "negative" : undefined} hint={`${pct(pyg.ebitdaPct)} · CAPEX excluido`} trend={series.map((s) => s.ebitda)} icon={<TrendingUp size={16} />} />
@@ -99,35 +101,58 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
       </div>
 
       {metrics && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-3">
           <KpiCard title="Ocupación" value={pct(metrics.occupancy)} hint={`${metrics.nights} de ${metrics.available} noches`} icon={<Moon size={16} />}><ProgressBar value={metrics.occupancy} label="Ocupación" /></KpiCard>
           <KpiCard title="Tarifa media (ADR)" value={cop(metrics.adr)} hint="Ingreso por noche vendida" />
           <KpiCard title="RevPAR" value={cop(metrics.revpar)} hint="Ingreso por noche disponible" />
-          <section className="card space-y-2">
-            <h2 className="text-sm text-muted">Próximas llegadas</h2>
-            {arrivals.length === 0 && <p className="text-sm text-muted">Sin reservas futuras.</p>}
-            {arrivals.map((r) => <Link key={r.id} href={`${base}/reservations?sel=${r.id}`} className="flex items-center justify-between rounded-xl px-2 py-1.5 text-sm hover:bg-canvas/70"><span className="truncate">{r.guest ?? "Huésped"} <span className="text-muted">· {fmtDate(r.checkIn)}</span></span><span className="shrink-0">{cop(r.amount)}</span></Link>)}
-          </section>
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card"><h2 className="mb-4 font-medium">Ingresos vs gastos · 6 meses</h2><BarChart data={series} current={key} /></section>
-        <section className="card"><h2 className="mb-4 font-medium">Gastos por categoría</h2><Donut items={breakdown.items} total={breakdown.total} /></section>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
-        <RecentList workspaceId={workspaceId} rows={recent.rows} />
-        <section className="card space-y-3">
-          <div className="flex items-center justify-between"><h2 className="font-medium">Por pagar y por cobrar</h2><Link className="text-sm text-brand-text underline" href={`${base}/pending`}>Ver todo</Link></div>
-          {pending.length === 0 && <p className="text-sm text-muted">Nada pendiente 🎉</p>}
-          {pending.map((t) => (
-            <Link key={t.id} href={`${base}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between rounded-xl px-2 py-1.5 text-sm hover:bg-canvas/70">
-              <span className="truncate">{t.vendor ?? t.category?.name ?? "Movimiento"} <span className="text-muted">· {fmtDate(t.date)}</span></span><span className="shrink-0 font-medium">{cop(t.amount)}</span>
-            </Link>
-          ))}
+        <section className="panel" aria-label="Principales gastos">
+          <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Principales gastos</h2><Link className="text-sm text-white/80 underline" href={`${base}/stats`}>Ver todo</Link></div>
+          {breakdown.items.length === 0 && <p className="text-sm text-white/70">Sin gastos en este periodo.</p>}
+          <ul className="space-y-3">
+            {breakdown.items.slice(0, 4).map((c, i) => (
+              <li key={c.label} className="flex items-center justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-3"><Avatar name={c.label.replace(/^\p{Extended_Pictographic}\s*/u, "")} size={40} /><span className="min-w-0"><span className="block truncate font-medium">{c.label}</span><span className="block text-xs text-white/65">{breakdown.total ? Math.round((c.value / breakdown.total) * 100) : 0}% del total</span></span></span>
+                <span className="text-right"><span className="block font-semibold">{cop(c.value)}</span><span className="text-xs text-accent">#{i + 1}</span></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className="panel" aria-label="Ingresos y gastos de los últimos 6 meses">
+          <h2 className="mb-4 font-semibold">Últimos 6 meses</h2>
+          <StackedBars data={series} current={key} />
         </section>
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <FolderCard tab="Por pagar" meta={<>{pending.length} pendiente(s)</>}>
+          {pending.length === 0 && <p className="text-sm text-muted">Nada pendiente 🎉</p>}
+          <ul className="space-y-1">
+            {pending.map((t) => (
+              <li key={t.id}><Link href={`${base}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/30">
+                <span className="truncate font-medium">{t.vendor ?? t.category?.name ?? "Movimiento"} <span className="font-normal text-muted">· {fmtDate(t.date)}</span></span><span className="shrink-0 font-semibold">{cop(t.amount)}</span>
+              </Link></li>
+            ))}
+          </ul>
+          <Link className="mt-3 inline-block text-sm font-medium underline" href={`${base}/pending`}>Ver todos los pendientes</Link>
+        </FolderCard>
+        {isAirbnb ? (
+          <FolderCard tab="Próximas llegadas" meta={<>{arrivals.length} reserva(s)</>}>
+            {arrivals.length === 0 && <p className="text-sm text-muted">Sin reservas futuras.</p>}
+            <ul className="space-y-1">
+              {arrivals.map((r) => (
+                <li key={r.id}><Link href={`${base}/reservations?sel=${r.id}`} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/30">
+                  <span className="truncate font-medium">{r.guest ?? "Huésped"} <span className="font-normal text-muted">· {fmtDate(r.checkIn)} → {fmtDate(r.checkOut)}</span></span><span className="shrink-0 font-semibold">{cop(r.amount)}</span>
+                </Link></li>
+              ))}
+            </ul>
+          </FolderCard>
+        ) : <RecentList workspaceId={workspaceId} rows={recent.rows} />}
+      </div>
+      {isAirbnb && <RecentList workspaceId={workspaceId} rows={recent.rows} />}
     </>
   );
 }
@@ -135,14 +160,14 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
 function RecentList({ workspaceId, rows }: { workspaceId: string; rows: Awaited<ReturnType<typeof searchTransactions>>["rows"] }) {
   return (
     <section className="panel space-y-3">
-      <div className="flex items-center justify-between"><h2 className="font-medium">Actividad reciente</h2><Link className="text-sm text-white/70 underline" href={`/w/${workspaceId}/transactions`}>Ver todo</Link></div>
+      <div className="flex items-center justify-between"><h2 className="font-semibold">Actividad reciente</h2><Link className="text-sm text-white/80 underline" href={`/w/${workspaceId}/transactions`}>Ver todo</Link></div>
       {rows.length === 0 && <p className="text-sm text-white/70">Aún no hay movimientos este mes.</p>}
       <ul className="space-y-2">
         {rows.map((t) => (
           <li key={t.id}>
-            <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white/10 px-3 py-2.5 text-sm hover:bg-white/20">
-              <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span><span className="min-w-0"><span className="block truncate font-medium">{t.vendor ?? t.category?.name ?? "Movimiento"}</span><span className="block text-xs text-white/60">{fmtDate(t.date)} · {t.account}</span></span></span>
-              <span className={`shrink-0 font-medium ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
+            <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm backdrop-blur hover:bg-white/20">
+              <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span><span className="min-w-0"><span className="block truncate font-medium">{t.vendor ?? t.category?.name ?? "Movimiento"}</span><span className="block text-xs text-white/65">{fmtDate(t.date)} · {t.account}</span></span></span>
+              <span className={`shrink-0 font-semibold ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
             </Link>
           </li>
         ))}

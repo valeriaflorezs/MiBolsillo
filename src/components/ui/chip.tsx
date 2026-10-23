@@ -1,5 +1,5 @@
 const TONES = {
-  neutral: "bg-canvas/70 text-muted",
+  neutral: "bg-white/60 text-muted",
   brand: "bg-brand/15 text-brand-text",
   positive: "bg-positive/15 text-positive",
   negative: "bg-negative/15 text-negative",

@@ -10,7 +10,7 @@ const config: Config = {
       colors: {
         canvas: c("canvas"), surface: c("surface"), ink: c("ink"), muted: c("muted"), line: c("line"),
         brand: { DEFAULT: c("brand"), text: c("brand-text") },
-        accent: c("accent"), panel: c("panel"), panel2: c("panel2"),
+        accent: c("accent"), folder: c("folder"), panel: c("panel"), panel2: c("panel2"),
         positive: c("positive"), negative: c("negative"),
       },
       borderRadius: { card: "1.5rem", pill: "9999px" },

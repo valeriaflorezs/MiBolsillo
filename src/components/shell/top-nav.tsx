@@ -25,7 +25,7 @@ export function TopNav({ primary, more, workspaces, currentId, user, pending, si
   const moreActive = more.some((t) => isActive(t.href));
 
   return (
-    <header className="rounded-[2rem] bg-panel px-3 py-2.5 text-white shadow-card">
+    <header className="rounded-[2rem] border border-white/20 bg-panel/80 px-3 py-2.5 text-white shadow-card backdrop-blur-xl" style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .25), 0 14px 34px rgb(6 24 60 / .3)" }}>
       <div className="flex items-center gap-2">
         <Link href="/" aria-label="MiBolsillo — inicio" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent font-bold text-[#0b1b3a]">M</Link>
         <label className="sr-only" htmlFor="ws-switch">Negocio</label>
