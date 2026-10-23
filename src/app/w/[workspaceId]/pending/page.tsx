@@ -29,7 +29,7 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
         <div className="space-y-2">
         {pay.length === 0 && <p className="text-sm text-muted">Nada por pagar 🎉</p>}
         {pay.map((t) => (
-          <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/40 px-4 py-3">
+          <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl inset px-4 py-3">
             <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="min-w-0">
               <p className="truncate font-medium">{t.category?.emoji} {t.vendor ?? t.category?.name ?? "Gasto"}</p>
               <p className="text-sm text-muted">{fmtDate(t.date)} {overdue(t.date) && <Chip tone="negative">Vencido</Chip>}</p>
@@ -44,11 +44,11 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
         <FolderCard tab="Por cobrar" meta={<>{incoming.length + receivables.length} pendiente(s)</>}>
           <div className="space-y-2">
           {incoming.map((t) => (
-            <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/40 px-4 py-3"><span>{t.vendor ?? t.category?.name ?? "Ingreso"} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
+            <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl inset px-4 py-3"><span>{t.vendor ?? t.category?.name ?? "Ingreso"} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
               <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong><ActionForm action={markPaidAction} submitLabel="Cobrado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm></div></div>
           ))}
           {receivables.map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/40 px-4 py-3"><span>{r.guestName ?? "Reserva"} <span className="text-sm text-muted">· {r.property.name} · {fmtDate(r.checkIn)}</span></span>
+            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl inset px-4 py-3"><span>{r.guestName ?? "Reserva"} <span className="text-sm text-muted">· {r.property.name} · {fmtDate(r.checkIn)}</span></span>
               <div className="flex items-center gap-3"><strong>{cop(num(r.grossAmount) + num(r.cleaningFeeCharged) - num(r.platformCommission))}</strong><ActionForm action={reservationStatusAction} submitLabel="Cobrada" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={r.id} /><input type="hidden" name="intent" value="received" /></ActionForm></div></div>
           ))}
           </div>

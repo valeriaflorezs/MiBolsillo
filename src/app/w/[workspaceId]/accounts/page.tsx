@@ -18,7 +18,7 @@ export default async function Accounts({ params }: { params: Promise<{ workspace
   return (
     <>
       <div><h1 className="text-3xl font-semibold tracking-tight">Cuentas</h1><p className="text-muted">Saldo total: <strong className="text-ink">{cop(total)}</strong></p></div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {accounts.map((a) => (
           <section key={a.id} className={a.archived ? "card opacity-60" : "panel"}>
             <div className="flex items-start justify-between"><p className={`flex items-center gap-2 text-sm ${a.archived ? "text-muted" : "text-white/70"}`}><Wallet size={14} aria-hidden />{TYPE[a.type]}</p>{a.archived && <Chip>Archivada</Chip>}</div>

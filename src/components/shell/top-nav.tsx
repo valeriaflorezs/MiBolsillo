@@ -40,13 +40,13 @@ export function TopNav({ primary, more, workspaces, currentId, user, pending, si
             {primary.map((t) => (
               <li key={t.href}>
                 <Link href={t.href} aria-current={isActive(t.href) ? "page" : undefined}
-                  className={`block whitespace-nowrap rounded-pill px-3.5 py-2 text-sm transition-colors ${isActive(t.href) ? "bg-brand text-white shadow-glow" : "text-white/70 hover:text-white"}`}>{t.label}</Link>
+                  className={`block whitespace-nowrap rounded-pill px-3.5 py-2 text-sm transition-colors ${isActive(t.href) ? "bg-brand on-brand shadow-glow" : "text-white/70 hover:text-white"}`}>{t.label}</Link>
               </li>
             ))}
             {more.length > 0 && (
               <li>
                 <details key={pathname} className="relative">
-                  <summary className={`flex cursor-pointer list-none items-center gap-1 whitespace-nowrap rounded-pill px-3.5 py-2 text-sm ${moreActive ? "bg-brand text-white" : "text-white/70 hover:text-white"}`}>Más <ChevronDown size={14} aria-hidden /></summary>
+                  <summary className={`flex cursor-pointer list-none items-center gap-1 whitespace-nowrap rounded-pill px-3.5 py-2 text-sm ${moreActive ? "bg-brand on-brand" : "text-white/70 hover:text-white"}`}>Más <ChevronDown size={14} aria-hidden /></summary>
                   <ul className="absolute left-0 top-full z-30 mt-2 w-56 rounded-2xl bg-panel2 p-2 shadow-card">
                     {more.map((t) => (
                       <li key={t.href}><Link href={t.href} aria-current={isActive(t.href) ? "page" : undefined} className={`block rounded-xl px-3 py-2 text-sm ${isActive(t.href) ? "bg-white/15" : "hover:bg-white/10"}`}>{t.label}</Link></li>

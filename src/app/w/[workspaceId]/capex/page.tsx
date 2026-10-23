@@ -7,6 +7,8 @@ import { can, pageCtx } from "@/lib/auth/permissions";
 import { capexVariance } from "@/lib/finance/pyg";
 import { cop, num } from "@/lib/format";
 import { addCapexAction, updateCapexAction } from "@/modules/airbnb/actions";
+import { CsvImport } from "@/components/forms/csv-import";
+import { importCapexAction } from "@/modules/airbnb/import-actions";
 
 export const metadata = { title: "CAPEX" };
 const CAT = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION: "Reformas", DECOR: "Decoración", LINENS_KITCHENWARE: "Ropa de cama y cocina", TECH: "Tecnología", OTHER: "Otros" } as const;
@@ -28,7 +30,7 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">CAPEX · Adecuación</h1>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <section className="card flex items-center gap-4"><ProgressRing value={rows.length ? bought.length / rows.length : 0} label="Ítems comprados" /><div><h2 className="text-sm text-muted">Comprado</h2><p className="font-medium">{bought.length} de {rows.length}</p></div></section>
         <KpiCard title="Presupuesto total" value={cop(totalBudget)} />
         <KpiCard title="Gastado (real)" value={cop(spent)} />
@@ -62,6 +64,7 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
         )}
       </section>
 
+      {admin && <CsvImport action={importCapexAction} workspaceId={workspaceId} properties={properties} title="Importar ítems desde CSV / Excel" columns="categoria, descripcion, cantidad, precio_unitario_presupuestado, precio_unitario_real, tienda" />}
       {admin && (
         <section className="card space-y-4">
           <h2 className="font-medium">Agregar ítem</h2>

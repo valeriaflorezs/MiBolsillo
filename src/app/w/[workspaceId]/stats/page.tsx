@@ -44,13 +44,13 @@ export default async function Stats({ params, searchParams }: { params: Promise<
         <Segmented label="Estado" current={sp.status ?? "ALL"} items={[{ key: "ALL", label: "Todo", href: q({ status: "ALL" }) }, { key: "PAID", label: "Pagado / cobrado", href: q({ status: "PAID" }) }, { key: "PENDING", label: "Pendiente", href: q({ status: "PENDING" }) }]} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-3">
         <KpiCard title="Ingresos" value={cop(data.pyg.grossRevenue)}><Delta now={data.pyg.grossRevenue} before={data.prev.income} /></KpiCard>
         <KpiCard title="Gastos" value={cop(expense)}><Delta now={expense} before={data.prev.expense} invert /></KpiCard>
         <KpiCard title="Resultado" value={cop(data.cashFlow)} tone={data.cashFlow < 0 ? "negative" : "positive"}><Delta now={data.cashFlow} before={data.prev.cash} /></KpiCard>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <section className="card"><h2 className="mb-4 font-medium">Ingresos vs gastos</h2><BarChart data={data.series} current="" labelOf={(k) => k} /></section>
         <section className="card"><h2 className="mb-4 font-medium">Gastos por categoría</h2><Donut items={data.breakdown.items} total={data.breakdown.total} /></section>
       </div>

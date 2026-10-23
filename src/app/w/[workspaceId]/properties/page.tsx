@@ -14,7 +14,7 @@ export default async function Properties({ params }: { params: Promise<{ workspa
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Propiedades</h1>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {props.map((p) => (
           <section key={p.id} className={p.active ? "card space-y-3" : "card space-y-3 opacity-60"}>
             <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-medium">{p.name}</h2><p className="text-sm text-muted">{p.address ?? "Sin dirección"}</p></div>{!p.active && <Chip>Inactiva</Chip>}</div>

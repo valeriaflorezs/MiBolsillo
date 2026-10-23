@@ -20,6 +20,9 @@
   --bg-grad: linear-gradient(180deg, #eef6ff 0%, #d6e8fb 20%, #a4c9ef 46%, #6197d8 68%, #26559f 86%, #0c2c62 100%);
   --glass: 255 255 255;
   --glass-alpha: .8;
+  --ring-a: 11 38 84; --ring-a-text: 255 255 255; --ring-b: 244 249 255; --ring-b-text: 11 27 58; --ring-center: 11 27 58; --ring-sub: 29 61 114;
+  --waves: radial-gradient(55% 22% at 8% 62%, rgb(255 255 255 / .35), transparent 70%), radial-gradient(60% 26% at 95% 46%, rgb(255 255 255 / .28), transparent 70%), radial-gradient(70% 30% at 20% 90%, rgb(18 70 150 / .55), transparent 72%), radial-gradient(80% 26% at 85% 100%, rgb(5 24 62 / .8), transparent 72%);
+  color-scheme: light;
 }
 [data-theme="dark"] {
   --canvas: 5 12 28;
@@ -39,16 +42,15 @@
   --bg-grad: linear-gradient(180deg, #0d2250 0%, #0a1a3d 35%, #07122b 70%, #040a1a 100%);
   --glass: 20 40 80;
   --glass-alpha: .66;
+  --ring-a: 125 180 238; --ring-a-text: 6 20 46; --ring-b: 236 244 255; --ring-b-text: 6 20 46; --ring-center: 232 240 252; --ring-sub: 170 196 232;
+  --waves: radial-gradient(55% 22% at 8% 62%, rgb(70 130 230 / .22), transparent 70%), radial-gradient(60% 26% at 95% 46%, rgb(90 150 250 / .18), transparent 70%), radial-gradient(70% 30% at 20% 90%, rgb(25 90 190 / .35), transparent 72%), radial-gradient(80% 26% at 85% 100%, rgb(2 8 24 / .85), transparent 72%);
+  color-scheme: dark;
 }
 
 body { @apply bg-canvas text-ink antialiased; background-image: var(--bg-grad); min-height: 100vh; position: relative; }
 /* Ondas difuminadas como en la referencia: luces celestes arriba y masas navy abajo. */
 body::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; filter: blur(14px);
-  background:
-    radial-gradient(55% 22% at 8% 62%, rgb(255 255 255 / .35), transparent 70%),
-    radial-gradient(60% 26% at 95% 46%, rgb(255 255 255 / .28), transparent 70%),
-    radial-gradient(70% 30% at 20% 90%, rgb(18 70 150 / .55), transparent 72%),
-    radial-gradient(80% 26% at 85% 100%, rgb(5 24 62 / .8), transparent 72%); }
+  background: var(--waves); }
 :focus-visible { outline: 2px solid rgb(var(--brand-text)); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -71,6 +73,7 @@ body::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-e
   .btn-ghost { @apply border border-white/60 bg-white/60 text-ink backdrop-blur hover:bg-white/80; }
   [data-theme="dark"] .btn-ghost { @apply border-white/15 bg-white/10 hover:bg-white/20; }
   .btn-danger { @apply border border-negative/40 bg-white/50 text-negative hover:bg-negative/10; }
+  [data-theme="dark"] .btn-danger { @apply bg-white/5; }
   .input { @apply w-full rounded-xl border border-white/70 bg-white/70 px-3 py-2 text-sm text-ink backdrop-blur placeholder:text-muted; }
   [data-theme="dark"] .input { @apply border-white/10 bg-white/10; }
   .label { @apply mb-1 block text-sm font-medium; }
@@ -82,7 +85,23 @@ body::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-e
   .folder-head { @apply flex items-end justify-between gap-3; }
   .folder-tab { @apply relative inline-flex items-center gap-2 rounded-t-3xl px-5 pb-2.5 pt-3 text-sm font-semibold; background: rgb(var(--folder)); color: rgb(var(--on-folder)); }
   .folder-tab::after { content: ""; position: absolute; right: -1.5rem; bottom: 0; width: 1.5rem; height: 1.5rem; background: radial-gradient(circle at 100% 0, transparent 1.5rem, rgb(var(--folder)) calc(1.5rem + .5px)); }
-  .folder-meta { @apply mb-1.5 inline-flex items-center gap-2 rounded-pill bg-panel/75 px-3 py-1 text-xs text-white backdrop-blur; }
+  .folder-meta { @apply mb-1.5 inline-flex items-center gap-2 rounded-pill border border-white/15 bg-panel/80 px-3 py-1 text-xs text-white backdrop-blur; }
   .folder-body { @apply rounded-b-3xl rounded-tr-3xl p-5 sm:p-6; background: rgb(var(--folder)); color: rgb(var(--on-folder)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), 0 14px 32px rgb(11 38 84 / .18); }
   .folder-body .text-muted { color: rgb(var(--on-folder) / .72); }
+
+  /* Elementos adaptativos (claro/oscuro) */
+  .glass-pill { @apply border border-white/60 bg-white/70 backdrop-blur-xl; }
+  [data-theme="dark"] .glass-pill { @apply border-white/15 bg-white/10; }
+  .inset { @apply bg-white/40; }
+  [data-theme="dark"] .inset { @apply bg-white/10; }
+  .inset-strong { @apply bg-white/70; }
+  [data-theme="dark"] .inset-strong { @apply bg-white/15; }
+  .on-brand { color: #fff; }
+  [data-theme="dark"] .on-brand, [data-theme="dark"] .on-brand * { color: #06142e; }
+  [data-theme="dark"] .btn-primary { color: #06142e; }
 }
+
+[data-theme="dark"] .card { box-shadow: inset 0 1px 0 rgb(255 255 255 / .1), 0 12px 32px rgb(0 0 0 / .35); }
+[data-theme="dark"] .panel { background: linear-gradient(165deg, rgb(32 74 148 / .5) 0%, rgb(10 30 70 / .86) 58%, rgb(5 16 40 / .94) 100%); }
+[data-theme="dark"] .hero { background: linear-gradient(180deg, rgb(56 108 196 / .88) 0%, rgb(22 60 138 / .93) 42%, rgb(6 24 62 / .98) 100%); border-color: rgb(255 255 255 / .22); }
+[data-theme="dark"] .folder-body, [data-theme="dark"] .folder-tab { color: rgb(var(--on-folder)); }

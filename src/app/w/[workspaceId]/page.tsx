@@ -34,7 +34,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
           <Link href={`${base}/expenses/new`} className="btn btn-primary">+ Registrar gasto</Link>
         </div>
         <Filters base={base} month={key} showStatus={false} />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <KpiCard title="Gastos que registraste este mes" value={cop(mine.expense)} hint={`${mine.total} registro(s)`} icon={<ArrowUpFromLine size={16} />} />
           <KpiCard title="Por pagar" value={String(pending.length)} hint="Gastos pendientes registrados por ti" icon={<CalendarDays size={16} />} />
         </div>
@@ -72,25 +72,25 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
       <section className="hero" aria-label="Saldo total">
         <p className="text-sm text-white/80">Saldo total en cuentas</p>
         <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{cop(totalBalance)}<span className="text-white/45">,00</span></p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-3">
           <span className="chip-outline"><TrendingUp size={12} className="mr-1" aria-hidden />{delta === null ? "Sin comparación" : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}% vs. mes anterior`}</span>
           <span className="chip-outline">{sum.cashFlow >= 0 ? "+" : "−"}{cop(Math.abs(sum.cashFlow))} · flujo del filtro</span>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-3">
+        <div className="mt-7 grid grid-cols-3 gap-3 sm:gap-4">
           {[
             { t: "EXPENSE", l: "Gasto", Icon: ArrowUpFromLine }, { t: "INCOME", l: "Ingreso", Icon: ArrowDownToLine }, { t: "TRANSFER", l: "Transferir", Icon: ArrowLeftRight },
           ].map(({ t, l, Icon }) => <Link key={t} href={`${base}/expenses/new?type=${t}`} className="glass-btn"><Icon size={18} aria-hidden />{l}</Link>)}
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+      <div className="grid gap-5 lg:grid-cols-[2fr_3fr]">
         <section className="flex flex-col justify-center py-2" aria-label="Ingresos, gastos y resultado">
           <RingGauge total={pyg.grossRevenue} expense={expense} label="Ingresos del mes">
             <span className="chip-solid">Margen {pct(pyg.contributionMarginPct)}</span>
             <span className="chip-solid">EBITDA {pct(pyg.ebitdaPct)}</span>
           </RingGauge>
         </section>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <KpiCard title="Flujo de caja" value={cop(sum.cashFlow)} tone={sum.cashFlow < 0 ? "negative" : "positive"} hint="Ingresos − gastos del filtro" trend={series.map((s) => s.cash)} icon={<TrendingUp size={16} />} />
           <KpiCard title="Margen de contribución" value={cop(pyg.contributionMargin)} hint={`${pct(pyg.contributionMarginPct)} de los ingresos`} trend={series.map((s) => s.margin)} icon={<TrendingUp size={16} />} />
           <KpiCard title="EBITDA operativo" value={cop(pyg.ebitda)} tone={pyg.ebitda < 0 ? "negative" : undefined} hint={`${pct(pyg.ebitdaPct)} · CAPEX excluido`} trend={series.map((s) => s.ebitda)} icon={<TrendingUp size={16} />} />
@@ -101,18 +101,18 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
       </div>
 
       {metrics && (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-3">
           <KpiCard title="Ocupación" value={pct(metrics.occupancy)} hint={`${metrics.nights} de ${metrics.available} noches`} icon={<Moon size={16} />}><ProgressBar value={metrics.occupancy} label="Ocupación" /></KpiCard>
           <KpiCard title="Tarifa media (ADR)" value={cop(metrics.adr)} hint="Ingreso por noche vendida" />
           <KpiCard title="RevPAR" value={cop(metrics.revpar)} hint="Ingreso por noche disponible" />
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <section className="panel" aria-label="Principales gastos">
-          <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Principales gastos</h2><Link className="text-sm text-white/80 underline" href={`${base}/stats`}>Ver todo</Link></div>
+          <div className="mb-5 flex items-center justify-between"><h2 className="font-semibold">Principales gastos</h2><Link className="text-sm text-white/80 underline" href={`${base}/stats`}>Ver todo</Link></div>
           {breakdown.items.length === 0 && <p className="text-sm text-white/70">Sin gastos en este periodo.</p>}
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {breakdown.items.slice(0, 4).map((c, i) => (
               <li key={c.label} className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-3"><Avatar name={c.label.replace(/^\p{Extended_Pictographic}\s*/u, "")} size={40} /><span className="min-w-0"><span className="block truncate font-medium">{c.label}</span><span className="block text-xs text-white/65">{breakdown.total ? Math.round((c.value / breakdown.total) * 100) : 0}% del total</span></span></span>
@@ -122,7 +122,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
           </ul>
         </section>
         <section className="panel" aria-label="Ingresos y gastos de los últimos 6 meses">
-          <h2 className="mb-4 font-semibold">Últimos 6 meses</h2>
+          <h2 className="mb-5 font-semibold">Últimos 6 meses</h2>
           <StackedBars data={series} current={key} />
         </section>
       </div>
@@ -137,7 +137,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
               </Link></li>
             ))}
           </ul>
-          <Link className="mt-3 inline-block text-sm font-medium underline" href={`${base}/pending`}>Ver todos los pendientes</Link>
+          <Link className="mt-4 inline-block text-sm font-medium underline" href={`${base}/pending`}>Ver todos los pendientes</Link>
         </FolderCard>
         {isAirbnb ? (
           <FolderCard tab="Próximas llegadas" meta={<>{arrivals.length} reserva(s)</>}>
@@ -159,7 +159,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
 
 function RecentList({ workspaceId, rows }: { workspaceId: string; rows: Awaited<ReturnType<typeof searchTransactions>>["rows"] }) {
   return (
-    <section className="panel space-y-3">
+    <section className="panel space-y-4">
       <div className="flex items-center justify-between"><h2 className="font-semibold">Actividad reciente</h2><Link className="text-sm text-white/80 underline" href={`/w/${workspaceId}/transactions`}>Ver todo</Link></div>
       {rows.length === 0 && <p className="text-sm text-white/70">Aún no hay movimientos este mes.</p>}
       <ul className="space-y-2">

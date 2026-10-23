@@ -58,13 +58,13 @@ export default async function Transactions({ params, searchParams }: { params: P
         <p className="text-sm text-muted">{data.total} movimiento(s){admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+      <div className="grid gap-5 lg:grid-cols-[2fr_3fr]">
         <section className="panel space-y-2 !p-3 sm:!p-4" aria-label="Lista de movimientos">
           {data.rows.length === 0 && <p className="p-6 text-center text-white/70">Sin movimientos con estos filtros.</p>}
           <ul className="space-y-1.5">
             {data.rows.map((t) => (
               <li key={t.id}>
-                <Link href={qs({ sel: t.id })} aria-current={selId === t.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${selId === t.id ? "bg-brand shadow-glow" : "border border-white/10 bg-white/10 hover:bg-white/20"}`}>
+                <Link href={qs({ sel: t.id })} aria-current={selId === t.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${selId === t.id ? "bg-brand on-brand shadow-glow" : "border border-white/10 bg-white/10 hover:bg-white/20"}`}>
                   <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span>
                     <span className="min-w-0"><span className="block truncate font-medium">{t.vendor ?? t.description ?? t.category?.name ?? TYPE[t.type]} {t.hasReceipt && <span aria-label="Con comprobante">📎</span>}</span><span className="block text-xs text-white/60">{fmtDate(t.date)} · {t.account}{t.status === "PENDING" ? " · Pendiente" : ""}</span></span></span>
                   <span className={`shrink-0 font-medium ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
@@ -90,9 +90,9 @@ export default async function Transactions({ params, searchParams }: { params: P
                   <p className="mt-3 text-4xl font-semibold tracking-tight">{cop(selected.amount)}</p>
                   <p className="mt-1 text-muted">{selected.vendor ?? selected.category?.name ?? "Sin proveedor"}</p>
                 </div>
-                <span aria-hidden className="grid size-14 place-items-center rounded-2xl bg-white/50 text-2xl">{selected.category?.emoji ?? "💳"}</span>
+                <span aria-hidden className="grid size-14 place-items-center rounded-2xl inset-strong text-2xl">{selected.category?.emoji ?? "💳"}</span>
               </div>
-              <dl className="grid gap-3 rounded-2xl bg-white/40 p-4 text-sm sm:grid-cols-2">
+              <dl className="grid gap-3 rounded-2xl inset p-4 text-sm sm:grid-cols-2">
                 <div><dt className="text-muted">Fecha</dt><dd className="font-medium">{fmtDate(selected.date)}</dd></div>
                 <div><dt className="text-muted">Categoría</dt><dd className="font-medium">{selected.category ? `${selected.category.emoji ?? ""} ${selected.category.name}` : "—"}</dd></div>
                 <div><dt className="text-muted">Cuenta</dt><dd className="font-medium">{selected.account}{selected.transferAccount ? ` → ${selected.transferAccount}` : ""}</dd></div>
@@ -101,7 +101,7 @@ export default async function Transactions({ params, searchParams }: { params: P
                 {selected.description && <div className="sm:col-span-2"><dt className="text-muted">Nota</dt><dd className="font-medium">{selected.description}</dd></div>}
               </dl>
               {selected.attachments.map((a) => <ReceiptLink key={a.id} workspaceId={workspaceId} attachmentId={a.id} name={a.fileName ?? "Ver comprobante"} />)}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 {selected.status === "PENDING" && (
                   <ActionForm action={markPaidAction} submitLabel="Marcar como pagado" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={selected.id} /></ActionForm>
                 )}

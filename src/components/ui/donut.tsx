@@ -1,6 +1,6 @@
 import { cop } from "@/lib/format";
 
-export const DONUT_COLORS = ["#1d4e9c", "#7db4ee", "#0b2654", "#4f8fe0", "#a9cdf5", "#2f6fcb", "#6b7fa8", "#c3d5ee"];
+export const DONUT_COLORS = ["#2f6fcb", "#7db4ee", "#0f3a7d", "#a9cdf5", "#4f8fe0", "#1d4e9c", "#6b7fa8", "#c3d5ee"];
 
 export type DonutItem = { label: string; value: number };
 

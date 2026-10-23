@@ -72,10 +72,10 @@ export function StackedBars({ data, current }: { data: { month: string; income: 
           })}
         </div>
       </div>
-      <div className="mr-14 mt-2 flex gap-2 text-center text-[11px] text-white/70 sm:gap-4" aria-hidden>
+      <div className="mr-14 mt-3 flex gap-2 text-center text-[11px] text-white/70 sm:gap-4" aria-hidden>
         {data.map((d) => <span key={d.month} className="flex-1">{labels[Number(d.month.slice(5)) - 1]}</span>)}
       </div>
-      <p className="mt-3 flex gap-4 text-xs text-white/70" aria-hidden>
+      <p className="mt-5 flex gap-5 text-xs text-white/70" aria-hidden>
         <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-accent" />Gastos</span>
         <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-white/35" />Resultado</span>
       </p>

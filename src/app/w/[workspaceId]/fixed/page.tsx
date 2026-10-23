@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { cop, monthRange, num } from "@/lib/format";
 import { createFixedExpenseAction, generateFixedAction, toggleFixedAction } from "@/modules/airbnb/actions";
+import { CsvImport } from "@/components/forms/csv-import";
+import { importFixedAction } from "@/modules/airbnb/import-actions";
 
 export const metadata = { title: "Gastos fijos" };
 const CONCEPT = { HOA: "Administración (HOA)", UTILITIES: "Servicios públicos", SUBSCRIPTIONS: "Suscripciones", MAINTENANCE: "Mantenimiento", OTHER: "Otro" } as const;
@@ -45,6 +47,7 @@ export default async function Fixed({ params, searchParams }: { params: Promise<
           </table>
         )}
       </section>
+      <CsvImport action={importFixedAction} workspaceId={workspaceId} properties={properties} title="Importar gastos fijos desde CSV / Excel" columns="nombre, concepto, monto, frecuencia, dia" />
       <section className="card space-y-4">
         <h2 className="font-medium">Nuevo gasto fijo</h2>
         <ActionForm action={createFixedExpenseAction} submitLabel="Crear">

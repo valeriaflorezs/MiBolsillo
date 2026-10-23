@@ -61,3 +61,9 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 - Unitarias: `rbac.test.ts`, `pyg.test.ts`, `period.test.ts`.
 - Integración (Postgres): `queries.int.test.ts` (PyG, filtros, alcance del operador, aislamiento entre negocios).
 - Verificación end-to-end (manual con Playwright contra Postgres local y sesiones JWT firmadas): creación/edición/eliminación de movimientos, transferencias, reservas, CAPEX, gastos fijos, categorías, cuentas, presupuesto, invitaciones, estadísticas por periodo, exportación CSV, degradación del OCR sin R2 y restricciones del Operador.
+
+## Importación CSV
+`src/lib/csv.ts` (lector sin dependencias; detecta `,`/`;` y montos es-CO/en-US) → `src/modules/airbnb/import.ts` (validación por fila, idempotente por descripción/nombre) → `import-actions.ts` (permiso `airbnb:manage`, 300 KB y 500 filas máx., 10/h por usuario). Pruebas: `csv.test.ts`, `import.int.test.ts`.
+
+## Fotos de perfil
+Las imágenes de Google (`*.googleusercontent.com`) están permitidas en `img-src` de la CSP (`next.config.mjs`); `Avatar` muestra las iniciales si la foto no carga.

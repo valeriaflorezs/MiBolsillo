@@ -39,11 +39,11 @@ export default async function Reservations({ params, searchParams }: { params: P
       </div>
       <MonthNav base={base} month={key} />
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+      <div className="grid gap-5 lg:grid-cols-[2fr_3fr]">
         <section className="panel space-y-1.5 !p-3 sm:!p-4" aria-label="Reservas del mes">
           {rows.length === 0 && <p className="p-6 text-center text-white/70">Sin reservas con entrada este mes.</p>}
           {rows.map((r) => (
-            <Link key={r.id} href={`${base}?month=${key}&sel=${r.id}`} aria-current={sel?.id === r.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm ${sel?.id === r.id ? "bg-brand shadow-glow" : "border border-white/10 bg-white/10 hover:bg-white/20"} ${r.status === "CANCELLED" ? "opacity-60" : ""}`}>
+            <Link key={r.id} href={`${base}?month=${key}&sel=${r.id}`} aria-current={sel?.id === r.id ? "true" : undefined} className={`flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm ${sel?.id === r.id ? "bg-brand on-brand shadow-glow" : "border border-white/10 bg-white/10 hover:bg-white/20"} ${r.status === "CANCELLED" ? "opacity-60" : ""}`}>
               <span className="min-w-0"><span className="block truncate font-medium">{r.guestName ?? "Huésped"}</span><span className="block text-xs text-white/60">{fmtDate(r.checkIn)} → {fmtDate(r.checkOut)} · {r.property.name}</span></span>
               <span className="shrink-0 text-right"><span className="block font-medium">{cop(total(r))}</span><span className="text-xs text-white/60">{r.status === "CANCELLED" ? "Cancelada" : r.payoutStatus === "RECEIVED" ? "Cobrada" : "Por cobrar"}</span></span>
             </Link>
@@ -60,11 +60,11 @@ export default async function Reservations({ params, searchParams }: { params: P
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[["Noches", num(sel.grossAmount)], ["Tarifa de aseo", num(sel.cleaningFeeCharged)], ["Comisión", -num(sel.platformCommission)]].map(([l, v]) => (
-                  <div key={l as string} className="rounded-2xl bg-white/40 p-4"><p className="text-sm text-muted">{l}</p><p className="mt-1 text-lg font-semibold">{cop(v as number)}</p></div>
+                  <div key={l as string} className="rounded-2xl inset p-4"><p className="text-sm text-muted">{l}</p><p className="mt-1 text-lg font-semibold">{cop(v as number)}</p></div>
                 ))}
               </div>
               <p className="text-sm text-muted">Tarifa media por noche: <strong className="text-ink">{cop(num(sel.grossAmount) / nights)}</strong>{sel.externalCode && <> · Código {sel.externalCode}</>}</p>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 {sel.status !== "CANCELLED" && sel.payoutStatus === "PENDING" && <ActionForm action={reservationStatusAction} submitLabel="Marcar cobrada" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={sel.id} /><input type="hidden" name="intent" value="received" /></ActionForm>}
                 {sel.status !== "CANCELLED" && <ActionForm action={reservationStatusAction} submitLabel="Cancelar reserva" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="reservationId" value={sel.id} /><input type="hidden" name="intent" value="cancel" /></ActionForm>}
                 <Link href={`${base}/${sel.id}/edit`} className="btn btn-ghost">Editar</Link>

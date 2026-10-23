@@ -54,3 +54,9 @@ Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de
 - **Cuentas:** edita nombre, tipo y saldo inicial, o archiva una cuenta.
 - **Presupuesto:** copia el presupuesto del mes anterior con un clic.
 - **Mi cuenta (avatar → Mi cuenta y privacidad):** ver tus negocios y **eliminar tu cuenta**. Si eres el único administrador de un negocio, ese negocio se elimina con todo; si hay otro administrador, los registros pasan a esa persona.
+
+## Importar datos desde un archivo (Administrador, Airbnb)
+En **CAPEX** y en **Gastos fijos** hay un panel “Importar desde CSV / Excel”. Prepara tu hoja de cálculo con estas columnas en la primera fila, guárdala como **CSV** y súbela eligiendo la propiedad:
+- **CAPEX:** `categoria, descripcion, cantidad, precio_unitario_presupuestado, precio_unitario_real, tienda`. Si pones precio real, el ítem queda como *comprado*.
+- **Gastos fijos:** `nombre, concepto, monto, frecuencia, dia`.
+Los ítems que ya existen no se duplican y la app te indica las filas con errores.

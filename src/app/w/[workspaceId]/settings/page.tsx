@@ -13,7 +13,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
   const { workspaceId } = await params;
   const { userId, workspace } = await pageCtx(workspaceId, "member:manage");
   const [members, invites, h] = await Promise.all([
-    prisma.workspaceMember.findMany({ where: { workspaceId }, include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "asc" } }),
+    prisma.workspaceMember.findMany({ where: { workspaceId }, include: { user: { select: { name: true, email: true, image: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.workspaceInvite.findMany({ where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } } }),
     headers(),
   ]);
@@ -28,7 +28,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
           {members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="flex items-center gap-3">
-                <Avatar name={m.user.name ?? m.user.email} size={40} /><div>
+                <Avatar name={m.user.name ?? m.user.email} image={m.user.image} size={40} /><div>
                 <p className="font-medium">{m.user.name ?? m.user.email}</p>
                 <p className="text-sm text-muted">{m.user.email}</p>
               </div></div>

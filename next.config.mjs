@@ -1,4 +1,5 @@
 const r2 = "https://*.r2.cloudflarestorage.com";
+const google = "https://*.googleusercontent.com"; // fotos de perfil de Google (lh3.googleusercontent.com, etc.)
 
 // Next.js inyecta scripts inline: 'unsafe-inline' es el mínimo viable sin nonces.
 // Mejora pendiente: CSP con nonce vía middleware (ver docs/manual-sistema.md).
@@ -6,7 +7,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${r2}`,
+  `img-src 'self' data: blob: ${r2} ${google}`,
   "font-src 'self'",
   `connect-src 'self' ${r2}`, // subida directa con URL prefirmada
   `frame-src ${r2}`, // vista previa de PDFs prefirmados

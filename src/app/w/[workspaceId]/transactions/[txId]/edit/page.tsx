@@ -23,7 +23,7 @@ export default async function EditTransaction({ params }: { params: Promise<{ wo
       <section className="card max-w-3xl">
         <ActionForm action={updateTransactionAction} submitLabel="Guardar cambios" resetOnSuccess={false}>
           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={txId} />
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             {admin ? (
               <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" defaultValue={tx.type} className="input"><option value="EXPENSE">Gasto</option><option value="INCOME">Ingreso</option><option value="TRANSFER">Transferencia</option></select></div>
             ) : <input type="hidden" name="type" value="EXPENSE" />}
