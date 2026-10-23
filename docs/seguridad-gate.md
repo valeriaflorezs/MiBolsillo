@@ -2,6 +2,7 @@
 
 **Stack:** Next.js 14 (App Router) + Prisma/PostgreSQL + Auth.js + Cloudflare R2, desplegado en Railway (Docker).
 Evidencia de detección: `next.config.mjs`, `prisma/schema.prisma`, `Dockerfile`, `railway.json`.
+Decisión del usuario (2026-10-23): login solo con Google en el MVP → puntos 10, 11 y 12 "No aplica" confirmados.
 Estado: **esqueleto**. "Cumple" = presente en el código del repo; lo que depende de la app aún no construida figura como "Pendiente".
 
 | # | Punto | Estado | Evidencia o razón |

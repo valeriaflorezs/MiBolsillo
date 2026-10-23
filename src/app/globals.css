@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: 238 238 243;   /* fondo gris-lavanda */
+  --surface: 255 255 255;  /* tarjetas */
+  --ink: 17 17 24;
+  --muted: 100 100 115;    /* 5.3:1 sobre blanco */
+  --line: 229 229 236;
+  --brand: 242 101 52;     /* naranja: SOLO rellenos, barras, anillos */
+  --brand-text: 194 65 12; /* naranja oscuro para texto (≥4.5:1 sobre blanco) */
+  --positive: 4 120 87;
+  --negative: 185 28 28;
+}
+[data-theme="dark"] {
+  --canvas: 12 12 16;
+  --surface: 24 24 32;
+  --ink: 244 244 248;
+  --muted: 160 160 175;
+  --line: 44 44 56;
+  --brand: 255 122 77;
+  --brand-text: 255 154 118;
+  --positive: 52 211 153;
+  --negative: 248 113 113;
+}
+
+body { @apply bg-canvas text-ink antialiased; }
+.card { @apply rounded-card bg-surface shadow-card p-6; }
+:focus-visible { outline: 2px solid rgb(var(--brand-text)); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
