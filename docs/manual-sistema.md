@@ -16,7 +16,7 @@ Multitenancy: un workspace = un negocio; toda tabla de negocio lleva `workspaceI
 4. Pruebas: `npm test` (las de integración usan `DATABASE_URL`). Calidad: `npm run lint && npm run typecheck`.
 
 ## Despliegue (Railway)
-Servicio web desde GitHub (Dockerfile) + servicio PostgreSQL. `railway.json` ejecuta `prisma migrate deploy` antes de cada release y hace healthcheck en `/api/health`. Activar “Wait for CI”. Entornos: `production` (rama `main`) y `staging`.
+Servicio web desde GitHub (Dockerfile) + servicio PostgreSQL. El contenedor ejecuta `prisma migrate deploy` al arrancar (ver `CMD` del Dockerfile) y `railway.json` hace healthcheck en `/api/health`. Activar “Wait for CI”. Entornos: `production` (rama `main`) y `staging`.
 
 ## Variables de entorno (solo nombres)
 `DATABASE_URL` · `AUTH_SECRET` · `AUTH_URL` · `AUTH_TRUST_HOST` · `AUTH_GOOGLE_ID` · `AUTH_GOOGLE_SECRET` · `R2_ACCOUNT_ID` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` · `R2_BUCKET` · `OCR_PROVIDER` · `OCR_MODEL` · `ANTHROPIC_API_KEY` · `OCR_MAX_FILE_MB`.

@@ -40,5 +40,7 @@ COPY --from=builder /app/prisma.config.ts ./
 
 USER node
 EXPOSE 3000
-# Railway define $PORT; Next standalone lo lee desde process.env.PORT
-CMD ["node", "server.js"]
+# Railway define $PORT; Next standalone lo lee desde process.env.PORT.
+# Las migraciones se aplican al arrancar (idempotente, con bloqueo de Prisma): si fallan, el contenedor
+# termina con el error visible en los logs y Railway conserva la versión anterior.
+CMD ["sh", "-c", "prisma migrate deploy && exec node server.js"]

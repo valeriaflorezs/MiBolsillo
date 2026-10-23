@@ -85,7 +85,7 @@ Regla de capas: `app/` solo compone UI y llama a `modules/*`; `modules/*` es el 
 
 ### 3.2 Build y migraciones
 - `next.config.mjs` usa `output: "standalone"` → imagen final pequeña (`node server.js`).
-- `railway.json` define `preDeployCommand: ["prisma migrate deploy"]`: corre **antes** de cada release, con `DATABASE_URL` real; si falla, el deploy no avanza y la versión anterior sigue viva.
+- El `CMD` del Dockerfile ejecuta `prisma migrate deploy` antes de iniciar la app; si falla, el contenedor termina con el error en los logs y la versión anterior sigue viva.
 - Flujo de migraciones: local `npm run db:migrate -- --name cambio` → commit de `prisma/migrations/*` → push. **Nunca** `migrate dev` ni `db push` contra Railway.
 - Cambios destructivos: patrón expand → deploy → contract en dos releases.
 - La migración inicial (`0001_init`) ya está generada desde el schema.
