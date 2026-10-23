@@ -1,0 +1,484 @@
+// MiBolsillo — esquema multitenant (Workspace = tenant)
+// Regla de oro: TODA tabla de negocio lleva workspaceId y TODA query lo filtra.
+// Montos: Decimal(14,2) (COP no usa centavos, pero queda listo para otras monedas).
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── ENUMS ─────────────────────────────
+
+enum WorkspaceType {
+  AIRBNB
+  PERSONAL
+  FREELANCE
+  GIG_ECONOMY
+}
+
+enum Role {
+  ADMIN    // acceso total (incluye EBITDA, PyG, presupuestos, miembros)
+  OPERATOR // registra gastos/insumos/aseo; sin acceso a EBITDA ni PyG
+}
+
+enum AccountType {
+  CASH
+  BANK
+  DIGITAL_WALLET // Nequi, Daviplata
+  CREDIT_CARD
+  LOAN_FUND // fondos de préstamo
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PAID    // pagado / cobrado
+  PENDING // por pagar / por cobrar
+}
+
+enum ExpenseKind {
+  FIXED_OPEX
+  VARIABLE
+  CAPEX
+}
+
+// Línea del Estado de Resultados a la que alimenta una categoría.
+enum PygLine {
+  REVENUE
+  COMMISSION
+  CLEANING
+  AMENITIES
+  OTHER_VARIABLE
+  ADMIN        // HOA / administración
+  UTILITIES
+  SUBSCRIPTIONS
+  MAINTENANCE
+  OTHER_FIXED
+  CAPEX        // fuera del EBITDA
+  NON_OPERATING
+}
+
+enum PurchaseStatus {
+  PENDING
+  PURCHASED
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING // por cobrar
+  RECEIVED // cobrado
+}
+
+enum ReservationChannel {
+  AIRBNB
+  BOOKING
+  DIRECT
+  OTHER
+}
+
+enum FixedExpenseConcept {
+  HOA
+  UTILITIES
+  SUBSCRIPTIONS
+  MAINTENANCE
+  OTHER
+}
+
+enum Frequency {
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+enum CapexCategory {
+  FURNITURE
+  APPLIANCES
+  RENOVATION
+  DECOR
+  LINENS_KITCHENWARE
+  TECH
+  OTHER
+}
+
+enum OcrStatus {
+  NOT_REQUIRED
+  QUEUED
+  PROCESSING
+  DONE
+  FAILED
+}
+
+// ───────────────────── USUARIOS Y AUTH (Auth.js v5) ─────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // solo si usas credenciales; con OAuth/magic link queda null
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  authAccounts AuthAccount[]
+  sessions     Session[]
+  memberships  WorkspaceMember[]
+  transactions Transaction[]    @relation("TransactionCreatedBy")
+  attachments  Attachment[]     @relation("AttachmentUploadedBy")
+  invitesSent  WorkspaceInvite[]
+}
+
+// Cuentas OAuth de Auth.js (NO confundir con FinancialAccount = Nequi/banco)
+model AuthAccount {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ───────────────────────── MULTITENANT ─────────────────────────
+
+model Workspace {
+  id        String        @id @default(cuid())
+  name      String
+  type      WorkspaceType
+  currency  String        @default("COP")
+  timezone  String        @default("America/Bogota")
+  archived  Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  members          WorkspaceMember[]
+  invites          WorkspaceInvite[]
+  accounts         FinancialAccount[]
+  categories       Category[]
+  transactions     Transaction[]
+  attachments      Attachment[]
+  plannedPurchases PlannedPurchase[]
+  budgets          Budget[]
+  properties       Property[]
+  capexItems       CapexItem[]
+  reservations     Reservation[]
+  fixedExpenses    FixedExpense[]
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        Role     @default(OPERATOR)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model WorkspaceInvite {
+  id          String   @id @default(cuid())
+  workspaceId String
+  email       String
+  role        Role     @default(OPERATOR)
+  token       String   @unique
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation(fields: [invitedById], references: [id])
+
+  @@unique([workspaceId, email])
+}
+
+// ───────────────────── CORE FINANZAS / MULTI-WALLET ─────────────────────
+
+model FinancialAccount {
+  id             String      @id @default(cuid())
+  workspaceId    String
+  name           String // "Nequi", "Bancolombia ahorros", "Efectivo"
+  type           AccountType
+  openingBalance Decimal     @default(0) @db.Decimal(14, 2)
+  creditLimit    Decimal?    @db.Decimal(14, 2) // solo CREDIT_CARD
+  emoji          String?
+  archived       Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transactions Transaction[] @relation("TxAccount")
+  transfersIn  Transaction[] @relation("TxTransferDestination")
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  workspaceId String
+  parentId    String? // subcategorías
+  name        String
+  emoji       String? // "🧹", "💡"
+  expenseKind ExpenseKind? // null para categorías de ingreso
+  pygLine     PygLine     @default(OTHER_VARIABLE)
+  archived    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent       Category?     @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Category[]    @relation("CategoryTree")
+  transactions Transaction[]
+  budgets      Budget[]
+  capexItems   CapexItem[]
+
+  @@unique([workspaceId, parentId, name])
+  @@index([workspaceId, pygLine])
+}
+
+model Transaction {
+  id                   String            @id @default(cuid())
+  workspaceId          String
+  type                 TransactionType
+  status               TransactionStatus @default(PAID)
+  amount               Decimal           @db.Decimal(14, 2) // siempre positivo; el signo lo da `type`
+  date                 DateTime // fecha contable (devengo)
+  dueDate              DateTime? // vencimiento si está PENDING
+  paidAt               DateTime? // fecha real de pago/cobro (flujo de caja)
+  accountId            String
+  transferAccountId    String? // destino cuando type = TRANSFER
+  categoryId           String?
+  vendor               String? // proveedor / contraparte
+  description          String?
+  receiptUrl           String? // acceso rápido al comprobante principal
+  // Vínculos opcionales con el módulo Airbnb
+  propertyId           String?
+  reservationId        String?
+  fixedExpenseId       String? // pago de un gasto fijo recurrente
+  capexItemId          String? // compra que cierra un ítem CAPEX
+  createdById          String
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account          FinancialAccount  @relation("TxAccount", fields: [accountId], references: [id])
+  transferAccount  FinancialAccount? @relation("TxTransferDestination", fields: [transferAccountId], references: [id])
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  property         Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  reservation      Reservation?      @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  fixedExpense     FixedExpense?     @relation(fields: [fixedExpenseId], references: [id], onDelete: SetNull)
+  capexItem        CapexItem?        @relation(fields: [capexItemId], references: [id], onDelete: SetNull)
+  createdBy        User              @relation("TransactionCreatedBy", fields: [createdById], references: [id])
+  attachments      Attachment[]
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, status, date])
+  @@index([workspaceId, categoryId, date])
+  @@index([accountId])
+  @@index([propertyId, date])
+  @@index([createdById])
+}
+
+model PlannedPurchase {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  itemName       String
+  store          String?
+  url            String?
+  estimatedPrice Decimal        @db.Decimal(14, 2)
+  priority       Int            @default(0)
+  status         PurchaseStatus @default(PENDING)
+  purchasedAt    DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+}
+
+// Presupuesto mensual por categoría → "Ejecución del presupuesto" (presupuestado vs real)
+model Budget {
+  id          String   @id @default(cuid())
+  workspaceId String
+  categoryId  String
+  propertyId  String?
+  month       DateTime // primer día del mes (UTC)
+  amount      Decimal  @db.Decimal(14, 2)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  property  Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, categoryId, propertyId, month])
+  @@index([workspaceId, month])
+}
+
+// ───────────────────── MÓDULO AIRBNB / ALQUILER CORTO ─────────────────────
+
+model Property {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String // "Apto 302"
+  address     String?
+  city        String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  capexItems    CapexItem[]
+  reservations  Reservation[]
+  fixedExpenses FixedExpense[]
+  transactions  Transaction[]
+  budgets       Budget[]
+
+  @@index([workspaceId])
+}
+
+model CapexItem {
+  id                  String         @id @default(cuid())
+  workspaceId         String
+  propertyId          String
+  categoryId          String?
+  capexCategory       CapexCategory
+  itemDescription     String
+  quantity            Int            @default(1)
+  budgetedUnitPrice   Decimal        @db.Decimal(14, 2)
+  actualUnitPrice     Decimal?       @db.Decimal(14, 2)
+  status              PurchaseStatus @default(PENDING)
+  store               String?
+  purchasedAt         DateTime?
+  sortOrder           Int            @default(0)
+  // Calculados en lectura (no persistidos):
+  //   budgetedTotal = quantity * budgetedUnitPrice
+  //   actualTotal   = quantity * actualUnitPrice
+  //   variance      = budgetedTotal - actualTotal   (positivo = ahorro)
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+
+  @@index([workspaceId, propertyId, status])
+}
+
+model Reservation {
+  id                 String             @id @default(cuid())
+  workspaceId        String
+  propertyId         String
+  channel            ReservationChannel @default(AIRBNB)
+  guestName          String?
+  externalCode       String? // código de confirmación Airbnb
+  checkIn            DateTime
+  checkOut           DateTime
+  grossAmount        Decimal            @db.Decimal(14, 2) // ingreso por noches
+  cleaningFeeCharged Decimal            @default(0) @db.Decimal(14, 2) // tarifa de aseo cobrada al huésped
+  platformCommission Decimal            @default(0) @db.Decimal(14, 2)
+  status             ReservationStatus  @default(CONFIRMED)
+  payoutStatus       PayoutStatus       @default(PENDING)
+  payoutDate         DateTime?
+  createdAt          DateTime           @default(now())
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([propertyId, externalCode])
+  @@index([workspaceId, checkIn])
+  @@index([propertyId, checkIn, checkOut])
+}
+
+model FixedExpense {
+  id          String              @id @default(cuid())
+  workspaceId String
+  propertyId  String
+  concept     FixedExpenseConcept
+  name        String // "Administración edificio", "Netflix"
+  amount      Decimal             @db.Decimal(14, 2)
+  frequency   Frequency           @default(MONTHLY)
+  dayOfMonth  Int?
+  startsOn    DateTime            @default(now())
+  endsOn      DateTime?
+  active      Boolean             @default(true)
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([workspaceId, propertyId, active])
+}
+
+// ───────────────────────── OCR Y COMPROBANTES ─────────────────────────
+
+model Attachment {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  transactionId String? // null mientras el usuario revisa el OCR y aún no guarda el gasto
+  uploadedById  String
+  storageKey    String // clave en R2: ws/{workspaceId}/receipts/{yyyy}/{mm}/{uuid}.ext
+  fileUrl       String? // URL pública/CDN opcional; por defecto se firma al leer
+  fileType      String // MIME: image/jpeg, application/pdf...
+  fileName      String?
+  sizeBytes     Int?
+  ocrStatus     OcrStatus @default(QUEUED)
+  ocrProvider   String?
+  ocrConfidence Float?
+  rawOcrData    Json?
+  createdAt     DateTime  @default(now())
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  uploadedBy  User         @relation("AttachmentUploadedBy", fields: [uploadedById], references: [id])
+
+  @@unique([storageKey])
+  @@index([workspaceId, createdAt])
+  @@index([transactionId])
+}
