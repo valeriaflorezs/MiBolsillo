@@ -116,3 +116,8 @@ body::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-e
 [data-theme="dark"] .panel { background: linear-gradient(165deg, rgb(32 74 148 / .5) 0%, rgb(10 30 70 / .86) 58%, rgb(5 16 40 / .94) 100%); }
 [data-theme="dark"] .hero { background: linear-gradient(180deg, rgb(56 108 196 / .88) 0%, rgb(22 60 138 / .93) 42%, rgb(6 24 62 / .98) 100%); border-color: rgb(255 255 255 / .22); }
 [data-theme="dark"] .folder-body, [data-theme="dark"] .folder-tab { color: rgb(var(--on-folder)); }
+
+/* Menús desplegables nativos: el popup lo dibuja el navegador (fondo claro por defecto), así que cada opción
+   lleva fondo y texto propios del tema; sin esto el texto claro del tema oscuro queda ilegible sobre blanco. */
+select option, select optgroup { background-color: rgb(var(--surface)); color: rgb(var(--ink)); }
+select option:disabled { color: rgb(var(--muted)); }

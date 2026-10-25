@@ -30,8 +30,8 @@ export function TopNav({ workspaces, currentId, user, pending, canWrite, canCrea
         <label className="sr-only" htmlFor="ws-switch">Negocio</label>
         <select id="ws-switch" value={currentId} className="max-w-[9.5rem] truncate rounded-pill border-0 bg-white/10 px-3 py-2 text-sm font-medium text-white sm:max-w-[13rem]"
           onChange={(e) => (e.target.value === "__new" ? router.push("/workspaces/new") : router.push(`/w/${e.target.value}`))}>
-          {workspaces.map((w) => <option className="bg-panel" key={w.id} value={w.id}>{w.name}</option>)}
-          {canCreateWorkspace && <option className="bg-panel" value="__new">+ Nuevo negocio</option>}
+          {workspaces.map((w) => <option className="bg-panel text-white" key={w.id} value={w.id}>{w.name}</option>)}
+          {canCreateWorkspace && <option className="bg-panel text-white" value="__new">+ Nuevo negocio</option>}
         </select>
 
         <div className="ml-auto flex items-center gap-2">
