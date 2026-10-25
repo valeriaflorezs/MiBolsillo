@@ -5,6 +5,10 @@ import type { CapexCategory, FixedExpenseConcept, Frequency, Prisma } from "@/ge
 
 const MAX_ROWS = 500;
 export type ImportResult = { created: number; skipped: number; errors: string[] };
+/** `row` = índice (desde 0) de la fila de datos, sin contar el encabezado. */
+export type RowIssue = { row: number; msg: string };
+export type Parsed<T> = { data: T[]; skipped: number; errors: RowIssue[]; warnings: RowIssue[] };
+type Obj = Record<string, string>;
 
 const CAPEX: Record<string, CapexCategory> = {
   furniture: "FURNITURE", muebles: "FURNITURE", mueble: "FURNITURE",
@@ -32,60 +36,127 @@ function rowsOf(text: string) {
   return objs;
 }
 
+/** Deduce la categoría de CAPEX por palabras del ítem (para hojas de Excel que usan otras categorías). */
+const INFER: [RegExp, CapexCategory][] = [
+  [/nevera|lavadora|secadora de ropa|freidora|cafetera|microhond|licuadora|secador|aire acond|estufa|horno|ventilador|plancha|hervidor|tostadora/, "APPLIANCES"],
+  [/\btv\b|televis|router|camara|parlante|telefono|computador|tablet/, "TECH"],
+  [/toalla|protector|sabana|almohada|cobija|edredon|vaso|pocillo|plato|vajilla|cubierto|cuchillo|olla|sarten|menaje|bateria/, "LINENS_KITCHENWARE"],
+  [/cama|colchon|comedor|sofa|butaca|mesedora|silla|mesa|escritorio|closet|armario|nochero|estante|mueble de sala/, "FURNITURE"],
+  [/persiana|cortina|cuadro|espejo|lampara|tapete|planta|decor/, "DECOR"],
+  [/puerta|grifo|lavamanos|lavaplatos|sifon|arreglo|pintura|piso|mudanza|instalaci|ducha|sanitario|cocina|bano|patio|reforma|remodel/, "RENOVATION"],
+];
+export const inferCapexCategory = (desc: string): CapexCategory | undefined => {
+  const n = desc.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  return INFER.find(([re]) => re.test(n))?.[1];
+};
+
+type CapexOpts = { lenientCategory?: boolean };
 /** Columnas: categoria, descripcion, cantidad, precio_unitario_presupuestado, precio_unitario_real (opcional), tienda (opcional). Con precio real → comprado. */
-export async function importCapex(workspaceId: string, propertyId: string, text: string): Promise<ImportResult> {
-  const objs = rowsOf(text);
-  const existing = new Set((await prisma.capexItem.findMany({ where: { workspaceId, propertyId }, select: { itemDescription: true } })).map((i) => norm(i.itemDescription)));
-  const res: ImportResult = { created: 0, skipped: 0, errors: [] };
-  const data: Prisma.CapexItemCreateManyInput[] = [];
-  objs.forEach((o, idx) => {
-    const line = idx + 2;
+export function parseCapex(objs: Obj[], existing: Set<string>, opts: CapexOpts = {}): Parsed<Omit<Prisma.CapexItemCreateManyInput, "workspaceId" | "propertyId">> {
+  const out: Parsed<Omit<Prisma.CapexItemCreateManyInput, "workspaceId" | "propertyId">> = { data: [], skipped: 0, errors: [], warnings: [] };
+  const seen = new Set(existing);
+  objs.forEach((o, row) => {
     const desc = z.string().trim().min(2).max(120).safeParse(o.descripcion ?? o.item ?? "");
-    const cat = CAPEX[norm(o.categoria ?? "")] ?? (o.categoria ? undefined : "OTHER");
+    let cat = CAPEX[norm(o.categoria ?? "")] ?? (o.categoria ? undefined : "OTHER");
     const qty = o.cantidad ? Number(o.cantidad.replace(",", ".")) : 1;
     const budget = money(o.precio_unitario_presupuestado ?? o.presupuesto);
     const actual = money(o.precio_unitario_real ?? o.real);
-    if (!desc.success) return res.errors.push(`Fila ${line}: falta la descripción.`);
-    if (!cat) return res.errors.push(`Fila ${line}: categoría “${o.categoria}” no reconocida.`);
-    if (!Number.isInteger(qty) || qty < 1 || qty > 10_000) return res.errors.push(`Fila ${line}: cantidad inválida.`);
-    if (budget === undefined || !Number.isFinite(budget) || budget < 0) return res.errors.push(`Fila ${line}: precio presupuestado inválido.`);
-    if (actual !== undefined && (!Number.isFinite(actual) || actual < 0)) return res.errors.push(`Fila ${line}: precio real inválido.`);
-    if (existing.has(norm(desc.data))) { res.skipped++; return; } // idempotente: no duplica ítems ya cargados
-    existing.add(norm(desc.data));
+    if (!desc.success) return out.errors.push({ row, msg: "falta la descripción." });
+    if (!cat && opts.lenientCategory) {
+      cat = inferCapexCategory(desc.data) ?? "OTHER";
+      out.warnings.push({ row, msg: `categoría “${o.categoria}” no reconocida; se usará ${CAPEX_LABEL[cat]}.` });
+    }
+    if (!cat) return out.errors.push({ row, msg: `categoría “${o.categoria}” no reconocida.` });
+    if (!Number.isInteger(qty) || qty < 1 || qty > 10_000) return out.errors.push({ row, msg: "cantidad inválida." });
+    if (budget === undefined || !Number.isFinite(budget) || budget < 0) return out.errors.push({ row, msg: "precio presupuestado inválido." });
+    if (actual !== undefined && (!Number.isFinite(actual) || actual < 0)) return out.errors.push({ row, msg: "precio real inválido." });
+    if (seen.has(norm(desc.data))) { out.skipped++; return; } // idempotente: no duplica ítems ya cargados
+    seen.add(norm(desc.data));
     const bought = actual !== undefined && actual > 0;
-    data.push({
-      workspaceId, propertyId, capexCategory: cat, itemDescription: desc.data, quantity: qty, budgetedUnitPrice: budget,
-      actualUnitPrice: bought ? actual : null, status: bought ? "PURCHASED" : "PENDING", store: o.tienda || null,
-    });
+    out.data.push({ capexCategory: cat, itemDescription: desc.data, quantity: qty, budgetedUnitPrice: budget, actualUnitPrice: bought ? actual : null, status: bought ? "PURCHASED" : "PENDING", store: o.tienda || null });
   });
-  if (data.length) await prisma.capexItem.createMany({ data });
-  res.created = data.length;
-  return res;
+  return out;
 }
+const CAPEX_LABEL: Record<CapexCategory, string> = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION: "Reformas", DECOR: "Decoración", LINENS_KITCHENWARE: "Ropa de cama y cocina", TECH: "Tecnología", OTHER: "Otros" };
 
 /** Columnas: nombre, concepto, monto, frecuencia (opcional, mensual por defecto), dia (opcional). */
-export async function importFixed(workspaceId: string, propertyId: string, text: string): Promise<ImportResult> {
-  const objs = rowsOf(text);
-  const existing = new Set((await prisma.fixedExpense.findMany({ where: { workspaceId, propertyId }, select: { name: true } })).map((i) => norm(i.name)));
-  const res: ImportResult = { created: 0, skipped: 0, errors: [] };
-  const data: Prisma.FixedExpenseCreateManyInput[] = [];
-  objs.forEach((o, idx) => {
-    const line = idx + 2;
+export function parseFixed(objs: Obj[], existing: Set<string>): Parsed<Omit<Prisma.FixedExpenseCreateManyInput, "workspaceId" | "propertyId">> {
+  const out: Parsed<Omit<Prisma.FixedExpenseCreateManyInput, "workspaceId" | "propertyId">> = { data: [], skipped: 0, errors: [], warnings: [] };
+  const seen = new Set(existing);
+  objs.forEach((o, row) => {
     const name = z.string().trim().min(2).max(80).safeParse(o.nombre ?? "");
-    const concept = CONCEPT[norm(o.concepto ?? "otro")];
+    const concept = CONCEPT[norm(o.concepto || "otro")];
     const freq = FREQ[norm(o.frecuencia || "mensual")];
     const amount = money(o.monto);
     const day = o.dia ? Number(o.dia) : 1;
-    if (!name.success) return res.errors.push(`Fila ${line}: falta el nombre.`);
-    if (!concept) return res.errors.push(`Fila ${line}: concepto “${o.concepto}” no reconocido.`);
-    if (!freq) return res.errors.push(`Fila ${line}: frecuencia “${o.frecuencia}” no reconocida.`);
-    if (amount === undefined || !Number.isFinite(amount) || amount <= 0) return res.errors.push(`Fila ${line}: monto inválido.`);
-    if (!Number.isInteger(day) || day < 1 || day > 28) return res.errors.push(`Fila ${line}: día inválido (1–28).`);
-    if (existing.has(norm(name.data))) { res.skipped++; return; }
-    existing.add(norm(name.data));
-    data.push({ workspaceId, propertyId, name: name.data, concept, amount, frequency: freq, dayOfMonth: day });
+    if (!name.success) return out.errors.push({ row, msg: "falta el nombre." });
+    if (!concept) return out.errors.push({ row, msg: `concepto “${o.concepto}” no reconocido.` });
+    if (!freq) return out.errors.push({ row, msg: `frecuencia “${o.frecuencia}” no reconocida.` });
+    if (amount === undefined || !Number.isFinite(amount) || amount <= 0) return out.errors.push({ row, msg: "monto inválido." });
+    if (!Number.isInteger(day) || day < 1 || day > 28) return out.errors.push({ row, msg: "día inválido (1–28)." });
+    if (seen.has(norm(name.data))) { out.skipped++; return; }
+    seen.add(norm(name.data));
+    out.data.push({ name: name.data, concept, amount, frequency: freq, dayOfMonth: day });
   });
-  if (data.length) await prisma.fixedExpense.createMany({ data });
-  res.created = data.length;
-  return res;
+  return out;
+}
+
+const TYPE: Record<string, "EXPENSE" | "INCOME"> = { gasto: "EXPENSE", egreso: "EXPENSE", expense: "EXPENSE", ingreso: "INCOME", income: "INCOME" };
+const STATUS: Record<string, "PAID" | "PENDING"> = { pagado: "PAID", cobrado: "PAID", paid: "PAID", pendiente: "PENDING", por_pagar: "PENDING", por_cobrar: "PENDING", pending: "PENDING" };
+
+/** "2026-03-15", "15/03/2026", "15-03-26" (día primero, como en Colombia) → Date UTC. */
+export function parseDate(raw: string): Date | null {
+  const s = raw.trim();
+  let y: number, m: number, d: number;
+  let r = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (r) [y, m, d] = [+r[1], +r[2], +r[3]];
+  else if ((r = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/.exec(s))) [d, m, y] = [+r[1], +r[2], +r[3] < 100 ? 2000 + +r[3] : +r[3]];
+  else return null;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d && y >= 2000 && y <= 2100 ? dt : null;
+}
+
+export type TxLookups = { accounts: { id: string; name: string }[]; categories: { id: string; name: string }[] };
+/** Columnas: fecha, tipo (gasto/ingreso), monto, proveedor, descripcion, categoria, cuenta, estado (pagado/pendiente). */
+export function parseTransactions(objs: Obj[], lk: TxLookups): Parsed<{ type: "EXPENSE" | "INCOME"; status: "PAID" | "PENDING"; amount: number; date: Date; accountId: string; categoryId: string | null; vendor: string | null; description: string | null }> {
+  const out: ReturnType<typeof parseTransactions> = { data: [], skipped: 0, errors: [], warnings: [] };
+  const acc = new Map(lk.accounts.map((a) => [norm(a.name), a.id]));
+  const cat = new Map(lk.categories.map((c) => [norm(c.name.replace(/^\p{Extended_Pictographic}\s*/u, "")), c.id]));
+  objs.forEach((o, row) => {
+    const date = parseDate(o.fecha ?? "");
+    const type = TYPE[norm(o.tipo || "gasto")];
+    const amount = money(o.monto);
+    const status = STATUS[norm(o.estado || "pagado")];
+    const accountId = o.cuenta ? acc.get(norm(o.cuenta)) : lk.accounts.length === 1 ? lk.accounts[0].id : undefined;
+    const categoryId = o.categoria ? cat.get(norm(o.categoria.replace(/^\p{Extended_Pictographic}\s*/u, ""))) : null;
+    if (!date) return out.errors.push({ row, msg: "fecha inválida (usa AAAA-MM-DD o DD/MM/AAAA)." });
+    if (!type) return out.errors.push({ row, msg: `tipo “${o.tipo}” no reconocido (Gasto o Ingreso).` });
+    if (amount === undefined || !Number.isFinite(amount) || amount <= 0 || amount > 1e12) return out.errors.push({ row, msg: "monto inválido (positivo; el tipo define si es gasto o ingreso)." });
+    if (!status) return out.errors.push({ row, msg: `estado “${o.estado}” no reconocido (Pagado o Pendiente).` });
+    if (!accountId) return out.errors.push({ row, msg: o.cuenta ? `cuenta “${o.cuenta}” no existe.` : "falta la cuenta." });
+    if (o.categoria && !categoryId) return out.errors.push({ row, msg: `categoría “${o.categoria}” no existe.` });
+    if ((o.proveedor ?? "").length > 80 || (o.descripcion ?? "").length > 300) return out.errors.push({ row, msg: "texto demasiado largo." });
+    out.data.push({ type, status, amount, date, accountId, categoryId: categoryId ?? null, vendor: o.proveedor || null, description: o.descripcion || null });
+  });
+  return out;
+}
+
+function issues(label: string, list: RowIssue[], offset: number) {
+  return list.map((e) => `${label} ${e.row + offset}: ${e.msg}`);
+}
+
+export async function importCapex(workspaceId: string, propertyId: string, text: string): Promise<ImportResult> {
+  const objs = rowsOf(text);
+  const existing = new Set((await prisma.capexItem.findMany({ where: { workspaceId, propertyId }, select: { itemDescription: true } })).map((i) => norm(i.itemDescription)));
+  const p = parseCapex(objs, existing);
+  if (p.data.length) await prisma.capexItem.createMany({ data: p.data.map((d) => ({ ...d, workspaceId, propertyId })) });
+  return { created: p.data.length, skipped: p.skipped, errors: issues("Fila", p.errors, 2) };
+}
+
+export async function importFixed(workspaceId: string, propertyId: string, text: string): Promise<ImportResult> {
+  const objs = rowsOf(text);
+  const existing = new Set((await prisma.fixedExpense.findMany({ where: { workspaceId, propertyId }, select: { name: true } })).map((i) => norm(i.name)));
+  const p = parseFixed(objs, existing);
+  if (p.data.length) await prisma.fixedExpense.createMany({ data: p.data.map((d) => ({ ...d, workspaceId, propertyId })) });
+  return { created: p.data.length, skipped: p.skipped, errors: issues("Fila", p.errors, 2) };
 }

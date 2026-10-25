@@ -17,6 +17,12 @@ Una aplicación web para llevar tus finanzas personales y las de tus negocios (p
 
 **Dar acceso de solo lectura con usuario y contraseña** (por ejemplo, a un familiar sin cuenta de Google): **Miembros → Dar acceso de solo lectura**. Escribe el nombre y elige un usuario; la app genera la contraseña y la muestra **una sola vez** (cópiala y compártela por un canal privado). La persona entra desde la pantalla de inicio, en «o con usuario y contraseña». Si la pierde, usa **Nueva contraseña**; para cortar el acceso, usa **Quitar**. Estas cuentas no pueden crear negocios propios.
 
+**Carga en lote (editor tipo tabla).** En el menú, **Carga en lote** (solo administradores). Elige qué cargar: *Movimientos*, y en negocios Airbnb también *CAPEX* y *Gastos fijos*. Puedes:
+- **Pegar desde Excel o Google Sheets:** copia las celdas (con o sin encabezados), haz clic en cualquier celda de la tabla y pega con Ctrl+V. En el celular usa «Pegar texto copiado de Excel».
+- **Subir un `.xlsx` o `.csv`:** la app detecta la hoja y las columnas por sus encabezados, y muestra las categorías del Excel para que elijas cuáles traer. Nada se guarda todavía.
+- **Editar como en una hoja:** Enter baja a la celda de abajo, × quita la fila.
+Pulsa **Revisar** para validar sin guardar; las filas con problema se marcan en rojo con el motivo. **Guardar** es todo o nada: si una fila falla, no se guarda ninguna. Los ítems de CAPEX y gastos fijos que ya existen (mismo nombre) se omiten, así que puedes volver a cargar el mismo archivo sin duplicar. Máximo 500 filas por carga.
+
 Para invitar a alguien: **Miembros → Invitar**. Copia el enlace y envíaselo; solo sirve para el correo de Google que invitaste y vence en 7 días.
 
 ## Registrar un gasto con foto de la factura
