@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Manual de usuario — MiBolsillo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--ink:#0b1f4a;--muted:#4a5b7c;--brand:#1d4fa8;--soft:#eaf1fc;--line:#d3deef}
+*{box-sizing:border-box}
+body{font:15px/1.6 Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);margin:0;background:#fff}
+main{max-width:860px;margin:0 auto;padding:32px 24px}
+h1{font-size:34px;margin:0 0 4px}h2{font-size:23px;margin:40px 0 8px;padding-top:8px;border-top:2px solid var(--line);break-after:avoid}
+h3{font-size:17px;margin:22px 0 4px;break-after:avoid}
+.sub{color:var(--muted);margin:0 0 24px}
+.cover{padding:60px 0 30px;border-bottom:4px solid var(--brand);margin-bottom:24px}
+.toc{columns:2;background:var(--soft);border-radius:12px;padding:16px 28px;margin:20px 0}
+.toc a{color:var(--brand);text-decoration:none}.toc li{break-inside:avoid;margin:2px 0}
+figure{margin:14px 0 20px;break-inside:avoid}
+figure img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+figure.narrow img{max-width:300px;margin:0 auto}
+figure.pair{display:flex;gap:12px;justify-content:center}figure.pair img{max-width:300px}
+figcaption{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+.tip,.warn{border-radius:10px;padding:10px 14px;margin:12px 0;break-inside:avoid}
+.tip{background:var(--soft);border-left:4px solid var(--brand)}.warn{background:#fff4e5;border-left:4px solid #e08a00}
+table{border-collapse:collapse;width:100%;margin:10px 0;break-inside:avoid}th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}th{background:var(--soft)}
+code{background:var(--soft);padding:1px 5px;border-radius:4px}
+ol,ul{padding-left:22px}
+@media print{@page{size:A4;margin:16mm}main{padding:0;max-width:none}h2{break-before:auto}.cover{padding-top:120px;break-after:page}.toc{break-after:page}figure.full img{max-height:230mm;width:auto;max-width:100%;margin:0 auto}}
+</style></head><body><main>
+
+<header class="cover"><h1>MiBolsillo</h1><p class="sub" style="font-size:20px">Manual de usuario</p>
+<p class="sub">Versión 3.0 · Octubre de 2026<br>Finanzas personales y de tus negocios (Airbnb, freelance, conductor) en un solo lugar.</p>
+<p class="sub"><small>Las capturas usan datos de demostración, no información real.</small></p></header>
+
+<nav class="toc"><strong>Contenido</strong><ol>
+<li><a href="#entrar">Entrar a la aplicación</a></li><li><a href="#navegar">Cómo moverte</a></li><li><a href="#roles">Roles y permisos</a></li>
+<li><a href="#resumen">Resumen</a></li><li><a href="#gasto">Registrar un gasto o ingreso</a></li><li><a href="#movs">Movimientos</a></li>
+<li><a href="#pend">Pendientes</a></li><li><a href="#capex">CAPEX</a></li><li><a href="#reservas">Reservas</a></li><li><a href="#fijos">Gastos fijos</a></li>
+<li><a href="#pyg">Estado de resultados (PyG)</a></li><li><a href="#stats">Estadísticas</a></li><li><a href="#deuda">Deuda bancaria</a></li>
+<li><a href="#lote">Carga en lote</a></li><li><a href="#config">Presupuesto, categorías, cuentas y propiedades</a></li>
+<li><a href="#miembros">Miembros y acceso de solo lectura</a></li><li><a href="#movil">Uso en el celular y tema oscuro</a></li><li><a href="#faq">Preguntas frecuentes</a></li></ol></nav>
+
+<h2 id="entrar">1. Entrar a la aplicación</h2>
+<p>Necesitas un navegador (Chrome, Edge, Safari o Firefox). Abre la dirección de la aplicación y elige una de las dos formas de entrar:</p>
+<ul><li><b>Continuar con Google</b>, si tienes cuenta de Google.</li><li><b>Usuario y contraseña</b>, si el administrador te creó un acceso de solo lectura.</li></ul>
+<figure class="full"><img src="img/01-login.jpg" alt="Pantalla de inicio de sesión"><figcaption>Pantalla de inicio de sesión.</figcaption></figure>
+<p>La primera vez con Google, crea tu <b>negocio</b>: escribe un nombre, elige el tipo y, si es Airbnb, el nombre del apartamento. La app crea categorías y una cuenta «Efectivo» listas para usar.</p>
+
+<h2 id="navegar">2. Cómo moverte</h2>
+<p>En el computador verás un <b>menú lateral</b> con iconos; al acercar el cursor se despliega con los nombres. Arriba están el <b>selector de negocio</b>, el botón <b>+ Movimiento</b>, la campana de <b>pendientes</b> y tu <b>avatar</b> (tema claro/oscuro, mi cuenta y cerrar sesión). En el celular hay una barra inferior con el botón <b>+</b>.</p>
+<figure class="full"><img src="img/19-mas.jpg" alt="Menú Más"><figcaption>La pantalla «Más» reúne todas las secciones.</figcaption></figure>
+
+<h2 id="roles">3. Roles y permisos</h2>
+<table><tr><th>Rol</th><th>Qué puede hacer</th></tr>
+<tr><td><b>Administrador</b></td><td>Todo: resumen, PyG, presupuesto, cuentas, reservas, deuda, carga en lote y miembros.</td></tr>
+<tr><td><b>Operador</b></td><td>Registrar gastos, insumos y facturas de aseo y marcar compras CAPEX. No ve ingresos, EBITDA ni PyG, y solo ve lo que él registró. Puede editar o borrar sus gastos durante 48 horas.</td></tr>
+<tr><td><b>Solo lectura</b></td><td>Ve el resumen, movimientos, CAPEX, reservas, PyG, estadísticas y deuda, pero no puede agregar, editar ni borrar nada.</td></tr></table>
+<figure class="full"><img src="img/40-operador.jpg" alt="Vista del operador"><figcaption>Vista del Operador: menú reducido y sin cifras de ingresos.</figcaption></figure>
+
+<h2 id="resumen">4. Resumen</h2>
+<p>Es la pantalla principal del administrador. Usa las flechas para cambiar de mes y el selector <b>Pagado / Por pagar / Todo</b> para ver lo ya movido, lo pendiente o ambos.</p>
+<ul><li><b>Saldo total en cuentas</b> y los botones rápidos <b>Gasto</b>, <b>Ingreso</b> y <b>Transferir</b>.</li>
+<li><b>Flujo de caja</b>: ingresos menos gastos del filtro.</li><li><b>Margen de contribución</b> y <b>EBITDA operativo</b> (las compras CAPEX no entran).</li>
+<li><b>Ejecución del presupuesto</b> del mes.</li><li>En Airbnb: <b>ocupación</b>, tarifa media por noche (<b>ADR</b>) y <b>RevPAR</b>.</li>
+<li>Principales gastos, últimos 6 meses, cuentas por pagar, próximas llegadas y actividad reciente.</li></ul>
+<figure class="full"><img src="img/02-resumen.jpg" alt="Resumen"><figcaption>Resumen del mes.</figcaption></figure>
+
+<h2 id="gasto">5. Registrar un gasto o ingreso</h2>
+<ol><li>Pulsa <b>+ Movimiento</b> (o <b>Gasto</b> en el resumen).</li>
+<li>Si tienes la factura, arrástrala o pulsa <b>Elegir archivo</b> (JPG, PNG, WebP o PDF de hasta 8 MB). En el celular puedes tomar la foto.</li>
+<li>La app lee el comprobante y <b>sugiere</b> monto, fecha, proveedor y categoría.</li>
+<li>Revisa los datos, elige cuenta y estado (<b>Pagado</b> o <b>Por pagar</b>) y pulsa <b>Guardar</b>.</li></ol>
+<figure class="full"><img src="img/04-nuevo-gasto.jpg" alt="Formulario vacío"><figcaption>Formulario de movimiento: arrastra la factura o llénalo a mano.</figcaption></figure>
+<figure class="full"><img src="img/04b-gasto-leido.jpg" alt="Formulario con datos leídos de la factura"><figcaption>Tras subir la factura, los campos se llenan solos. Revísalos siempre antes de guardar.</figcaption></figure>
+<div class="warn">Los datos leídos son una sugerencia, no una verdad: corrige cualquier error. Si la lectura falla, llena el formulario a mano.</div>
+<p>Para una <b>transferencia</b> entre cuentas, elige el tipo «Transferencia» e indica la cuenta destino.</p>
+
+<h2 id="movs">6. Movimientos</h2>
+<p>Lista de todo lo registrado. Busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. <b>Exportar CSV</b> descarga la lista filtrada.</p>
+<figure class="full"><img src="img/03-movimientos.jpg" alt="Movimientos"><figcaption>Lista de movimientos con filtros.</figcaption></figure>
+<p>Toca un movimiento para ver el detalle, abrir su comprobante, <b>editarlo</b> o <b>eliminarlo</b>.</p>
+<figure class="full"><img src="img/03b-detalle-movimiento.jpg" alt="Detalle del movimiento"><figcaption>Detalle de un movimiento.</figcaption></figure>
+
+<h2 id="pend">7. Pendientes</h2>
+<p>La campana muestra lo que <b>debes pagar</b> (los vencidos van marcados) y lo que <b>te deben</b>. Márcalos como pagados o cobrados desde ahí.</p>
+<figure class="full"><img src="img/10-pendientes.jpg" alt="Pendientes"><figcaption>Pendientes por pagar y por cobrar.</figcaption></figure>
+
+<h2 id="capex">8. CAPEX (compras de adecuación)</h2>
+<p>Lista de lo que compras para dejar listo el apartamento. Escribe el <b>precio real</b> y pulsa <b>Comprado ✓</b>. La variación (presupuestado − real) se calcula sola: verde es ahorro, rojo es sobrecosto. <b>Deshacer</b> revierte la compra.</p>
+<figure class="full"><img src="img/05-capex.jpg" alt="CAPEX"><figcaption>Compras de adecuación y su variación.</figcaption></figure>
+
+<h2 id="reservas">9. Reservas</h2>
+<p>Registra entrada, salida, ingreso, tarifa de aseo y comisión del canal (Airbnb, Booking…). Marca <b>Cobrada</b> cuando llegue el pago. El detalle muestra el neto que realmente te queda.</p>
+<figure class="full"><img src="img/06-reservas.jpg" alt="Reservas"><figcaption>Reservas y estado de cobro.</figcaption></figure>
+
+<h2 id="fijos">10. Gastos fijos</h2>
+<p>Crea una vez administración, servicios y suscripciones. Cada mes pulsa <b>Generar gastos del mes</b> para crearlos como «Por pagar» y luego márcalos como pagados.</p>
+<figure class="full"><img src="img/07-gastos-fijos.jpg" alt="Gastos fijos"><figcaption>Gastos fijos recurrentes.</figcaption></figure>
+
+<h2 id="pyg">11. Estado de resultados (PyG)</h2>
+<p>Ingresos brutos → costos variables (comisiones, aseo, insumos) → margen de contribución → gastos fijos → EBITDA operativo. La «línea del PyG» de cada categoría decide dónde suma.</p>
+<figure class="full"><img src="img/08-pyg.jpg" alt="PyG"><figcaption>Estado de resultados del mes.</figcaption></figure>
+
+<h2 id="stats">12. Estadísticas</h2>
+<p>Elige Hoy, Semana, Mes o Año; compara con el periodo anterior y mira los gastos por categoría y los mayores proveedores.</p>
+<figure class="full"><img src="img/09-estadisticas.jpg" alt="Estadísticas"><figcaption>Estadísticas por periodo.</figcaption></figure>
+
+<h2 id="deuda">13. Deuda bancaria</h2>
+<p>Seguimiento de un crédito con el banco. Crea el crédito con monto, banco, tasa (E.A. o mensual), plazo en meses, fecha de la primera cuota y, si la tienes, la cuota que cobra el banco; si no, se calcula con cuota fija.</p>
+<ul><li><b>Saldo pendiente</b>, % de capital pagado, cuota actual y aviso de <b>cuotas atrasadas</b>.</li>
+<li><b>Próxima cuota</b>, intereses pagados vs. previstos, total pagado y <b>fecha estimada de fin</b> (se recalcula con abonos extra).</li>
+<li><b>Plan de pagos</b>: gráfica de capital e intereses por cuota y tabla de amortización.</li>
+<li><b>Pagos</b>: registra cada cuota o un <b>abono extra a capital</b>. Si no escribes los intereses del extracto, se calculan.</li>
+<li><b>Destino del crédito</b>: a dónde fue el dinero y su porcentaje; avisa si la suma supera el monto o queda algo sin asignar.</li></ul>
+<figure class="full"><img src="img/11-deuda.jpg" alt="Deuda bancaria"><figcaption>Deuda bancaria con plan de pagos, pagos y destino del crédito.</figcaption></figure>
+<div class="tip">Los pagos del crédito no descuentan de tus cuentas ni entran al PyG. Si quieres reflejarlos en una cuenta, regístralos además como movimiento.</div>
+
+<h2 id="lote">14. Carga en lote (editor tipo tabla)</h2>
+<p>Solo administradores. Sirve para meter muchos datos de una vez. Elige qué cargar: <b>Movimientos</b>, <b>CAPEX</b>, <b>Gastos fijos</b> o <b>Destino del crédito</b>.</p>
+<ol><li><b>Pegar desde Excel o Google Sheets:</b> copia las celdas, haz clic en cualquier celda de la tabla y pega con <code>Ctrl+V</code>. En el celular usa «Pegar texto copiado de Excel».</li>
+<li><b>Subir un .xlsx o .csv:</b> la app detecta la hoja y las columnas por sus encabezados. Nada se guarda todavía.</li>
+<li><b>Editar como en una hoja:</b> <code>Enter</code> baja a la celda de abajo; × quita la fila.</li>
+<li>Pulsa <b>Revisar</b> para validar sin guardar: las filas con problema se marcan en rojo con el motivo.</li>
+<li>Pulsa <b>Guardar</b>. Es todo o nada: si una fila falla, no se guarda ninguna.</li></ol>
+<figure class="full"><img src="img/12-carga-lote.jpg" alt="Carga en lote de movimientos"><figcaption>Pestaña Movimientos: Fecha, Tipo, Monto, Proveedor, Descripción, Categoría y Cuenta.</figcaption></figure>
+<figure class="full"><img src="img/12b-lote-capex.jpg" alt="Carga en lote de CAPEX"><figcaption>Pestaña CAPEX.</figcaption></figure>
+<figure class="full"><img src="img/12c-lote-destino.jpg" alt="Carga en lote del destino del crédito"><figcaption>Pestaña Destino del crédito (requiere haber creado el crédito).</figcaption></figure>
+<div class="tip">Los ítems de CAPEX, gastos fijos y destinos que ya existen (mismo nombre) se omiten, así que puedes volver a cargar el mismo archivo sin duplicar. En Movimientos no hay esa protección. Máximo 500 filas por carga.</div>
+
+<h2 id="config">15. Presupuesto, categorías, cuentas y propiedades</h2>
+<h3>Presupuesto</h3><p>Fija cuánto quieres gastar por categoría cada mes. El botón de copiar trae el presupuesto del mes anterior.</p>
+<figure class="full"><img src="img/13-presupuesto.jpg" alt="Presupuesto"></figure>
+<h3>Categorías</h3><p>Crea y edita categorías; la «línea del PyG» decide en qué parte del estado de resultados suman.</p>
+<figure class="full"><img src="img/14-categorias.jpg" alt="Categorías"></figure>
+<h3>Cuentas</h3><p>Efectivo, banco, billeteras digitales. Edita nombre, tipo y saldo inicial, o archiva una cuenta.</p>
+<figure class="full"><img src="img/15-cuentas.jpg" alt="Cuentas"></figure>
+<h3>Propiedades</h3><p>En negocios Airbnb, administra tus apartamentos.</p>
+<figure class="full"><img src="img/16-propiedades.jpg" alt="Propiedades"></figure>
+<h3>Lista de deseos</h3><p>Anota compras que planeas, con tienda y precio estimado.</p>
+<figure class="full"><img src="img/18-deseos.jpg" alt="Lista de deseos"></figure>
+
+<h2 id="miembros">16. Miembros y acceso de solo lectura</h2>
+<p><b>Invitar a alguien con Google:</b> Miembros → Invitar. Copia el enlace y envíaselo; solo sirve para el correo de Google invitado y vence en 7 días.</p>
+<p><b>Dar acceso de solo lectura con usuario y contraseña</b> (por ejemplo, a un familiar sin cuenta de Google): Miembros → <b>Dar acceso de solo lectura</b>. Escribe el nombre y elige un usuario; la app genera la contraseña y la muestra <b>una sola vez</b>. Cópiala y compártela por un canal privado.</p>
+<figure class="full"><img src="img/17-miembros.jpg" alt="Miembros"><figcaption>Miembros, invitaciones y accesos de solo lectura.</figcaption></figure>
+<ul><li>Si la persona pierde la contraseña: <b>Nueva contraseña</b>.</li><li>Para cortar el acceso: <b>Quitar</b>.</li><li>Estas cuentas no pueden crear negocios propios.</li></ul>
+<p>En la misma pantalla puedes <b>eliminar el negocio</b> completo.</p>
+
+<h2 id="movil">17. Uso en el celular y tema oscuro</h2>
+<p>La app se adapta al celular: barra inferior, botón <b>+</b> para registrar y la sección <b>Más</b> con el resto de pantallas.</p>
+<figure class="pair"><img src="img/30-movil-resumen.jpg" alt="Resumen en celular"><img src="img/31-movil-gasto.jpg" alt="Gasto en celular"><img src="img/32-movil-mas.jpg" alt="Más en celular"></figure>
+<p>Desde el menú de tu avatar puedes cambiar entre tema claro y oscuro.</p>
+<figure class="full"><img src="img/20-oscuro.jpg" alt="Tema oscuro"><figcaption>Tema oscuro.</figcaption></figure>
+
+<h2 id="faq">18. Preguntas frecuentes</h2>
+<ul><li><b>Me dice «No tienes permiso».</b> Tu rol no permite esa acción; pídele al administrador.</li>
+<li><b>La invitación no funciona.</b> Inicia sesión con el mismo correo al que se envió y verifica que no haya vencido.</li>
+<li><b>La lectura de la factura se equivocó.</b> Corrige los campos a mano; son solo sugerencias.</li>
+<li><b>Subí un archivo y nada se guardó.</b> En la carga en lote primero se revisa y luego se pulsa Guardar.</li>
+<li><b>Mis datos.</b> Puedes eliminar un negocio en Miembros → Eliminar este negocio. Para eliminar tu cuenta: avatar → Mi cuenta y privacidad.</li></ul>
+<p><b>Soporte:</b> <code>&lt;CORREO_DE_SOPORTE&gt;</code></p>
+</main></body></html>

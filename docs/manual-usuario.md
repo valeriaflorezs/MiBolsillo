@@ -1,5 +1,5 @@
 # Manual de usuario — MiBolsillo
-**Versión:** 2.0 · **Fecha:** 2026-10-23 · **Cambios:** 2.0 rediseño, edición/eliminación de todo, estadísticas, pendientes, categorías, exportación CSV y eliminación de cuenta (pendiente añadir capturas).
+**Versión:** 2.0 · **Fecha:** 2026-10-23 · **Cambios:** 2.0 rediseño, edición/eliminación de todo, estadísticas, pendientes, categorías, exportación CSV y eliminación de cuenta . **Manual con capturas de pantalla:** `docs/MiBolsillo_Manual_de_usuario.pdf` (fuente HTML en `docs/manual-usuario/`).
 
 ## Qué es
 Una aplicación web para llevar tus finanzas personales y las de tus negocios (por ejemplo, un apartamento en Airbnb). Funciona en el computador y en el celular. Solo necesitas un navegador y una cuenta de Google.
