@@ -4,6 +4,8 @@
 Evidencia de detección: `next.config.mjs`, `prisma/schema.prisma`, `Dockerfile`, `railway.json`.
 Carga en lote: el `.xlsx` se lee en el navegador (el servidor nunca procesa archivos Excel); el servidor recibe solo texto, lo valida fila por fila con límites (500 filas, 12 columnas, 400 caracteres por celda), exige permiso (ADMIN) y aplica `rateLimit`. Dependencias: `read-excel-file` (sin vulnerabilidades conocidas) y `zod` 4.6.7 (corrige la advertencia de severidad alta sobre colecciones sobredimensionadas).
 
+Deuda bancaria: lectura con `finance:read`, escritura solo ADMIN (`dashboard:full`); todo `loanId`/`paymentId`/`allocationId` se verifica contra el workspace del usuario.
+
 Login: Google para dueños/operadores; usuario y contraseña únicamente para cuentas de solo lectura (rol VIEWER) creadas por un ADMIN. Limitación: restablecer la contraseña no cierra las sesiones ya abiertas (JWT, 14 días); quitar al miembro sí corta el acceso al instante.
 
 | # | Punto | Estado | Evidencia o razón |

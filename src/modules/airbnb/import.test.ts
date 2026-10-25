@@ -43,3 +43,18 @@ describe("parsers de carga en lote", () => {
     expect(parseTransactions([{ fecha: "2026-03-07", monto: "5" }], { accounts: [{ id: "a1", name: "Efectivo" }], categories: [] }).data[0].accountId).toBe("a1");
   });
 });
+
+describe("destino del crédito", () => {
+  it("omite la fila del monto total, duplicados y valida valores", async () => {
+    const { parseAllocations } = await import("./import");
+    const p = parseAllocations([
+      { categoria: "", concepto: "Monto Total del Préstamo Banco", valor: "56912455" },
+      { categoria: "Airbnb", concepto: "Total inversión Airbnb", valor: "26.500.000" },
+      { categoria: "Airbnb", concepto: "total inversion airbnb", valor: "1" },
+      { categoria: "", concepto: "Tarjetas", valor: "abc" },
+    ], new Set());
+    expect(p.data).toEqual([{ category: "Airbnb", name: "Total inversión Airbnb", amount: 26500000 }]);
+    expect(p.skipped).toBe(2);
+    expect(p.errors.map((e) => e.row)).toEqual([3]);
+  });
+});

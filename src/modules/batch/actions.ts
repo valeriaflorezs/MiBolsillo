@@ -9,12 +9,12 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { BATCH_SPECS, MAX_BATCH_ROWS } from "@/lib/batch/spec";
 import { id } from "@/lib/validation";
 import { norm } from "@/lib/csv";
-import { parseCapex, parseFixed, parseTransactions, type RowIssue } from "@/modules/airbnb/import";
+import { parseAllocations, parseCapex, parseFixed, parseTransactions, type RowIssue } from "@/modules/airbnb/import";
 
 export type BatchResult = { ok: boolean; message: string; errors: RowIssue[]; warnings: RowIssue[] };
 
 const input = z.object({
-  kind: z.enum(["transactions", "capex", "fixed"]),
+  kind: z.enum(["transactions", "capex", "fixed", "allocations"]),
   workspaceId: id,
   propertyId: z.string().optional(),
   dryRun: z.boolean(),
@@ -29,7 +29,7 @@ export async function batchAction(raw: unknown): Promise<BatchResult> {
     const parsed = input.safeParse(raw);
     if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Datos inválidos.");
     const i = parsed.data;
-    const { userId } = await requireWorkspace(i.workspaceId, i.kind === "transactions" ? "dashboard:full" : "airbnb:manage");
+    const { userId } = await requireWorkspace(i.workspaceId, i.kind === "transactions" || i.kind === "allocations" ? "dashboard:full" : "airbnb:manage");
     rateLimit(`batch:${userId}`, 60, 3_600_000);
 
     // Filas vacías se ignoran, pero se conserva el número de fila original para marcar errores en la tabla.
@@ -50,6 +50,14 @@ export async function batchAction(raw: unknown): Promise<BatchResult> {
       const p = parseTransactions(objs, { accounts, categories });
       res = p;
       write = () => prisma.transaction.createMany({ data: p.data.map((d) => ({ ...d, workspaceId: w, createdById: userId, paidAt: d.status === "PAID" ? d.date : null })) });
+    } else if (i.kind === "allocations") {
+      const loanId = i.propertyId ?? ""; // aquí propertyId lleva el id del crédito elegido
+      if (!(await prisma.loan.count({ where: { id: loanId, workspaceId: w } }))) throw new Error("FORBIDDEN");
+      const existing = new Set((await prisma.loanAllocation.findMany({ where: { loanId }, select: { name: true } })).map((x) => norm(x.name)));
+      const base = await prisma.loanAllocation.count({ where: { loanId } });
+      const p = parseAllocations(objs, existing);
+      res = p;
+      write = () => prisma.loanAllocation.createMany({ data: p.data.map((d, k) => ({ ...d, loanId, workspaceId: w, sortOrder: base + k })) });
     } else {
       const propertyId = i.propertyId ?? "";
       if (!(await prisma.property.count({ where: { id: propertyId, workspaceId: w } }))) throw new Error("FORBIDDEN");

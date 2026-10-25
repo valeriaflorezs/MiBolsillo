@@ -23,6 +23,14 @@ Una aplicación web para llevar tus finanzas personales y las de tus negocios (p
 - **Editar como en una hoja:** Enter baja a la celda de abajo, × quita la fila.
 Pulsa **Revisar** para validar sin guardar; las filas con problema se marcan en rojo con el motivo. **Guardar** es todo o nada: si una fila falla, no se guarda ninguna. Los ítems de CAPEX y gastos fijos que ya existen (mismo nombre) se omiten, así que puedes volver a cargar el mismo archivo sin duplicar. Máximo 500 filas por carga.
 
+**Deuda bancaria.** En **Más → Deuda bancaria** (lo ve todo el equipo con acceso al resumen; solo el administrador edita). Crea el crédito con monto, banco, tasa (E.A. o mensual), plazo en meses, fecha de la primera cuota y, si la tienes, la cuota que cobra el banco (si no, se calcula con cuota fija). La pantalla muestra:
+- **Saldo pendiente**, % del capital pagado y cuotas pagadas (de las del plan), con aviso de cuotas atrasadas.
+- **Próxima cuota**, intereses pagados vs. previstos, total pagado y **fecha estimada de fin** (se recalcula si haces abonos extra).
+- **Plan de pagos** con gráfica de capital e intereses por cuota y tabla de amortización.
+- **Pagos**: registra cada cuota o **abono extra a capital**. Si no indicas los intereses del extracto, se calculan (saldo × tasa mensual); si los sabes, escríbelos para que cuadre con el banco.
+- **Destino del crédito**: a dónde fue el dinero (inversión Airbnb, tarjetas, ahorro…), con su porcentaje del crédito. Avisa si la suma supera el monto o si queda algo sin asignar. Puedes pegarlo desde Excel en **Carga en lote → Destino del crédito**.
+Nota: los pagos del crédito no descuentan de tus cuentas ni entran al PyG; es un seguimiento de la deuda. Si quieres reflejarlos en una cuenta, regístralos además como movimiento.
+
 Para invitar a alguien: **Miembros → Invitar**. Copia el enlace y envíaselo; solo sirve para el correo de Google que invitaste y vence en 7 días.
 
 ## Registrar un gasto con foto de la factura

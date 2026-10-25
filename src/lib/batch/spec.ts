@@ -1,9 +1,9 @@
 import { norm, parseCsv } from "@/lib/csv";
 
 // Definición de las tablas de carga en lote. Sin dependencias de servidor: la usan el editor (cliente) y la acción (servidor).
-export type BatchKind = "transactions" | "capex" | "fixed";
+export type BatchKind = "transactions" | "capex" | "fixed" | "allocations";
 export type BatchCol = { key: string; label: string; width: string; numeric?: boolean; options?: string[]; match: (h: string) => boolean; help?: string };
-export type BatchSpec = { title: string; blurb: string; cols: BatchCol[] };
+export type BatchSpec = { title: string; blurb: string; cols: BatchCol[]; /** Nombre de hoja preferido cuando varias hojas encajan igual. */ sheetHint: RegExp };
 
 export const MAX_BATCH_ROWS = 500;
 export const CAPEX_CATEGORY_LABELS = ["Muebles", "Electrodomésticos", "Reformas", "Decoración", "Ropa de cama y cocina", "Tecnología", "Otros"];
@@ -14,6 +14,7 @@ const has = (...parts: string[]) => (h: string) => parts.every((p) => h.includes
 export const BATCH_SPECS: Record<BatchKind, BatchSpec> = {
   transactions: {
     title: "Movimientos",
+    sheetHint: /mov/,
     blurb: "Gastos e ingresos históricos o del día a día. El monto va en positivo; el tipo define si es gasto o ingreso.",
     cols: [
       { key: "fecha", label: "Fecha", width: "9rem", match: is("fecha", "date"), help: "AAAA-MM-DD o DD/MM/AAAA" },
@@ -28,6 +29,7 @@ export const BATCH_SPECS: Record<BatchKind, BatchSpec> = {
   },
   capex: {
     title: "CAPEX",
+    sheetHint: /capex|presupuesto/,
     blurb: "Ítems de adecuación. Con precio real el ítem queda como comprado. Los que ya existen (mismo nombre) se omiten.",
     cols: [
       { key: "categoria", label: "Categoría", width: "11rem", options: CAPEX_CATEGORY_LABELS, match: is("categoria", "category") },
@@ -38,8 +40,19 @@ export const BATCH_SPECS: Record<BatchKind, BatchSpec> = {
       { key: "tienda", label: "Tienda", width: "9rem", match: is("tienda", "store", "proveedor") },
     ],
   },
+  allocations: {
+    title: "Destino del crédito",
+    sheetHint: /destino|prestamo|resumen/,
+    blurb: "Cómo se reparte el dinero del crédito (inversión, pago de tarjetas, ahorro…). Los conceptos que ya existen en ese crédito se omiten.",
+    cols: [
+      { key: "categoria", label: "Categoría", width: "14rem", match: is("categoria", "category") },
+      { key: "concepto", label: "Concepto", width: "22rem", match: is("concepto", "descripcion", "item", "destino") },
+      { key: "valor", label: "Valor", width: "12rem", numeric: true, match: (h) => is("valor", "monto", "amount", "valor_total", "total")(h) },
+    ],
+  },
   fixed: {
     title: "Gastos fijos",
+    sheetHint: /fijo/,
     blurb: "Gastos recurrentes (administración, servicios, suscripciones…). Los que ya existen (mismo nombre) se omiten.",
     cols: [
       { key: "nombre", label: "Nombre", width: "16rem", match: is("nombre", "name", "gasto") },

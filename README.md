@@ -14,7 +14,7 @@ Cada persona puede administrar varios *negocios* (por ejemplo “Airbnb Apto 302
 
 ## Qué hace
 
-- **Multinegocio y roles.** Carga en lote tipo hoja de cálculo (pegar desde Excel o subir .xlsx/.csv). Inicio de sesión con Google (y usuario/contraseña para cuentas de solo lectura); *Administrador* (acceso total), *Solo lectura* (ve todo sin poder modificar) y *Operador* (registra gastos, insumos y facturas de aseo, sin ver ingresos, EBITDA ni PyG).
+- **Multinegocio y roles.** Seguimiento de la deuda bancaria (saldo, plan de pagos, abonos y destino del crédito). Carga en lote tipo hoja de cálculo (pegar desde Excel o subir .xlsx/.csv). Inicio de sesión con Google (y usuario/contraseña para cuentas de solo lectura); *Administrador* (acceso total), *Solo lectura* (ve todo sin poder modificar) y *Operador* (registra gastos, insumos y facturas de aseo, sin ver ingresos, EBITDA ni PyG).
 - **Resumen financiero.** Saldo total, flujo de caja, margen de contribución, EBITDA operativo, ejecución del presupuesto, ingresos vs. gastos, gastos por categoría y filtros por mes y por estado (pagado / por pagar, cobrado / por cobrar).
 - **Movimientos.** Gastos, ingresos y transferencias entre cuentas (Nequi, bancos, efectivo, tarjetas); búsqueda, filtros, paginación, edición, eliminación y exportación a CSV.
 - **Facturas con OCR.** Arrastra una foto o PDF: la app lee monto, fecha y proveedor, sugiere la categoría y guarda el comprobante en un almacenamiento privado (Cloudflare R2).

@@ -210,6 +210,7 @@ model Workspace {
   capexItems       CapexItem[]
   reservations     Reservation[]
   fixedExpenses    FixedExpense[]
+  loans            Loan[]
 }
 
 model WorkspaceMember {
@@ -483,4 +484,71 @@ model Attachment {
   @@unique([storageKey])
   @@index([workspaceId, createdAt])
   @@index([transactionId])
+}
+
+enum LoanRateType {
+  EFFECTIVE_ANNUAL // tasa efectiva anual (E.A.)
+  MONTHLY          // tasa mensual
+}
+
+enum LoanPaymentKind {
+  INSTALLMENT // cuota del plan
+  EXTRA       // abono extra a capital
+}
+
+// Crédito con un banco: monitoreo de saldo, cuotas pagadas y destino de los fondos.
+model Loan {
+  id               String       @id @default(cuid())
+  workspaceId      String
+  name             String
+  lender           String?
+  principal        Decimal      @db.Decimal(14, 2)
+  rateType         LoanRateType @default(EFFECTIVE_ANNUAL)
+  ratePct          Decimal      @db.Decimal(7, 4)
+  termMonths       Int
+  firstPaymentDate DateTime
+  monthlyPayment   Decimal?     @db.Decimal(14, 2) // cuota informada por el banco; si es null se calcula
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payments    LoanPayment[]
+  allocations LoanAllocation[]
+
+  @@index([workspaceId])
+}
+
+model LoanPayment {
+  id               String          @id @default(cuid())
+  loanId           String
+  workspaceId      String
+  date             DateTime
+  kind             LoanPaymentKind @default(INSTALLMENT)
+  amount           Decimal         @db.Decimal(14, 2)
+  interestOverride Decimal?        @db.Decimal(14, 2) // intereses reales del extracto, si los tienes
+  note             String?
+  createdAt        DateTime        @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, date])
+  @@index([workspaceId])
+}
+
+// Destino de los fondos del crédito (p. ej. inversión Airbnb, pago de tarjetas, CDT).
+model LoanAllocation {
+  id          String   @id @default(cuid())
+  loanId      String
+  workspaceId String
+  category    String?
+  name        String
+  amount      Decimal  @db.Decimal(14, 2)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+  @@index([workspaceId])
 }

@@ -10,6 +10,8 @@ type Props = {
   workspaceId: string;
   propertyId?: string;
   properties?: { id: string; name: string }[];
+  /** Etiqueta del selector (propiedad o crédito). */
+  targetLabel?: string;
   /** Opciones sugeridas por columna (categorías y cuentas reales del negocio). */
   lookups?: Record<string, string[]>;
 };
@@ -18,7 +20,7 @@ const blank = (n: number, cols: number) => Array.from({ length: n }, () => Array
 const isEmpty = (r: string[]) => r.every((c) => !c.trim());
 type Sheet = { name: string; data: unknown[][] };
 
-export function BatchGrid({ kind, workspaceId, propertyId, properties = [], lookups = {} }: Props) {
+export function BatchGrid({ kind, workspaceId, propertyId, properties = [], targetLabel = "Propiedad", lookups = {} }: Props) {
   const spec = BATCH_SPECS[kind];
   const cols = spec.cols;
   const [rows, setRows] = useState<string[][]>(() => blank(8, cols.length));
@@ -81,9 +83,9 @@ export function BatchGrid({ kind, workspaceId, propertyId, properties = [], look
         const { default: readXlsx } = await import("read-excel-file/universal");
         list = (await readXlsx(f)).map((s) => ({ name: s.sheet, data: s.data as unknown[][] }));
       } else return setFileErr("Usa un archivo .xlsx o .csv (los .xls antiguos: guárdalos como .xlsx).");
-      const best = list.map((s) => mapSheet(kind, s.data)?.mapped.length ?? 0);
+      const best = list.map((s) => (mapSheet(kind, s.data)?.mapped.length ?? 0) + (spec.sheetHint.test(norm(s.name).replace(/_/g, " ")) ? 0.5 : 0));
       const bi = best.indexOf(Math.max(...best));
-      if (!list.length || best[bi] === 0) return setFileErr(`No encontré encabezados reconocibles (${cols.map((c) => c.label).join(", ")}).`);
+      if (!list.length || best[bi] < 1) return setFileErr(`No encontré encabezados reconocibles (${cols.map((c) => c.label).join(", ")}).`);
       setSheets(list); setSheetIdx(bi); setPicked(null);
     } catch {
       setFileErr("No pude leer el archivo. Verifica que no esté dañado ni protegido con contraseña.");
@@ -124,7 +126,7 @@ export function BatchGrid({ kind, workspaceId, propertyId, properties = [], look
           <div><label className="label" htmlFor={`file-${kind}`}>Cargar desde Excel (.xlsx) o CSV</label>
             <input id={`file-${kind}`} type="file" accept=".xlsx,.csv,.txt" className="input" onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ""; }} /></div>
           {kind !== "transactions" && properties.length > 1 && (
-            <div><label className="label" htmlFor={`prop-${kind}`}>Propiedad</label>
+            <div><label className="label" htmlFor={`prop-${kind}`}>{targetLabel}</label>
               <select id={`prop-${kind}`} className="input" value={prop} onChange={(e) => setProp(e.target.value)}>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
           )}
         </div>

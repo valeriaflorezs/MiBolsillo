@@ -101,6 +101,24 @@ export function parseFixed(objs: Obj[], existing: Set<string>): Parsed<Omit<Pris
   return out;
 }
 
+/** Columnas: categoria (opcional), concepto, valor. Destino de los fondos de un crédito. */
+export function parseAllocations(objs: Obj[], existing: Set<string>): Parsed<{ category: string | null; name: string; amount: number }> {
+  const out: Parsed<{ category: string | null; name: string; amount: number }> = { data: [], skipped: 0, errors: [], warnings: [] };
+  const seen = new Set(existing);
+  objs.forEach((o, row) => {
+    const name = z.string().trim().min(2).max(100).safeParse(o.concepto ?? "");
+    const amount = money(o.valor);
+    if (!name.success) return out.errors.push({ row, msg: "falta el concepto." });
+    if (/^monto total/.test(norm(name.data).replace(/_/g, " "))) { out.skipped++; out.warnings.push({ row, msg: "es el monto total del crédito, no un destino: se omite." }); return; }
+    if (amount === undefined || !Number.isFinite(amount) || amount < 0 || amount > 1e12) return out.errors.push({ row, msg: "valor inválido." });
+    if ((o.categoria ?? "").length > 60) return out.errors.push({ row, msg: "categoría demasiado larga." });
+    if (seen.has(norm(name.data))) { out.skipped++; return; }
+    seen.add(norm(name.data));
+    out.data.push({ category: o.categoria || null, name: name.data, amount });
+  });
+  return out;
+}
+
 const TYPE: Record<string, "EXPENSE" | "INCOME"> = { gasto: "EXPENSE", egreso: "EXPENSE", expense: "EXPENSE", ingreso: "INCOME", income: "INCOME" };
 const STATUS: Record<string, "PAID" | "PENDING"> = { pagado: "PAID", cobrado: "PAID", paid: "PAID", pendiente: "PENDING", por_pagar: "PENDING", por_cobrar: "PENDING", pending: "PENDING" };
 
