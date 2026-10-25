@@ -1,5 +1,6 @@
 import { ExpenseForm } from "@/components/forms/expense-form";
 import { prisma } from "@/lib/db";
+import { receiptCapabilities } from "@/lib/ocr/config";
 import { pageCtx } from "@/lib/auth/permissions";
 import { createTransactionAction } from "@/modules/core/finance-actions";
 import { accountOptions, categoryOptions } from "@/modules/core/queries";
@@ -20,7 +21,7 @@ export default async function NewExpense({ params, searchParams }: { params: Pro
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Registrar movimiento</h1>
       <section className="card max-w-3xl">
-        <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts} properties={properties} action={createTransactionAction}
+        <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} receipts={receiptCapabilities()} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts} properties={properties} action={createTransactionAction}
           categories={categories.filter((c) => isAdmin || c.expenseKind !== null)} />
       </section>
     </>

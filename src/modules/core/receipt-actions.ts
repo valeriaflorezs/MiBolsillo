@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { can, requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { getOcrProvider } from "@/lib/ocr";
+import { receiptCapabilities } from "@/lib/ocr/config";
 import { createReceiptUpload, deleteObjects, readObject, signedReadUrl } from "@/lib/storage/r2";
 
 const UploadInput = z.object({
@@ -28,6 +29,7 @@ function realMime(b: Uint8Array): string | null {
 export async function createReceiptUploadAction(raw: unknown) {
   try {
     const input = UploadInput.parse(raw);
+    if (!receiptCapabilities().upload) return { ok: false as const, error: "El almacenamiento de comprobantes aún no está configurado." };
     const { userId } = await requireWorkspace(input.workspaceId, "transaction:create");
     rateLimit(`upload:${userId}`, 30, 60_000);
     await purgeOrphans(userId);
@@ -50,6 +52,7 @@ export async function processReceiptAction(raw: unknown) {
     rateLimit(`ocr:${userId}`, 15, 60_000);
     const att = await prisma.attachment.findFirst({ where: { id: attachmentId, workspaceId, uploadedById: userId } });
     if (!att) return { ok: false as const, error: "Comprobante no encontrado." };
+    if (!receiptCapabilities().ocr) return { ok: false as const, error: "El comprobante quedó guardado. La lectura automática aún no está activada: completa los datos a mano." };
 
     const bytes = await readObject(att.storageKey);
     const mime = realMime(bytes);

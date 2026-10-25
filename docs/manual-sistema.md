@@ -49,7 +49,7 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 - *Deploy falla en migraciones:* revisar `DATABASE_URL` y logs de predeploy.
 - *Login vuelve a /login:* revisar `AUTH_SECRET`, `AUTH_URL` y la URI de redirección en Google.
 - *Subida de comprobantes falla:* CORS del bucket, variables `R2_*` y CSP `connect-src`.
-- *OCR falla:* revisar `ANTHROPIC_API_KEY`; el formulario sigue funcionando a mano.
+- *OCR falla:* revisar `ANTHROPIC_API_KEY`; el formulario sigue funcionando a mano. Guía de configuración paso a paso: `docs/comprobantes-ocr.md`.
 
 ## Rutas (v2.0)
 `/w/[id]`: resumen · `transactions` (lista+detalle, `[txId]/edit`, `export` CSV) · `expenses/new` · `pending` · `stats` · `accounts` · `categories` · `budget` · `wishlist` · `settings` · `more` · Airbnb: `capex` (+`[itemId]/edit`), `pyg`, `reservations` (+`[resId]/edit`), `fixed` (+`[fixedId]/edit`), `properties`. Globales: `/login`, `/workspaces/new`, `/invite/[token]`, `/account`, `/privacidad`, `/terminos`, `/api/health`.

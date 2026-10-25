@@ -12,13 +12,14 @@ type Props = {
   categories: Opt[];
   properties: Opt[];
   defaultType?: "EXPENSE" | "INCOME" | "TRANSFER";
+  receipts: { upload: boolean; ocr: boolean };
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
 };
 
 const OK = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties, defaultType = "EXPENSE", action }: Props) {
+export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties, defaultType = "EXPENSE", receipts, action }: Props) {
   const [attachmentId, setAttachmentId] = useState("");
   const [file, setFile] = useState("");
   const [ocr, setOcr] = useState<{ msg: string; kind: "info" | "error" | "ok" } | null>(null);
@@ -36,6 +37,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
   }, null);
 
   async function handleFile(f: File) {
+    if (!receipts.upload) return;
     if (!OK.includes(f.type)) return setOcr({ msg: "Solo imágenes (JPG, PNG, WebP) o PDF.", kind: "error" });
     if (f.size > 8 * 1024 * 1024) return setOcr({ msg: "El archivo supera 8 MB.", kind: "error" });
     setFile(f.name);
@@ -69,11 +71,16 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
         onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) void handleFile(f); }}
         className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${drag ? "border-brand bg-canvas" : "border-line"}`}
       >
-        <p className="text-sm">Arrastra la factura aquí o</p>
-        <label className="btn btn-ghost mt-2 cursor-pointer">
-          Elegir archivo
-          <input type="file" accept={OK.join(",")} capture="environment" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }} />
-        </label>
+        {receipts.upload ? (
+          <>
+            <p className="text-sm">Arrastra la factura aquí o</p>
+            <label className="btn btn-ghost mt-2 cursor-pointer">
+              Elegir archivo
+              <input type="file" accept={OK.join(",")} capture="environment" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }} />
+            </label>
+            {!receipts.ocr && <p className="mt-2 text-xs text-muted">Se guarda el comprobante; la lectura automática de datos aún no está activada.</p>}
+          </>
+        ) : <p className="text-sm text-muted">Adjuntar facturas aún no está disponible (falta configurar el almacenamiento). Registra el gasto a mano.</p>}
         {file && <p className="mt-2 text-sm text-muted">{file}</p>}
         <p role="status" className={`mt-2 text-sm ${ocr?.kind === "error" ? "text-negative" : ocr?.kind === "ok" ? "text-positive" : "text-muted"}`}>{ocr?.msg}</p>
       </div>
