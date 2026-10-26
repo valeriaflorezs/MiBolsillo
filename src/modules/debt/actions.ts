@@ -29,7 +29,7 @@ async function ownLoan(workspaceId: string, loanId: string) {
   const loan = await prisma.loan.findFirst({ where: { id: loanId, workspaceId }, select: { id: true } });
   if (!loan) throw new Error("NOT_FOUND");
 }
-const refresh = (w: string) => revalidatePath(`/w/${w}/debt`);
+const refresh = (w: string) => revalidatePath(`/w/${w}/accounts`);
 
 export async function createLoanAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
@@ -38,7 +38,7 @@ export async function createLoanAction(_: ActionState, fd: FormData): Promise<Ac
     rateLimit(`loan:${userId}`, 30, 3_600_000);
     if ((await prisma.loan.count({ where: { workspaceId: i.workspaceId } })) >= 20) throw userError("Alcanzaste el máximo de créditos.");
     const loan = await prisma.loan.create({ data: i, select: { id: true } });
-    redirect(`/w/${i.workspaceId}/debt?l=${loan.id}`);
+    redirect(`/w/${i.workspaceId}/accounts?t=creditos&l=${loan.id}`);
   });
 }
 
@@ -59,7 +59,7 @@ export async function deleteLoanAction(_: ActionState, fd: FormData): Promise<Ac
     await requireWorkspace(i.workspaceId, "dashboard:full");
     await ownLoan(i.workspaceId, i.loanId);
     await prisma.loan.delete({ where: { id: i.loanId } });
-    redirect(`/w/${i.workspaceId}/debt`);
+    redirect(`/w/${i.workspaceId}/accounts?t=creditos`);
   });
 }
 

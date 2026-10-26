@@ -33,8 +33,8 @@ ol,ul{padding-left:22px}
 <li><a href="#entrar">Entrar a la aplicación</a></li><li><a href="#navegar">Cómo moverte</a></li><li><a href="#roles">Roles y permisos</a></li>
 <li><a href="#resumen">Resumen</a></li><li><a href="#gasto">Registrar un gasto o ingreso</a></li><li><a href="#movs">Movimientos</a></li>
 <li><a href="#pend">Pendientes</a></li><li><a href="#capex">CAPEX</a></li><li><a href="#reservas">Reservas</a></li><li><a href="#fijos">Gastos fijos</a></li>
-<li><a href="#pyg">Estado de resultados (PyG)</a></li><li><a href="#stats">Estadísticas</a></li><li><a href="#deuda">Deuda bancaria</a></li>
-<li><a href="#lote">Carga en lote</a></li><li><a href="#config">Presupuesto, categorías, cuentas y propiedades</a></li>
+<li><a href="#pyg">Estado de resultados (PyG)</a></li><li><a href="#stats">Estadísticas</a></li><li><a href="#deuda">Cuentas, tarjetas y créditos</a></li>
+<li><a href="#lote">Carga en lote</a></li><li><a href="#config">Presupuesto, categorías y propiedades</a></li>
 <li><a href="#miembros">Miembros y acceso de solo lectura</a></li><li><a href="#movil">Uso en el celular y tema oscuro</a></li><li><a href="#faq">Preguntas frecuentes</a></li></ol></nav>
 
 <h2 id="entrar">1. Entrar a la aplicación</h2>
@@ -102,15 +102,27 @@ ol,ul{padding-left:22px}
 <p>Elige Hoy, Semana, Mes o Año; compara con el periodo anterior y mira los gastos por categoría y los mayores proveedores.</p>
 <figure class="full"><img src="img/09-estadisticas.jpg" alt="Estadísticas"><figcaption>Estadísticas por periodo.</figcaption></figure>
 
-<h2 id="deuda">13. Deuda bancaria</h2>
-<p>Seguimiento de un crédito con el banco. Crea el crédito con monto, banco, tasa (E.A. o mensual), plazo en meses, fecha de la primera cuota y, si la tienes, la cuota que cobra el banco; si no, se calcula con cuota fija.</p>
+<h2 id="deuda">13. Cuentas, tarjetas y créditos</h2>
+<p>Todo el dinero y las deudas viven en un solo módulo: <b>Más → Cuentas y deudas</b>. Arriba ves cuatro cifras: <b>Dinero en cuentas</b>, <b>Deuda en tarjetas</b>, <b>Saldo de créditos</b> y <b>Posición neta</b> (dinero menos deudas). Debajo hay tres pestañas. Solo el administrador puede editar; el rol de solo lectura lo ve todo.</p>
+<h3>Cuentas</h3>
+<p>Efectivo, bancos y billeteras con su saldo. Edita nombre, tipo y saldo inicial, o archiva una cuenta.</p>
+<figure class="full"><img src="img/13a-modulo-cuentas.jpg" alt="Pestaña Cuentas"><figcaption>Pestaña Cuentas.</figcaption></figure>
+<h3>Tarjetas de crédito</h3>
+<p>Cada tarjeta muestra la <b>deuda</b>, el <b>cupo disponible</b> y el porcentaje usado, el <b>próximo corte</b>, la <b>fecha límite de pago</b> (con los días que faltan), las compras desde el último corte, los cargos mensuales y los intereses estimados de un mes si no pagas.</p>
+<ol><li><b>Crear la tarjeta:</b> nombre, cupo total, deuda actual, día de corte, día límite de pago, tasa, <b>cuota de manejo</b> y <b>seguro</b> mensuales.</li>
+<li><b>Registrar compras:</b> en un movimiento nuevo, elige la tarjeta como cuenta. La deuda sube.</li>
+<li><b>Pagar la tarjeta:</b> elige desde qué cuenta pagas y el valor. Se registra como transferencia: baja la deuda y baja esa cuenta.</li>
+<li><b>Cargar cuota de manejo, seguro e intereses:</b> elige el mes y, si quieres, los intereses del extracto. Se suman a la deuda como gastos financieros (no entran al EBITDA) y no se duplican si repites el mes.</li></ol>
+<figure class="full"><img src="img/13b-modulo-tarjetas.jpg" alt="Pestaña Tarjetas de crédito"><figcaption>Pestaña Tarjetas de crédito.</figcaption></figure>
+<h3>Créditos</h3>
+<p>Seguimiento de un crédito con el banco. Créalo con monto, banco, tasa (E.A. o mensual), plazo en meses, fecha de la primera cuota, la cuota que cobra el banco (si la tienes), el <b>seguro mensual</b> y la cuota de manejo.</p>
 <ul><li><b>Saldo pendiente</b>, % de capital pagado, cuota actual y aviso de <b>cuotas atrasadas</b>.</li>
 <li><b>Próxima cuota</b>, intereses pagados vs. previstos, total pagado y <b>fecha estimada de fin</b> (se recalcula con abonos extra).</li>
 <li><b>Plan de pagos</b>: gráfica de capital e intereses por cuota y tabla de amortización.</li>
 <li><b>Seguro y cuota de manejo</b>: en «Editar los datos del crédito» escribe el <b>seguro mensual</b> que cobra el banco y la <b>cuota de manejo mensual</b> (tarjetas de crédito). No amortizan la deuda: se suman a cada cuota y la pantalla muestra la cuota total y lo pagado y pendiente por estos cargos. Para una tarjeta, crea un crédito con su deuda, tasa y plazo y llena estos campos. Al registrar una cuota, el valor incluido queda guardado en ese pago, así que cambiarlo después no altera los pagos anteriores.</li>
 <li><b>Pagos</b>: registra cada cuota o un <b>abono extra a capital</b>. Si no escribes los intereses del extracto, se calculan.</li>
 <li><b>Destino del crédito</b>: a dónde fue el dinero y su porcentaje; avisa si la suma supera el monto o queda algo sin asignar.</li></ul>
-<figure class="full"><img src="img/11-deuda.jpg" alt="Deuda bancaria"><figcaption>Deuda bancaria con plan de pagos, pagos y destino del crédito.</figcaption></figure>
+<figure class="full"><img src="img/13c-modulo-creditos.jpg" alt="Pestaña Créditos"><figcaption>Pestaña Créditos con plan de pagos, pagos y destino del crédito.</figcaption></figure>
 <div class="tip">Los pagos del crédito no descuentan de tus cuentas ni entran al PyG. Si quieres reflejarlos en una cuenta, regístralos además como movimiento.</div>
 
 <h2 id="lote">14. Carga en lote (editor tipo tabla)</h2>
@@ -125,13 +137,11 @@ ol,ul{padding-left:22px}
 <figure class="full"><img src="img/12c-lote-destino.jpg" alt="Carga en lote del destino del crédito"><figcaption>Pestaña Destino del crédito (requiere haber creado el crédito).</figcaption></figure>
 <div class="tip">Los ítems de CAPEX, gastos fijos y destinos que ya existen (mismo nombre) se omiten, así que puedes volver a cargar el mismo archivo sin duplicar. En Movimientos no hay esa protección. Máximo 500 filas por carga.</div>
 
-<h2 id="config">15. Presupuesto, categorías, cuentas y propiedades</h2>
+<h2 id="config">15. Presupuesto, categorías y propiedades</h2>
 <h3>Presupuesto</h3><p>Fija cuánto quieres gastar por categoría cada mes. El botón de copiar trae el presupuesto del mes anterior.</p>
 <figure class="full"><img src="img/13-presupuesto.jpg" alt="Presupuesto"></figure>
 <h3>Categorías</h3><p>Crea y edita categorías; la «línea del PyG» decide en qué parte del estado de resultados suman.</p>
 <figure class="full"><img src="img/14-categorias.jpg" alt="Categorías"></figure>
-<h3>Cuentas</h3><p>Efectivo, banco, billeteras digitales. Edita nombre, tipo y saldo inicial, o archiva una cuenta.</p>
-<figure class="full"><img src="img/15-cuentas.jpg" alt="Cuentas"></figure>
 <h3>Propiedades</h3><p>En negocios Airbnb, administra tus apartamentos.</p>
 <figure class="full"><img src="img/16-propiedades.jpg" alt="Propiedades"></figure>
 <h3>Lista de deseos</h3><p>Anota compras que planeas, con tienda y precio estimado.</p>

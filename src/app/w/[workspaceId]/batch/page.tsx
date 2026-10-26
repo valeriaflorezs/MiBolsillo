@@ -22,7 +22,7 @@ export default async function BatchPage({ params, searchParams }: { params: Prom
   const base = `/w/${workspaceId}/batch`;
   const needsProperty = (kind === "capex" || kind === "fixed") && properties.length === 0;
   const blocker = needsProperty ? "Primero crea una propiedad en la sección Propiedades."
-    : kind === "allocations" && loans.length === 0 ? <>Primero registra el crédito en <Link className="font-medium underline" href={`/w/${workspaceId}/debt`}>Deuda bancaria</Link>; luego vuelve aquí para cargar su destino.</>
+    : kind === "allocations" && loans.length === 0 ? <>Primero registra el crédito en <Link className="font-medium underline" href={`/w/${workspaceId}/accounts?t=creditos`}>Cuentas y deudas</Link>; luego vuelve aquí para cargar su destino.</>
     : null;
 
   return (

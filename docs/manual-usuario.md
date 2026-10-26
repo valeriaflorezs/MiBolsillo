@@ -23,7 +23,10 @@ Una aplicación web para llevar tus finanzas personales y las de tus negocios (p
 - **Editar como en una hoja:** Enter baja a la celda de abajo, × quita la fila.
 Pulsa **Revisar** para validar sin guardar; las filas con problema se marcan en rojo con el motivo. **Guardar** es todo o nada: si una fila falla, no se guarda ninguna. Los ítems de CAPEX y gastos fijos que ya existen (mismo nombre) se omiten, así que puedes volver a cargar el mismo archivo sin duplicar. Máximo 500 filas por carga.
 
-**Deuda bancaria.** En **Más → Deuda bancaria** (lo ve todo el equipo con acceso al resumen; solo el administrador edita). Crea el crédito con monto, banco, tasa (E.A. o mensual), plazo en meses, fecha de la primera cuota y, si la tienes, la cuota que cobra el banco (si no, se calcula con cuota fija). La pantalla muestra:
+**Cuentas y deudas.** Un solo módulo en **Más → Cuentas y deudas** (lo ve todo el equipo con acceso al resumen; solo el administrador edita). Arriba muestra cuatro cifras: *Dinero en cuentas*, *Deuda en tarjetas*, *Saldo de créditos* y *Posición neta* (dinero menos deudas). Tiene tres pestañas:
+- **Cuentas:** efectivo, bancos y billeteras, con su saldo. Edita nombre, tipo y saldo inicial, o archiva una cuenta.
+- **Tarjetas de crédito:** cada tarjeta muestra la **deuda**, el **cupo disponible** y el % usado, el **próximo corte**, la **fecha límite de pago** (con los días que faltan), las compras desde el último corte, los cargos mensuales y los intereses estimados de un mes si no pagas. Para crearla: nombre, cupo, deuda actual, día de corte, día de pago, tasa, **cuota de manejo** y **seguro**. Tus compras con la tarjeta se registran como gastos eligiéndola como cuenta. **Pagar la tarjeta** registra una transferencia desde tu banco (baja la deuda y baja ese banco). **Cargar cuota de manejo, seguro e intereses** suma esos cargos del mes como gastos financieros (no entran al EBITDA) y no se duplican si repites el mes.
+- **Créditos** (antes «Deuda bancaria»): Crea el crédito con monto, banco, tasa (E.A. o mensual), plazo en meses, fecha de la primera cuota y, si la tienes, la cuota que cobra el banco (si no, se calcula con cuota fija). La pantalla muestra:
 - **Saldo pendiente**, % del capital pagado y cuotas pagadas (de las del plan), con aviso de cuotas atrasadas.
 - **Próxima cuota**, intereses pagados vs. previstos, total pagado y **fecha estimada de fin** (se recalcula si haces abonos extra).
 - **Plan de pagos** con gráfica de capital e intereses por cuota y tabla de amortización.
@@ -70,7 +73,6 @@ Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de
 - **Pendientes (campana):** lo que debes pagar (con los vencidos marcados) y lo que te deben; márcalos como pagados o cobrados desde ahí.
 - **Airbnb:** el resumen muestra ocupación, tarifa media por noche (ADR) y RevPAR. En **Reservas** ves el detalle con el neto para ti; en **Propiedades** administras tus apartamentos.
 - **Categorías (Administrador):** crea y edita categorías; la “línea del PyG” decide dónde suma cada gasto en el estado de resultados.
-- **Cuentas:** edita nombre, tipo y saldo inicial, o archiva una cuenta.
 - **Presupuesto:** copia el presupuesto del mes anterior con un clic.
 - **Mi cuenta (avatar → Mi cuenta y privacidad):** ver tus negocios y **eliminar tu cuenta**. Si eres el único administrador de un negocio, ese negocio se elimina con todo; si hay otro administrador, los registros pasan a esa persona.
 

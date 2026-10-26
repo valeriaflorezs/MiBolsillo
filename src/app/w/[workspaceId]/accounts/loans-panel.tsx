@@ -8,12 +8,10 @@ import { FolderCard } from "@/components/ui/folder-card";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ProgressBar } from "@/components/ui/progress";
 import { prisma } from "@/lib/db";
-import { can, pageCtx } from "@/lib/auth/permissions";
 import { loanSummary, type LoanTerms } from "@/lib/finance/loan";
 import { cop, fmtDate, inputDate, num, pct, todayUtc } from "@/lib/format";
 import { addAllocationAction, addPaymentAction, createLoanAction, deleteAllocationAction, deleteLoanAction, deletePaymentAction, updateLoanAction } from "@/modules/debt/actions";
 
-export const metadata = { title: "Deuda bancaria" };
 const RATE_LABEL = { EFFECTIVE_ANNUAL: "E.A.", MONTHLY: "mensual" } as const;
 type LoanRow = Awaited<ReturnType<typeof prisma.loan.findMany>>[number];
 
@@ -36,18 +34,14 @@ function LoanFields({ loan }: { loan?: LoanRow }) {
   );
 }
 
-export default async function DebtPage({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ l?: string }> }) {
-  const { workspaceId } = await params;
-  const sp = await searchParams;
-  const ctx = await pageCtx(workspaceId, "finance:read");
-  const canEdit = can(ctx.role, "dashboard:full");
+export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId: string; loanId?: string; canEdit: boolean }) {
   const loans = await prisma.loan.findMany({ where: { workspaceId }, orderBy: { createdAt: "asc" } });
-  const base = `/w/${workspaceId}/debt`;
+  const base = `/w/${workspaceId}/accounts?t=creditos`;
 
   if (!loans.length) {
     return (
       <>
-        <div><h1 className="text-3xl font-semibold tracking-tight">Deuda bancaria</h1><p className="text-muted">Monitorea el saldo, las cuotas y el destino del dinero de tu crédito.</p></div>
+        <p className="text-muted">Monitorea el saldo, las cuotas y el destino del dinero de tu crédito.</p>
         {canEdit ? (
           <section className="card space-y-4">
             <h2 className="font-medium">Registrar el crédito</h2>
@@ -58,7 +52,7 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
     );
   }
 
-  const loan = loans.find((l) => l.id === sp.l) ?? loans[0];
+  const loan = loans.find((l) => l.id === loanId) ?? loans[0];
   const [payments, allocations] = await Promise.all([
     prisma.loanPayment.findMany({ where: { loanId: loan.id }, orderBy: { date: "asc" } }),
     prisma.loanAllocation.findMany({ where: { loanId: loan.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),
@@ -71,10 +65,10 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-3xl font-semibold tracking-tight">Deuda bancaria</h1><p className="text-muted">{loan.name}{loan.lender ? ` · ${loan.lender}` : ""} · {num(loan.ratePct)}% {RATE_LABEL[loan.rateType]} · {loan.termMonths} meses</p></div>
+        <div><p className="text-muted">{loan.name}{loan.lender ? ` · ${loan.lender}` : ""} · {num(loan.ratePct)}% {RATE_LABEL[loan.rateType]} · {loan.termMonths} meses</p></div>
         {loans.length > 1 && (
           <nav aria-label="Créditos" className="flex flex-wrap gap-2">
-            {loans.map((l) => <Link key={l.id} href={`${base}?l=${l.id}`} aria-current={l.id === loan.id ? "page" : undefined} className={l.id === loan.id ? "btn btn-primary" : "btn btn-ghost"}>{l.name}</Link>)}
+            {loans.map((l) => <Link key={l.id} href={`${base}&l=${l.id}`} aria-current={l.id === loan.id ? "page" : undefined} className={l.id === loan.id ? "btn btn-primary" : "btn btn-ghost"}>{l.name}</Link>)}
           </nav>
         )}
       </div>

@@ -253,6 +253,13 @@ model FinancialAccount {
   type           AccountType
   openingBalance Decimal     @default(0) @db.Decimal(14, 2)
   creditLimit    Decimal?    @db.Decimal(14, 2) // solo CREDIT_CARD
+  // Datos de la tarjeta de crédito (CREDIT_CARD): corte, pago, tasa y cargos mensuales
+  cutoffDay            Int? // día del mes en que cierra el extracto
+  paymentDay           Int? // día límite de pago
+  rateType             LoanRateType?
+  ratePct              Decimal?      @db.Decimal(7, 4)
+  insuranceMonthly     Decimal?      @db.Decimal(14, 2)
+  managementFeeMonthly Decimal?      @db.Decimal(14, 2)
   emoji          String?
   archived       Boolean     @default(false)
   createdAt      DateTime    @default(now())

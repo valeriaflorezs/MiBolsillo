@@ -52,7 +52,7 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 - *OCR falla:* revisar `ANTHROPIC_API_KEY`; el formulario sigue funcionando a mano. Guía de configuración paso a paso: `docs/comprobantes-ocr.md`.
 
 ## Rutas (v2.0)
-`/w/[id]`: resumen · `transactions` (lista+detalle, `[txId]/edit`, `export` CSV) · `expenses/new` · `pending` · `stats` · `accounts` · `categories` · `budget` · `wishlist` · `settings` · `more` · Airbnb: `capex` (+`[itemId]/edit`), `pyg`, `reservations` (+`[resId]/edit`), `fixed` (+`[fixedId]/edit`), `properties`. Globales: `/login`, `/workspaces/new`, `/invite/[token]`, `/account`, `/privacidad`, `/terminos`, `/api/health`.
+`/w/[id]`: resumen · `transactions` (lista+detalle, `[txId]/edit`, `export` CSV) · `expenses/new` · `pending` · `stats` · `accounts` (módulo «Cuentas y deudas»: pestañas cuentas, tarjetas y créditos; `/debt` redirige a `?t=creditos`) · `categories` · `budget` · `wishlist` · `settings` · `more` · Airbnb: `capex` (+`[itemId]/edit`), `pyg`, `reservations` (+`[resId]/edit`), `fixed` (+`[fixedId]/edit`), `properties`. Globales: `/login`, `/workspaces/new`, `/invite/[token]`, `/account`, `/privacidad`, `/terminos`, `/api/health`.
 
 ## Acciones del servidor
 `modules/core/{actions,finance-actions,crud-actions,receipt-actions}.ts` y `modules/airbnb/{actions,crud-actions}.ts`. Reglas comunes: zod → `requireWorkspace(permiso)` → verificación de pertenencia de cada ID relacionado → operación filtrada por `workspaceId`. `canMutateTx` (en `lib/auth/rbac.ts`) decide quién edita/elimina un movimiento (ADMIN todo; OPERATOR sus gastos < 48 h).

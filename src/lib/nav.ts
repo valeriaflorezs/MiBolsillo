@@ -19,8 +19,8 @@ export function tabsFor(workspaceId: string, type: WorkspaceType, role: Role): {
     if (can(role, "data:read") && reader) primary.push({ href: `${b}/reservations`, label: "Reservas", icon: "res" });
     if (can(role, "airbnb:manage")) more.push({ href: `${b}/fixed`, label: "Gastos fijos", icon: "fixed" }, { href: `${b}/properties`, label: "Propiedades", icon: "props" });
   }
-  if (admin) more.push({ href: `${b}/accounts`, label: "Cuentas", icon: "accounts" }, { href: `${b}/budget`, label: "Presupuesto", icon: "budget" }, { href: `${b}/categories`, label: "Categorías", icon: "cats" });
-  if (reader) more.push({ href: `${b}/debt`, label: "Deuda bancaria", icon: "debt" });
+  if (reader) more.push({ href: `${b}/accounts`, label: "Cuentas y deudas", icon: "accounts" });
+  if (admin) more.push({ href: `${b}/budget`, label: "Presupuesto", icon: "budget" }, { href: `${b}/categories`, label: "Categorías", icon: "cats" });
   if (admin) more.push({ href: `${b}/batch`, label: "Carga en lote", icon: "batch" });
   if (writer) more.push({ href: `${b}/wishlist`, label: "Lista de deseos", icon: "wish" });
   if (can(role, "member:manage")) more.push({ href: `${b}/settings`, label: "Miembros y ajustes", icon: "settings" });
