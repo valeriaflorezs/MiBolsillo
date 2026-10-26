@@ -27,7 +27,8 @@ Pulsa **Revisar** para validar sin guardar; las filas con problema se marcan en 
 - **Saldo pendiente**, % del capital pagado y cuotas pagadas (de las del plan), con aviso de cuotas atrasadas.
 - **Próxima cuota**, intereses pagados vs. previstos, total pagado y **fecha estimada de fin** (se recalcula si haces abonos extra).
 - **Plan de pagos** con gráfica de capital e intereses por cuota y tabla de amortización.
-- **Pagos**: registra cada cuota o **abono extra a capital**. Si no indicas los intereses del extracto, se calculan (saldo × tasa mensual); si los sabes, escríbelos para que cuadre con el banco.
+- **Seguro y cuota de manejo**: en los datos del crédito puedes escribir el **seguro mensual** (el que cobran los bancos) y la **cuota de manejo mensual** (tarjetas de crédito). No amortizan la deuda: se suman a cada cuota y la pantalla muestra la cuota total, cuánto llevas pagado en seguro/manejo y cuánto falta. Para una tarjeta, crea un crédito con su deuda, tasa y plazo (o cuota) y llena estos campos.
+- **Pagos**: registra cada cuota o **abono extra a capital**. Al registrar una cuota, el campo «Seguro y cuota de manejo incluidos en el pago» viene con los valores actuales; ese valor queda guardado en el pago, así que cambiarlo después no altera pagos anteriores. Si no indicas los intereses del extracto, se calculan (saldo × tasa mensual); si los sabes, escríbelos para que cuadre con el banco.
 - **Destino del crédito**: a dónde fue el dinero (inversión Airbnb, tarjetas, ahorro…), con su porcentaje del crédito. Avisa si la suma supera el monto o si queda algo sin asignar. Puedes pegarlo desde Excel en **Carga en lote → Destino del crédito**.
 Nota: los pagos del crédito no descuentan de tus cuentas ni entran al PyG; es un seguimiento de la deuda. Si quieres reflejarlos en una cuenta, regístralos además como movimiento.
 

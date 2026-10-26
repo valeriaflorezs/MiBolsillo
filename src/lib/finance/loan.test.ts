@@ -51,4 +51,26 @@ describe("crédito", () => {
     expect(addMonths(D("2026-01-31"), 1).toISOString().slice(0, 10)).toBe("2026-02-28");
     expect(addMonths(D("2026-11-15"), 3).toISOString().slice(0, 10)).toBe("2027-02-15");
   });
+
+  it("el seguro y la cuota de manejo se suman a la cuota sin amortizar", () => {
+    const W = { ...T, insuranceMonthly: 30_000, managementFeeMonthly: 20_000 };
+    expect(schedule(W)[0].payment).toBeCloseTo(schedule(T)[0].payment, 6); // capital + intereses no cambian
+    expect(schedule(W)[0].fees).toBe(50_000);
+    const s = loanSummary(W, [], D("2026-11-01"));
+    expect(s.cuotaTotal).toBeCloseTo(s.cuota + 50_000, 6);
+    expect(s.plannedFees).toBe(50_000 * s.plan.length);
+  });
+
+  it("un pago con seguro descuenta esos cargos antes de intereses y capital", () => {
+    const total = schedule(T)[0].payment + 50_000;
+    const a = applyPayments(T, [{ date: D("2026-11-15"), kind: "INSTALLMENT", amount: total, fees: 50_000 }]);
+    const b = applyPayments(T, [{ date: D("2026-11-15"), kind: "INSTALLMENT", amount: schedule(T)[0].payment }]);
+    expect(a.balance).toBeCloseTo(b.balance, 6);
+    expect(a.paidFees).toBe(50_000);
+    expect(a.paidTotal).toBeCloseTo(total, 6);
+    // sin snapshot de cargos (pagos antiguos) todo el pago se aplica como antes
+    expect(applyPayments(T, [{ date: D("2026-11-15"), kind: "INSTALLMENT", amount: total }]).paidFees).toBe(0);
+    // un abono extra ignora los cargos
+    expect(applyPayments(T, [{ date: D("2026-11-15"), kind: "EXTRA", amount: 100_000, fees: 50_000 }]).paidFees).toBe(0);
+  });
 });

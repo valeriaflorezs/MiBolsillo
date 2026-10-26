@@ -508,6 +508,8 @@ model Loan {
   termMonths       Int
   firstPaymentDate DateTime
   monthlyPayment   Decimal?     @db.Decimal(14, 2) // cuota informada por el banco; si es null se calcula
+  insuranceMonthly     Decimal? @db.Decimal(14, 2) // seguro mensual (de vida/deudores, tarjetas): se suma a cada cuota
+  managementFeeMonthly Decimal? @db.Decimal(14, 2) // cuota de manejo mensual (tarjetas de crédito)
   notes            String?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -527,6 +529,7 @@ model LoanPayment {
   kind             LoanPaymentKind @default(INSTALLMENT)
   amount           Decimal         @db.Decimal(14, 2)
   interestOverride Decimal?        @db.Decimal(14, 2) // intereses reales del extracto, si los tienes
+  fees             Decimal?        @db.Decimal(14, 2) // seguro y cuota de manejo incluidos en este pago (no amortizan)
   note             String?
   createdAt        DateTime        @default(now())
 

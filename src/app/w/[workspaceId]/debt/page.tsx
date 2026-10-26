@@ -29,6 +29,8 @@ function LoanFields({ loan }: { loan?: LoanRow }) {
       <div><label className="label" htmlFor="termMonths">Plazo (meses)</label><input id="termMonths" name="termMonths" type="number" min="1" max="600" step="1" required defaultValue={loan?.termMonths} className="input" /></div>
       <div><label className="label" htmlFor="firstPaymentDate">Fecha de la primera cuota</label><input id="firstPaymentDate" name="firstPaymentDate" type="date" required defaultValue={loan ? inputDate(loan.firstPaymentDate) : undefined} className="input" /></div>
       <div><label className="label" htmlFor="monthlyPayment">Cuota del banco (opcional)</label><input id="monthlyPayment" name="monthlyPayment" type="number" min="0" step="any" defaultValue={loan?.monthlyPayment ? num(loan.monthlyPayment) : undefined} className="input" placeholder="Si la dejas vacía, se calcula" /></div>
+      <div><label className="label" htmlFor="insuranceMonthly">Seguro mensual (opcional)</label><input id="insuranceMonthly" name="insuranceMonthly" type="number" min="0" step="any" defaultValue={loan?.insuranceMonthly ? num(loan.insuranceMonthly) : undefined} className="input" placeholder="Seguro de vida / deudores" /></div>
+      <div><label className="label" htmlFor="managementFeeMonthly">Cuota de manejo mensual (opcional)</label><input id="managementFeeMonthly" name="managementFeeMonthly" type="number" min="0" step="any" defaultValue={loan?.managementFeeMonthly ? num(loan.managementFeeMonthly) : undefined} className="input" placeholder="Tarjetas de crédito" /></div>
       <div><label className="label" htmlFor="notes">Notas</label><input id="notes" name="notes" defaultValue={loan?.notes ?? ""} className="input" /></div>
     </div>
   );
@@ -61,8 +63,8 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
     prisma.loanPayment.findMany({ where: { loanId: loan.id }, orderBy: { date: "asc" } }),
     prisma.loanAllocation.findMany({ where: { loanId: loan.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),
   ]);
-  const terms: LoanTerms = { principal: num(loan.principal), rateType: loan.rateType, ratePct: num(loan.ratePct), termMonths: loan.termMonths, firstPaymentDate: loan.firstPaymentDate, monthlyPayment: loan.monthlyPayment ? num(loan.monthlyPayment) : null };
-  const s = loanSummary(terms, payments.map((p) => ({ id: p.id, date: p.date, kind: p.kind, amount: num(p.amount), interestOverride: p.interestOverride ? num(p.interestOverride) : null })), todayUtc());
+  const terms: LoanTerms = { principal: num(loan.principal), rateType: loan.rateType, ratePct: num(loan.ratePct), termMonths: loan.termMonths, firstPaymentDate: loan.firstPaymentDate, monthlyPayment: loan.monthlyPayment ? num(loan.monthlyPayment) : null, insuranceMonthly: loan.insuranceMonthly ? num(loan.insuranceMonthly) : null, managementFeeMonthly: loan.managementFeeMonthly ? num(loan.managementFeeMonthly) : null };
+  const s = loanSummary(terms, payments.map((p) => ({ id: p.id, date: p.date, kind: p.kind, amount: num(p.amount), interestOverride: p.interestOverride ? num(p.interestOverride) : null, fees: p.fees ? num(p.fees) : null })), todayUtc());
   const allocTotal = allocations.reduce((a, x) => a + num(x.amount), 0);
   const paidOff = s.balance <= 0.5;
 
@@ -90,21 +92,21 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
       </section>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Próxima cuota" value={s.next ? cop(s.next.payment) : "—"} hint={s.next ? `${fmtDate(s.next.date)} · cuota ${s.next.n}${s.overdue ? " (atrasada)" : ""}` : "Sin cuotas pendientes"} tone={s.overdue ? "negative" : undefined} icon={<CalendarClock size={16} />} />
+        <KpiCard title="Próxima cuota" value={s.next ? cop(s.next.payment + s.next.fees) : "—"} hint={s.next ? `${fmtDate(s.next.date)} · cuota ${s.next.n}${s.overdue ? " (atrasada)" : ""}${s.fees ? ` · incluye ${cop(s.fees)} de seguro/manejo` : ""}` : "Sin cuotas pendientes"} tone={s.overdue ? "negative" : undefined} icon={<CalendarClock size={16} />} />
         <KpiCard title="Intereses pagados" value={cop(s.paidInterest)} hint={`de ${cop(s.plannedInterest)} previstos en el plan`} icon={<Percent size={16} />} />
-        <KpiCard title="Pagado en total" value={cop(s.paidTotal)} hint={`${payments.length} pago(s) registrado(s)`} icon={<PiggyBank size={16} />} />
-        <KpiCard title="Termina aprox." value={s.payoffDate ? fmtDate(s.payoffDate) + " " + s.payoffDate.getUTCFullYear() : paidOff ? "Saldado" : "—"} hint={s.monthsLeft === null ? (paidOff ? undefined : "La cuota no cubre los intereses") : `${s.monthsLeft} mes(es) · intereses restantes ≈ ${cop(s.interestLeft ?? 0)}`} icon={<Landmark size={16} />} />
+        <KpiCard title="Pagado en total" value={cop(s.paidTotal)} hint={`${payments.length} pago(s)${s.paidFees ? ` · seguro y manejo ${cop(s.paidFees)}` : ""}`} icon={<PiggyBank size={16} />} />
+        <KpiCard title="Termina aprox." value={s.payoffDate ? fmtDate(s.payoffDate) + " " + s.payoffDate.getUTCFullYear() : paidOff ? "Saldado" : "—"} hint={s.monthsLeft === null ? (paidOff ? undefined : "La cuota no cubre los intereses") : `${s.monthsLeft} mes(es) · intereses restantes ≈ ${cop(s.interestLeft ?? 0)}${s.feesLeft ? ` · seguro/manejo ≈ ${cop(s.feesLeft)}` : ""}`} icon={<Landmark size={16} />} />
       </div>
 
       <section className="card space-y-4" aria-label="Plan de pagos">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-medium">Plan de pagos</h2><p className="text-sm text-muted">Cuota mensual {cop(s.cuota)}{loan.monthlyPayment ? " (informada por el banco)" : " (calculada)"}</p></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-medium">Plan de pagos</h2><p className="text-sm text-muted">Cuota mensual {cop(s.cuota)}{loan.monthlyPayment ? " (informada por el banco)" : " (calculada)"}{s.fees > 0 && <> + seguro/manejo {cop(s.fees)} = <strong>{cop(s.cuotaTotal)}</strong></>}</p></div>
         <AmortizationChart rows={s.plan} paidCount={Math.min(s.installmentsPaid, s.plan.length)} />
         <details>
           <summary className="cursor-pointer text-sm font-medium">Ver tabla de amortización</summary>
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full"><thead><tr><th className="th">#</th><th className="th">Fecha</th><th className="th text-right">Cuota</th><th className="th text-right">Intereses</th><th className="th text-right">Capital</th><th className="th text-right">Saldo</th></tr></thead>
+            <table className="w-full"><thead><tr><th className="th">#</th><th className="th">Fecha</th><th className="th text-right">Cuota</th><th className="th text-right">Intereses</th><th className="th text-right">Capital</th>{s.fees > 0 && <th className="th text-right">Seguro/manejo</th>}<th className="th text-right">Saldo</th></tr></thead>
               <tbody className="divide-y divide-line">{s.plan.map((r, i) => (
-                <tr key={r.n} className={i < s.installmentsPaid ? "bg-canvas/60" : ""}><td className="td">{r.n}</td><td className="td">{fmtDate(r.date)} {r.date.getUTCFullYear()}</td><td className="td text-right">{cop(r.payment)}</td><td className="td text-right">{cop(r.interest)}</td><td className="td text-right">{cop(r.principal)}</td><td className="td text-right">{cop(r.balance)}</td></tr>
+                <tr key={r.n} className={i < s.installmentsPaid ? "bg-canvas/60" : ""}><td className="td">{r.n}</td><td className="td">{fmtDate(r.date)} {r.date.getUTCFullYear()}</td><td className="td text-right">{cop(r.payment + r.fees)}</td><td className="td text-right">{cop(r.interest)}</td><td className="td text-right">{cop(r.principal)}</td>{s.fees > 0 && <td className="td text-right">{cop(r.fees)}</td>}<td className="td text-right">{cop(r.balance)}</td></tr>
               ))}</tbody></table>
           </div>
         </details>
@@ -120,7 +122,7 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
                   <span className="font-medium">{fmtDate(p.date)} {p.date.getUTCFullYear()} · {cop(p.amount)} <Chip tone={p.kind === "EXTRA" ? "brand" : "neutral"}>{p.kind === "EXTRA" ? "Abono extra" : "Cuota"}</Chip></span>
                   {canEdit && p.id && <DeleteButton action={deletePaymentAction} fields={{ workspaceId, paymentId: p.id }} label="Quitar" confirmText="¿Quitar este pago?" />}
                 </div>
-                <p className="mt-1 text-muted">Capital {cop(p.principal)} · Intereses {cop(p.interest)} · Saldo después {cop(p.balanceAfter)}</p>
+                <p className="mt-1 text-muted">Capital {cop(p.principal)} · Intereses {cop(p.interest)}{p.fees > 0 && <> · Seguro/manejo {cop(p.fees)}</>} · Saldo después {cop(p.balanceAfter)}</p>
               </li>
             ))}
           </ul>
@@ -130,8 +132,9 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
               <div className="grid gap-3 sm:grid-cols-2">
                 <div><label className="label" htmlFor="pdate">Fecha</label><input id="pdate" name="date" type="date" required defaultValue={inputDate(todayUtc())} className="input" /></div>
                 <div><label className="label" htmlFor="pkind">Tipo</label><select id="pkind" name="kind" className="input"><option value="INSTALLMENT">Cuota</option><option value="EXTRA">Abono extra a capital</option></select></div>
-                <div><label className="label" htmlFor="pamount">Valor pagado</label><input id="pamount" name="amount" type="number" min="1" step="any" required className="input" defaultValue={Math.round(s.cuota)} /></div>
+                <div><label className="label" htmlFor="pamount">Valor pagado</label><input id="pamount" name="amount" type="number" min="1" step="any" required className="input" defaultValue={Math.round(s.cuotaTotal)} /></div>
                 <div><label className="label" htmlFor="pint">Intereses del extracto (opcional)</label><input id="pint" name="interestOverride" type="number" min="0" step="any" className="input" placeholder="Si no, se calculan" /></div>
+                <div className="sm:col-span-2"><label className="label" htmlFor="pfees">Seguro y cuota de manejo incluidos en el pago</label><input id="pfees" name="fees" type="number" min="0" step="any" className="input" defaultValue={s.fees > 0 ? Math.round(s.fees) : undefined} placeholder="0 si el pago no los incluye" /><p className="mt-1 text-xs text-muted">Se restan del pago antes de calcular intereses y capital. En un abono extra a capital se ignoran.</p></div>
               </div>
             </ActionForm>
           )}

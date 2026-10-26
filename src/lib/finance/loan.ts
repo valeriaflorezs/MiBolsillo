@@ -1,9 +1,9 @@
 // Matemática de créditos (sistema francés: cuota fija). Pura y testeable; las fechas son UTC.
 export type RateType = "EFFECTIVE_ANNUAL" | "MONTHLY";
-export type LoanTerms = { principal: number; rateType: RateType; ratePct: number; termMonths: number; firstPaymentDate: Date; monthlyPayment?: number | null };
-export type ScheduleRow = { n: number; date: Date; payment: number; interest: number; principal: number; balance: number };
-export type Payment = { id?: string; date: Date; kind: "INSTALLMENT" | "EXTRA"; amount: number; interestOverride?: number | null };
-export type AppliedPayment = Payment & { interest: number; principal: number; balanceAfter: number };
+export type LoanTerms = { principal: number; rateType: RateType; ratePct: number; termMonths: number; firstPaymentDate: Date; monthlyPayment?: number | null; insuranceMonthly?: number | null; managementFeeMonthly?: number | null };
+export type ScheduleRow = { n: number; date: Date; payment: number; interest: number; principal: number; balance: number; fees: number };
+export type Payment = { id?: string; date: Date; kind: "INSTALLMENT" | "EXTRA"; amount: number; interestOverride?: number | null; fees?: number | null };
+export type AppliedPayment = Payment & { fees: number; interest: number; principal: number; balanceAfter: number };
 
 /** Tasa mensual: la E.A. se convierte con (1+ea)^(1/12) − 1; la mensual se usa tal cual. */
 export const monthlyRate = (type: RateType, ratePct: number) => (type === "MONTHLY" ? ratePct / 100 : Math.pow(1 + ratePct / 100, 1 / 12) - 1);
@@ -16,6 +16,9 @@ export function addMonths(d: Date, k: number) {
   const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
   return new Date(Date.UTC(y, m, Math.min(day, last)));
 }
+
+/** Cargos mensuales que no amortizan (seguro y cuota de manejo): se pagan junto con cada cuota. */
+export const feesOf = (t: LoanTerms) => (t.insuranceMonthly ?? 0) + (t.managementFeeMonthly ?? 0);
 
 export const cuotaOf = (t: LoanTerms) => t.monthlyPayment && t.monthlyPayment > 0 ? t.monthlyPayment : installment(t.principal, monthlyRate(t.rateType, t.ratePct), t.termMonths);
 
@@ -30,7 +33,7 @@ export function schedule(t: LoanTerms): ScheduleRow[] {
     const pay = Math.min(c, bal + interest);
     const principal = pay - interest;
     bal = Math.max(0, bal - principal);
-    rows.push({ n, date: addMonths(t.firstPaymentDate, n - 1), payment: pay, interest, principal, balance: bal < 0.5 ? 0 : bal });
+    rows.push({ n, date: addMonths(t.firstPaymentDate, n - 1), payment: pay, interest, principal, balance: bal < 0.5 ? 0 : bal, fees: feesOf(t) });
   }
   return rows;
 }
@@ -38,14 +41,15 @@ export function schedule(t: LoanTerms): ScheduleRow[] {
 /** Aplica los pagos reales en orden: cada cuota paga primero intereses (saldo × tasa); un abono extra va todo a capital. */
 export function applyPayments(t: LoanTerms, payments: Payment[]) {
   const r = monthlyRate(t.rateType, t.ratePct);
-  let bal = t.principal, paidInterest = 0, paidPrincipal = 0;
+  let bal = t.principal, paidInterest = 0, paidPrincipal = 0, paidFees = 0;
   const rows: AppliedPayment[] = [...payments].sort((a, b) => a.date.getTime() - b.date.getTime()).map((p) => {
-    const interest = p.kind === "EXTRA" ? 0 : Math.min(p.interestOverride ?? bal * r, p.amount);
-    const principal = Math.min(p.amount - interest, bal);
-    bal -= principal; paidInterest += interest; paidPrincipal += principal;
-    return { ...p, interest, principal, balanceAfter: bal };
+    const fees = p.kind === "EXTRA" ? 0 : Math.min(p.fees ?? 0, p.amount);
+    const interest = p.kind === "EXTRA" ? 0 : Math.min(p.interestOverride ?? bal * r, p.amount - fees);
+    const principal = Math.min(p.amount - fees - interest, bal);
+    bal -= principal; paidInterest += interest; paidPrincipal += principal; paidFees += fees;
+    return { ...p, fees, interest, principal, balanceAfter: bal };
   });
-  return { rows, balance: Math.max(0, bal), paidInterest, paidPrincipal, paidTotal: paidInterest + paidPrincipal };
+  return { rows, balance: Math.max(0, bal), paidInterest, paidPrincipal, paidFees, paidTotal: paidInterest + paidPrincipal + paidFees };
 }
 
 /** Meses que faltan para saldar `balance` con cuota `c` (Infinity si la cuota no cubre los intereses). */
@@ -74,5 +78,8 @@ export function loanSummary(t: LoanTerms, payments: Payment[], today: Date) {
     payoffDate: monthsLeft === null ? null : done.balance <= 0.5 ? null : addMonths(anchor, Math.max(0, monthsLeft - 1)),
     interestLeft: Number.isFinite(months) ? Math.max(0, c * months - done.balance) : null,
     plannedInterest: plan.reduce((a, p) => a + p.interest, 0),
+    fees: feesOf(t), cuotaTotal: c + feesOf(t),
+    plannedFees: feesOf(t) * plan.length,
+    feesLeft: monthsLeft === null ? null : feesOf(t) * monthsLeft,
   };
 }

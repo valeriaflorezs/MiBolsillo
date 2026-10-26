@@ -19,6 +19,8 @@ const loanFields = {
   termMonths: z.coerce.number({ message: "Plazo inválido" }).int("El plazo va en meses enteros").min(1).max(600),
   firstPaymentDate: dateStr,
   monthlyPayment: optMoney,
+  insuranceMonthly: optMoney,
+  managementFeeMonthly: optMoney,
   notes: optText(500),
 };
 
@@ -45,7 +47,7 @@ export async function updateLoanAction(_: ActionState, fd: FormData): Promise<Ac
     const { workspaceId, loanId, ...data } = z.object({ workspaceId: id, loanId: id, ...loanFields }).parse(Object.fromEntries(fd));
     await requireWorkspace(workspaceId, "dashboard:full");
     await ownLoan(workspaceId, loanId);
-    await prisma.loan.update({ where: { id: loanId }, data: { ...data, monthlyPayment: data.monthlyPayment ?? null } });
+    await prisma.loan.update({ where: { id: loanId }, data: { ...data, monthlyPayment: data.monthlyPayment ?? null, insuranceMonthly: data.insuranceMonthly ?? null, managementFeeMonthly: data.managementFeeMonthly ?? null } });
     refresh(workspaceId);
     return "Crédito actualizado";
   });
@@ -65,13 +67,14 @@ export async function addPaymentAction(_: ActionState, fd: FormData): Promise<Ac
   return run(async () => {
     const i = z.object({
       workspaceId: id, loanId: id, date: dateStr, kind: z.enum(["INSTALLMENT", "EXTRA"]),
-      amount: positive, interestOverride: optMoney, note: optText(200),
+      amount: positive, interestOverride: optMoney, fees: optMoney, note: optText(200),
     }).parse(Object.fromEntries(fd));
     const { userId } = await requireWorkspace(i.workspaceId, "dashboard:full");
     rateLimit(`loanpay:${userId}`, 120, 3_600_000);
     await ownLoan(i.workspaceId, i.loanId);
-    if (i.interestOverride !== undefined && i.interestOverride > i.amount) throw userError("Los intereses no pueden superar el pago.");
-    await prisma.loanPayment.create({ data: { ...i, interestOverride: i.interestOverride ?? null } });
+    const fees = i.kind === "EXTRA" ? undefined : i.fees; // un abono extra a capital no paga seguro ni manejo
+    if ((i.interestOverride ?? 0) + (fees ?? 0) > i.amount) throw userError("Intereses más seguro y manejo no pueden superar el pago.");
+    await prisma.loanPayment.create({ data: { ...i, interestOverride: i.interestOverride ?? null, fees: fees ?? null } });
     refresh(i.workspaceId);
     return "Pago registrado";
   });
