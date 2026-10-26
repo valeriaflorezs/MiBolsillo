@@ -24,8 +24,8 @@ export default async function EditCapex({ params }: { params: Promise<{ workspac
             <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" defaultValue={i.propertyId} className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
             <div><label className="label" htmlFor="capexCategory">Categoría</label><select id="capexCategory" name="capexCategory" defaultValue={i.capexCategory} className="input">{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
             <div><label className="label" htmlFor="itemDescription">Descripción</label><input id="itemDescription" name="itemDescription" required defaultValue={i.itemDescription} className="input" /></div>
-            <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" defaultValue={i.quantity} className="input" /></div>
-            <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" min="0" step="any" required defaultValue={num(i.budgetedUnitPrice)} className="input" /></div>
+            <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" max="10000" step="1" defaultValue={i.quantity} className="input" /></div>
+            <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" max="1000000000000" min="0" step="0.01" required defaultValue={num(i.budgetedUnitPrice)} className="input" /></div>
             <div><label className="label" htmlFor="store">Tienda</label><input id="store" name="store" defaultValue={i.store ?? ""} className="input" /></div>
           </div>
         </ActionForm>

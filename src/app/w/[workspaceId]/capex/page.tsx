@@ -55,7 +55,7 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
                     {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Deshacer" : "Comprado ✓"} variant={r.status === "PURCHASED" ? "ghost" : "primary"} className="flex items-center gap-2" resetOnSuccess={false}>
                       <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} />
                       <input type="hidden" name="intent" value={r.status === "PURCHASED" ? "undo" : "buy"} />
-                      {r.status === "PENDING" && <><label className="sr-only" htmlFor={`p${r.id}`}>Precio unitario real</label><input id={`p${r.id}`} name="actualUnitPrice" type="number" min="0" step="any" placeholder="Precio real" className="input !w-28" /></>}
+                      {r.status === "PENDING" && <><label className="sr-only" htmlFor={`p${r.id}`}>Precio unitario real</label><input id={`p${r.id}`} name="actualUnitPrice" type="number" max="1000000000000" min="0" step="0.01" placeholder="Precio real" className="input !w-28" /></>}
                     </ActionForm>}
                   </td>
                 </tr>
@@ -75,8 +75,8 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
               <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
               <div><label className="label" htmlFor="capexCategory">Categoría</label><select id="capexCategory" name="capexCategory" className="input">{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
               <div><label className="label" htmlFor="itemDescription">Descripción</label><input id="itemDescription" name="itemDescription" required className="input" placeholder="Nevera 300 L" /></div>
-              <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" defaultValue={1} className="input" /></div>
-              <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" min="0" step="any" required className="input" /></div>
+              <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" max="10000" step="1" defaultValue={1} className="input" /></div>
+              <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" max="1000000000000" min="0" step="0.01" required className="input" /></div>
               <div><label className="label" htmlFor="store">Tienda</label><input id="store" name="store" className="input" /></div>
             </div>
           </ActionForm>

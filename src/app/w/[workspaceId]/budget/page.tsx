@@ -38,7 +38,7 @@ export default async function Budget({ params, searchParams }: { params: Promise
                     <tr key={c.id}>
                       <td className="td">{c.emoji} {c.name}</td>
                       <td className="td"><label className="sr-only" htmlFor={`cat_${c.id}`}>Presupuesto {c.name}</label>
-                        <input id={`cat_${c.id}`} name={`cat_${c.id}`} type="number" min="0" step="any" defaultValue={r ? num(r.budget) : ""} className="input !w-36" /></td>
+                        <input id={`cat_${c.id}`} name={`cat_${c.id}`} type="number" max="1000000000000" min="0" step="0.01" defaultValue={r ? num(r.budget) : ""} className="input !w-36" /></td>
                       <td className="td text-right">{r ? cop(r.actual) : "—"}</td>
                       <td className={`td text-right ${r && r.actual > r.budget ? "text-negative" : ""}`}>{r && r.budget ? pct(r.actual / r.budget) : "—"}</td>
                     </tr>

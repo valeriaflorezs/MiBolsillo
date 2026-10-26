@@ -1,5 +1,7 @@
 import { unstable_rethrow } from "next/navigation";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
+
+z.config(z.locales.es()); // mensajes de validación en español para lo que no tenga texto propio
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | null;
 

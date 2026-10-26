@@ -22,7 +22,7 @@ export default async function Wishlist({ params }: { params: Promise<{ workspace
           <div className="grid gap-3 sm:grid-cols-3">
             <div><label className="label" htmlFor="itemName">Artículo</label><input id="itemName" name="itemName" required className="input" /></div>
             <div><label className="label" htmlFor="store">Tienda</label><input id="store" name="store" className="input" /></div>
-            <div><label className="label" htmlFor="estimatedPrice">Precio estimado</label><input id="estimatedPrice" name="estimatedPrice" type="number" min="1" step="any" required className="input" /></div>
+            <div><label className="label" htmlFor="estimatedPrice">Precio estimado</label><input id="estimatedPrice" name="estimatedPrice" type="number" max="1000000000000" min="0.01" step="0.01" required className="input" /></div>
           </div>
         </ActionForm>
       </section>

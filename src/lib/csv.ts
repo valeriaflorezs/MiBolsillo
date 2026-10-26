@@ -37,8 +37,9 @@ export function toObjects(rows: string[][]): Record<string, string>[] {
 
 /** "1.200.000", "1,200,000", "$ 75.900,00", "1200000" → número. Devuelve NaN si no es un monto. */
 export function parseMoney(raw: string): number {
-  const s = raw.replace(/[^\d.,-]/g, "");
-  if (!s) return NaN;
+  // Solo se toleran símbolos de moneda y espacios ("$ 1.200.000", "COP 50000"); cualquier otro texto ("12abc") es inválido.
+  const s = raw.replace(/\s|\u00a0|\$|COP/gi, "");
+  if (!s || !/^-?[\d.,]+$/.test(s)) return NaN;
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return Number(s.replace(/\./g, "").replace(",", "."));
   if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) return Number(s.replace(/,/g, ""));
   return Number(s.replace(",", "."));

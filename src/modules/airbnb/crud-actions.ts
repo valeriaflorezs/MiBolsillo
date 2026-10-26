@@ -6,7 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
-import { bool, dateStr, id, money, optText, positive } from "@/lib/validation";
+import { bool, dateStr, id, intBetween, money, opt, optText, positive } from "@/lib/validation";
 
 const refresh = (w: string) => revalidatePath(`/w/${w}`, "layout");
 const CAPEX_CAT = z.enum(["FURNITURE", "APPLIANCES", "RENOVATION", "DECOR", "LINENS_KITCHENWARE", "TECH", "OTHER"]);
@@ -30,7 +30,7 @@ export async function updateCapexItemAction(_: ActionState, fd: FormData): Promi
   return run(async () => {
     const i = z.object({
       workspaceId: id, itemId: id, propertyId: id, capexCategory: CAPEX_CAT, itemDescription: z.string().trim().min(2).max(120),
-      quantity: z.coerce.number().int().min(1).max(10_000), budgetedUnitPrice: money, store: optText(60),
+      quantity: intBetween(1, 10_000, "Cantidad"), budgetedUnitPrice: money, store: optText(60),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);
@@ -94,7 +94,7 @@ export async function updateFixedExpenseAction(_: ActionState, fd: FormData): Pr
     const i = z.object({
       workspaceId: id, fixedId: id, propertyId: id, concept: z.enum(["HOA", "UTILITIES", "SUBSCRIPTIONS", "MAINTENANCE", "OTHER"]),
       name: z.string().trim().min(2).max(80), amount: positive, frequency: z.enum(["MONTHLY", "BIMONTHLY", "QUARTERLY", "SEMIANNUAL", "ANNUAL"]),
-      dayOfMonth: z.coerce.number().int().min(1).max(28).default(1), active: bool,
+      dayOfMonth: opt(intBetween(1, 28, "Día del mes")).default(1), active: bool,
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);

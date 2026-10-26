@@ -6,11 +6,8 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { monthRange } from "@/lib/format";
+import { dateStr, id, intBetween, money, opt, optText, positive } from "@/lib/validation";
 
-const id = z.string().cuid();
-const money = z.coerce.number({ message: "Monto inválido" }).min(0, "No puede ser negativo").max(1e12);
-const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida").transform((s) => new Date(`${s}T00:00:00Z`));
-const optText = (n: number) => z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().max(n).optional());
 const refresh = (w: string) => revalidatePath(`/w/${w}`, "layout");
 
 async function ownProperty(workspaceId: string, propertyId: string) {
@@ -33,7 +30,7 @@ export async function addCapexAction(_: ActionState, fd: FormData): Promise<Acti
       workspaceId: id, propertyId: id,
       capexCategory: z.enum(["FURNITURE", "APPLIANCES", "RENOVATION", "DECOR", "LINENS_KITCHENWARE", "TECH", "OTHER"]),
       itemDescription: z.string().trim().min(2, "Describe el ítem").max(120),
-      quantity: z.coerce.number().int().min(1).max(10_000), budgetedUnitPrice: money, store: optText(60),
+      quantity: intBetween(1, 10_000, "Cantidad"), budgetedUnitPrice: money, store: optText(60),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);
@@ -48,7 +45,7 @@ export async function updateCapexAction(_: ActionState, fd: FormData): Promise<A
   return run(async () => {
     const i = z.object({
       workspaceId: id, itemId: id, intent: z.enum(["buy", "undo"]),
-      actualUnitPrice: z.preprocess((v) => (v === "" ? undefined : v), money.optional()),
+      actualUnitPrice: opt(money),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "capex:update");
     const item = await prisma.capexItem.findFirst({ where: { id: i.itemId, workspaceId: i.workspaceId } });
@@ -102,9 +99,9 @@ export async function createFixedExpenseAction(_: ActionState, fd: FormData): Pr
   return run(async () => {
     const i = z.object({
       workspaceId: id, propertyId: id, concept: z.enum(["HOA", "UTILITIES", "SUBSCRIPTIONS", "MAINTENANCE", "OTHER"]),
-      name: z.string().trim().min(2).max(80), amount: money.refine((n) => n > 0, "Monto inválido"),
+      name: z.string().trim().min(2).max(80), amount: positive,
       frequency: z.enum(["MONTHLY", "BIMONTHLY", "QUARTERLY", "SEMIANNUAL", "ANNUAL"]),
-      dayOfMonth: z.coerce.number().int().min(1).max(28).default(1),
+      dayOfMonth: opt(intBetween(1, 28, "Día del mes")).default(1),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);

@@ -97,11 +97,11 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
         )}
         <div>
           <label className="label" htmlFor="amount">Monto (COP)</label>
-          <input id="amount" name="amount" type="number" inputMode="decimal" min="1" step="any" required className="input" value={vals.amount} onChange={(e) => setVals({ ...vals, amount: e.target.value })} />
+          <input id="amount" name="amount" type="number" max="1000000000000" inputMode="decimal" min="0.01" step="0.01" required className="input" value={vals.amount} onChange={(e) => setVals({ ...vals, amount: e.target.value })} />
         </div>
         <div>
           <label className="label" htmlFor="quantity">Cantidad (opcional)</label>
-          <input id="quantity" name="quantity" type="number" inputMode="decimal" min="0" step="any" className="input" placeholder="Unidades compradas" value={vals.quantity} onChange={(e) => setVals({ ...vals, quantity: e.target.value })} />
+          <input id="quantity" name="quantity" type="number" max="10000000" inputMode="decimal" min="0.001" step="0.001" className="input" placeholder="Unidades compradas" value={vals.quantity} onChange={(e) => setVals({ ...vals, quantity: e.target.value })} />
         </div>
         <div>
           <label className="label" htmlFor="date">Fecha</label>

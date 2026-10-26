@@ -25,7 +25,7 @@ export default async function EditFixed({ params }: { params: Promise<{ workspac
             <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" defaultValue={f.propertyId} className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
             <div><label className="label" htmlFor="concept">Concepto</label><select id="concept" name="concept" defaultValue={f.concept} className="input">{Object.entries(CONCEPT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
             <div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required defaultValue={f.name} className="input" /></div>
-            <div><label className="label" htmlFor="amount">Monto</label><input id="amount" name="amount" type="number" min="1" step="any" required defaultValue={num(f.amount)} className="input" /></div>
+            <div><label className="label" htmlFor="amount">Monto</label><input id="amount" name="amount" type="number" max="1000000000000" min="0.01" step="0.01" required defaultValue={num(f.amount)} className="input" /></div>
             <div><label className="label" htmlFor="frequency">Frecuencia</label><select id="frequency" name="frequency" defaultValue={f.frequency} className="input">{Object.entries(FREQ).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
             <div><label className="label" htmlFor="dayOfMonth">Día del mes</label><input id="dayOfMonth" name="dayOfMonth" type="number" min="1" max="28" defaultValue={f.dayOfMonth ?? 1} className="input" /></div>
           </div>

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { norm, parseMoney, toObjects, parseCsv } from "@/lib/csv";
+import { numericInput } from "@/lib/validation";
 import type { CapexCategory, FixedExpenseConcept, Frequency, Prisma } from "@/generated/prisma/client";
 
 const MAX_ROWS = 500;
@@ -28,6 +29,8 @@ const FREQ: Record<string, Frequency> = {
 };
 
 const money = (v: string | undefined) => (v && v.trim() ? parseMoney(v) : undefined);
+/** ¿`n` tiene como máximo `k` decimales? */
+const maxDec = (n: number, k: number) => Math.abs(n * 10 ** k - Math.round(n * 10 ** k)) < 1e-6;
 
 function rowsOf(text: string) {
   const objs = toObjects(parseCsv(text));
@@ -58,7 +61,7 @@ export function parseCapex(objs: Obj[], existing: Set<string>, opts: CapexOpts =
   objs.forEach((o, row) => {
     const desc = z.string().trim().min(2).max(120).safeParse(o.descripcion ?? o.item ?? "");
     let cat = CAPEX[norm(o.categoria ?? "")] ?? (o.categoria ? undefined : "OTHER");
-    const qty = o.cantidad ? Number(o.cantidad.replace(",", ".")) : 1;
+    const qty = o.cantidad?.trim() ? numericInput(o.cantidad) : 1;
     const budget = money(o.precio_unitario_presupuestado ?? o.presupuesto);
     const actual = money(o.precio_unitario_real ?? o.real);
     if (!desc.success) return out.errors.push({ row, msg: "falta la descripción." });
@@ -67,9 +70,9 @@ export function parseCapex(objs: Obj[], existing: Set<string>, opts: CapexOpts =
       out.warnings.push({ row, msg: `categoría “${o.categoria}” no reconocida; se usará ${CAPEX_LABEL[cat]}.` });
     }
     if (!cat) return out.errors.push({ row, msg: `categoría “${o.categoria}” no reconocida.` });
-    if (!Number.isInteger(qty) || qty < 1 || qty > 10_000) return out.errors.push({ row, msg: "cantidad inválida." });
-    if (budget === undefined || !Number.isFinite(budget) || budget < 0) return out.errors.push({ row, msg: "precio presupuestado inválido." });
-    if (actual !== undefined && (!Number.isFinite(actual) || actual < 0)) return out.errors.push({ row, msg: "precio real inválido." });
+    if (!Number.isInteger(qty) || qty < 1 || qty > 10_000) return out.errors.push({ row, msg: "cantidad inválida (número entero entre 1 y 10000)." });
+    if (budget === undefined || !Number.isFinite(budget) || budget < 0 || budget > 1e12 || !maxDec(budget, 2)) return out.errors.push({ row, msg: "precio presupuestado inválido." });
+    if (actual !== undefined && (!Number.isFinite(actual) || actual < 0 || actual > 1e12 || !maxDec(actual, 2))) return out.errors.push({ row, msg: "precio real inválido." });
     if (seen.has(norm(desc.data))) { out.skipped++; return; } // idempotente: no duplica ítems ya cargados
     seen.add(norm(desc.data));
     const bought = actual !== undefined && actual > 0;
@@ -88,11 +91,11 @@ export function parseFixed(objs: Obj[], existing: Set<string>): Parsed<Omit<Pris
     const concept = CONCEPT[norm(o.concepto || "otro")];
     const freq = FREQ[norm(o.frecuencia || "mensual")];
     const amount = money(o.monto);
-    const day = o.dia ? Number(o.dia) : 1;
+    const day = o.dia?.trim() ? numericInput(o.dia) : 1;
     if (!name.success) return out.errors.push({ row, msg: "falta el nombre." });
     if (!concept) return out.errors.push({ row, msg: `concepto “${o.concepto}” no reconocido.` });
     if (!freq) return out.errors.push({ row, msg: `frecuencia “${o.frecuencia}” no reconocida.` });
-    if (amount === undefined || !Number.isFinite(amount) || amount <= 0) return out.errors.push({ row, msg: "monto inválido." });
+    if (amount === undefined || !Number.isFinite(amount) || amount <= 0 || amount > 1e12 || !maxDec(amount, 2)) return out.errors.push({ row, msg: "monto inválido (número positivo, máximo 2 decimales)." });
     if (!Number.isInteger(day) || day < 1 || day > 28) return out.errors.push({ row, msg: "día inválido (1–28)." });
     if (seen.has(norm(name.data))) { out.skipped++; return; }
     seen.add(norm(name.data));
@@ -110,7 +113,7 @@ export function parseAllocations(objs: Obj[], existing: Set<string>): Parsed<{ c
     const amount = money(o.valor);
     if (!name.success) return out.errors.push({ row, msg: "falta el concepto." });
     if (/^monto total/.test(norm(name.data).replace(/_/g, " "))) { out.skipped++; out.warnings.push({ row, msg: "es el monto total del crédito, no un destino: se omite." }); return; }
-    if (amount === undefined || !Number.isFinite(amount) || amount < 0 || amount > 1e12) return out.errors.push({ row, msg: "valor inválido." });
+    if (amount === undefined || !Number.isFinite(amount) || amount < 0 || amount > 1e12 || !maxDec(amount, 2)) return out.errors.push({ row, msg: "valor inválido (número, máximo 2 decimales)." });
     if ((o.categoria ?? "").length > 60) return out.errors.push({ row, msg: "categoría demasiado larga." });
     if (seen.has(norm(name.data))) { out.skipped++; return; }
     seen.add(norm(name.data));
@@ -145,13 +148,13 @@ export function parseTransactions(objs: Obj[], lk: TxLookups): Parsed<{ type: "E
     const type = TYPE[norm(o.tipo || "gasto")];
     const amount = money(o.monto);
     const status = STATUS[norm(o.estado || "pagado")];
-    const quantity = o.cantidad ? money(o.cantidad) : null;
+    const quantity = o.cantidad?.trim() ? numericInput(o.cantidad) : null;
     const accountId = o.cuenta ? acc.get(norm(o.cuenta)) : lk.accounts.length === 1 ? lk.accounts[0].id : undefined;
     const categoryId = o.categoria ? cat.get(norm(o.categoria.replace(/^\p{Extended_Pictographic}\s*/u, ""))) : null;
     if (!date) return out.errors.push({ row, msg: "fecha inválida (usa AAAA-MM-DD o DD/MM/AAAA)." });
     if (!type) return out.errors.push({ row, msg: `tipo “${o.tipo}” no reconocido (Gasto o Ingreso).` });
-    if (amount === undefined || !Number.isFinite(amount) || amount <= 0 || amount > 1e12) return out.errors.push({ row, msg: "monto inválido (positivo; el tipo define si es gasto o ingreso)." });
-    if (o.cantidad && (quantity === undefined || quantity === null || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1e7)) return out.errors.push({ row, msg: "cantidad inválida (número mayor a 0)." });
+    if (amount === undefined || !Number.isFinite(amount) || amount <= 0 || amount > 1e12 || !maxDec(amount, 2)) return out.errors.push({ row, msg: "monto inválido (número positivo, máximo 2 decimales; el tipo define si es gasto o ingreso)." });
+    if (o.cantidad && (quantity === undefined || quantity === null || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1e7 || !maxDec(quantity, 3))) return out.errors.push({ row, msg: "cantidad inválida (número mayor a 0, máximo 3 decimales)." });
     if (!status) return out.errors.push({ row, msg: `estado “${o.estado}” no reconocido (Pagado o Pendiente).` });
     if (!accountId) return out.errors.push({ row, msg: o.cuenta ? `cuenta “${o.cuenta}” no existe.` : "falta la cuenta." });
     if (o.categoria && !categoryId) return out.errors.push({ row, msg: `categoría “${o.categoria}” no existe.` });

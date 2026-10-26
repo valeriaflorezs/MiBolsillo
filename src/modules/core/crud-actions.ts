@@ -9,7 +9,7 @@ import { requireUser, requireWorkspace } from "@/lib/auth/permissions";
 import { canMutateTx } from "@/lib/auth/rbac";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { deleteObjects } from "@/lib/storage/r2";
-import { bool, dateStr, id, optId, optText, positive } from "@/lib/validation";
+import { bool, dateStr, id, opt, optId, optText, positive, quantity, signedMoney } from "@/lib/validation";
 
 const refresh = (w: string) => revalidatePath(`/w/${w}`, "layout");
 
@@ -31,7 +31,7 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
     const i = z.object({
       workspaceId: id, transactionId: id, type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]), status: z.enum(["PAID", "PENDING"]),
       amount: positive, date: dateStr, accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId,
-      quantity: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number({ message: "Cantidad inválida" }).positive("La cantidad debe ser mayor a 0").max(1e7).optional()),
+      quantity: opt(quantity),
       vendor: optText(80), description: optText(300),
     }).parse(Object.fromEntries(fd));
     const { userId, role } = await requireWorkspace(i.workspaceId, "transaction:create");
@@ -69,7 +69,7 @@ export async function updateAccountAction(_: ActionState, fd: FormData): Promise
   return run(async () => {
     const i = z.object({
       workspaceId: id, accountId: id, name: z.string().trim().min(2, "Nombre muy corto").max(40),
-      type: z.enum(["CASH", "BANK", "DIGITAL_WALLET", "CREDIT_CARD", "LOAN_FUND"]), openingBalance: z.coerce.number().min(-1e12).max(1e12), archived: bool,
+      type: z.enum(["CASH", "BANK", "DIGITAL_WALLET", "CREDIT_CARD", "LOAN_FUND"]), openingBalance: signedMoney, archived: bool,
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "dashboard:full");
     const { workspaceId, accountId, ...data } = i;

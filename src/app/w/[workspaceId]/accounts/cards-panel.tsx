@@ -18,14 +18,14 @@ function CardFields({ card, debt, idp }: { card?: CardRow; debt?: number; idp: s
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <div><label className="label" htmlFor={f("name")}>Nombre</label><input id={f("name")} name="name" required defaultValue={card?.name} className="input" placeholder="Visa Bancolombia" /></div>
-      <div><label className="label" htmlFor={f("limit")}>Cupo total</label><input id={f("limit")} name="creditLimit" type="number" min="0" step="any" defaultValue={card?.creditLimit ? num(card.creditLimit) : undefined} className="input" /></div>
-      <div><label className="label" htmlFor={f("debt")}>Deuda actual</label><input id={f("debt")} name="debt" type="number" min="0" step="any" defaultValue={debt || undefined} className="input" placeholder="Lo que debes hoy" /></div>
+      <div><label className="label" htmlFor={f("limit")}>Cupo total</label><input id={f("limit")} name="creditLimit" type="number" max="1000000000000" min="0" step="0.01" defaultValue={card?.creditLimit ? num(card.creditLimit) : undefined} className="input" /></div>
+      <div><label className="label" htmlFor={f("debt")}>Deuda actual</label><input id={f("debt")} name="debt" type="number" max="1000000000000" min="0" step="0.01" defaultValue={debt || undefined} className="input" placeholder="Lo que debes hoy" /></div>
       <div><label className="label" htmlFor={f("cut")}>Día de corte</label><input id={f("cut")} name="cutoffDay" type="number" min="1" max="31" step="1" defaultValue={card?.cutoffDay ?? undefined} className="input" placeholder="Ej. 15" /></div>
       <div><label className="label" htmlFor={f("pay")}>Día límite de pago</label><input id={f("pay")} name="paymentDay" type="number" min="1" max="31" step="1" defaultValue={card?.paymentDay ?? undefined} className="input" placeholder="Ej. 30" /></div>
-      <div><label className="label" htmlFor={f("rate")}>Tasa de interés (%)</label><input id={f("rate")} name="ratePct" type="number" min="0" max="100" step="any" defaultValue={card?.ratePct ? num(card.ratePct) : undefined} className="input" /></div>
+      <div><label className="label" htmlFor={f("rate")}>Tasa de interés (%)</label><input id={f("rate")} name="ratePct" type="number" min="0" max="100" step="0.0001" defaultValue={card?.ratePct ? num(card.ratePct) : undefined} className="input" /></div>
       <div><label className="label" htmlFor={f("rt")}>Tipo de tasa</label><select id={f("rt")} name="rateType" defaultValue={card?.rateType ?? "EFFECTIVE_ANNUAL"} className="input"><option value="EFFECTIVE_ANNUAL">Efectiva anual (E.A.)</option><option value="MONTHLY">Mensual</option></select></div>
-      <div><label className="label" htmlFor={f("fee")}>Cuota de manejo mensual</label><input id={f("fee")} name="managementFeeMonthly" type="number" min="0" step="any" defaultValue={card?.managementFeeMonthly ? num(card.managementFeeMonthly) : undefined} className="input" /></div>
-      <div><label className="label" htmlFor={f("ins")}>Seguro mensual</label><input id={f("ins")} name="insuranceMonthly" type="number" min="0" step="any" defaultValue={card?.insuranceMonthly ? num(card.insuranceMonthly) : undefined} className="input" /></div>
+      <div><label className="label" htmlFor={f("fee")}>Cuota de manejo mensual</label><input id={f("fee")} name="managementFeeMonthly" type="number" max="1000000000000" min="0" step="0.01" defaultValue={card?.managementFeeMonthly ? num(card.managementFeeMonthly) : undefined} className="input" /></div>
+      <div><label className="label" htmlFor={f("ins")}>Seguro mensual</label><input id={f("ins")} name="insuranceMonthly" type="number" max="1000000000000" min="0" step="0.01" defaultValue={card?.insuranceMonthly ? num(card.insuranceMonthly) : undefined} className="input" /></div>
     </div>
   );
 }
@@ -83,7 +83,7 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
                   <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="cardId" value={c.id} />
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div><label className="label" htmlFor={`pf${c.id}`}>Pagar desde</label><select id={`pf${c.id}`} name="fromAccountId" required className="input">{payFrom.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                    <div><label className="label" htmlFor={`pa${c.id}`}>Valor</label><input id={`pa${c.id}`} name="amount" type="number" min="1" step="any" required defaultValue={s.debt > 0 ? Math.round(s.debt) : undefined} className="input" /></div>
+                    <div><label className="label" htmlFor={`pa${c.id}`}>Valor</label><input id={`pa${c.id}`} name="amount" type="number" max="1000000000000" min="0.01" step="0.01" required defaultValue={s.debt > 0 ? Math.round(s.debt) : undefined} className="input" /></div>
                     <div><label className="label" htmlFor={`pd${c.id}`}>Fecha</label><input id={`pd${c.id}`} name="date" type="date" required defaultValue={inputDate(today)} className="input" /></div>
                   </div>
                 </ActionForm>
@@ -95,7 +95,7 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
                   <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="cardId" value={c.id} />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div><label className="label" htmlFor={`cm${c.id}`}>Mes</label><input id={`cm${c.id}`} name="month" type="month" required defaultValue={month} className="input" /></div>
-                    <div><label className="label" htmlFor={`ci${c.id}`}>Intereses del extracto (opcional)</label><input id={`ci${c.id}`} name="interest" type="number" min="0" step="any" className="input" placeholder={s.interestIfUnpaid ? `≈ ${Math.round(s.interestIfUnpaid)}` : undefined} /></div>
+                    <div><label className="label" htmlFor={`ci${c.id}`}>Intereses del extracto (opcional)</label><input id={`ci${c.id}`} name="interest" type="number" max="1000000000000" min="0" step="0.01" className="input" placeholder={s.interestIfUnpaid ? `≈ ${Math.round(s.interestIfUnpaid)}` : undefined} /></div>
                   </div>
                 </ActionForm>
               </div>

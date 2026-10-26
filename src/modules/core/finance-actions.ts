@@ -6,19 +6,15 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { dateStr, id, money, opt, optId, optText, positive, quantity, signedMoney } from "@/lib/validation";
 
-const id = z.string().cuid();
-const money = z.coerce.number({ message: "Monto inválido" }).positive("El monto debe ser mayor a 0").max(1_000_000_000_000);
-const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida").transform((s) => new Date(`${s}T00:00:00Z`));
-const optId = z.preprocess((v) => (v === "" ? undefined : v), id.optional());
-const optText = (n: number) => z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().max(n).optional());
 
 export async function createAccountAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({
       workspaceId: id, name: z.string().trim().min(2, "Nombre muy corto").max(40),
       type: z.enum(["CASH", "BANK", "DIGITAL_WALLET", "CREDIT_CARD", "LOAN_FUND"]),
-      openingBalance: z.coerce.number().default(0),
+      openingBalance: opt(signedMoney).default(0),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "dashboard:full");
     try {
@@ -38,9 +34,9 @@ export async function createTransactionAction(_: ActionState, fd: FormData): Pro
       workspaceId: id,
       type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]).default("EXPENSE"),
       status: z.enum(["PAID", "PENDING"]).default("PAID"),
-      amount: money, date: dateStr,
+      amount: positive, date: dateStr,
       accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId, attachmentId: optId,
-      quantity: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number({ message: "Cantidad inválida" }).positive("La cantidad debe ser mayor a 0").max(1e7).optional()),
+      quantity: opt(quantity),
       vendor: optText(80), description: optText(300),
     }).parse(Object.fromEntries(fd));
     const { userId, role } = await requireWorkspace(i.workspaceId, "transaction:create");
@@ -87,7 +83,7 @@ export async function markPaidAction(_: ActionState, fd: FormData): Promise<Acti
 
 export async function addWishAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
-    const i = z.object({ workspaceId: id, itemName: z.string().trim().min(2).max(80), store: optText(60), estimatedPrice: money }).parse(Object.fromEntries(fd));
+    const i = z.object({ workspaceId: id, itemName: z.string().trim().min(2).max(80), store: optText(60), estimatedPrice: positive }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "transaction:create");
     await prisma.plannedPurchase.create({ data: i });
     revalidatePath(`/w/${i.workspaceId}/wishlist`);
@@ -120,7 +116,7 @@ export async function saveBudgetAction(_: ActionState, fd: FormData): Promise<Ac
       const raw = String(fd.get(`cat_${c.id}`) ?? "").trim();
       const existing = await prisma.budget.findFirst({ where: { workspaceId, categoryId: c.id, propertyId: null, month: monthDate } });
       if (!raw) { if (existing) await prisma.budget.delete({ where: { id: existing.id } }); continue; }
-      const amount = z.coerce.number().min(0).max(1e12).parse(raw);
+      const amount = money.parse(raw);
       if (existing) await prisma.budget.update({ where: { id: existing.id }, data: { amount } });
       else await prisma.budget.create({ data: { workspaceId, categoryId: c.id, month: monthDate, amount } });
     }

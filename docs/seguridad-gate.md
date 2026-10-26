@@ -63,3 +63,6 @@ Jurisdicción asumida: Colombia (Ley 1581 de 2012, Ley 1480 de 2011).
 - `deleteMyAccountAction` está limitado (3/h), exige escribir el correo y reasigna los registros a otro administrador o elimina el negocio y sus comprobantes en R2.
 - `npm audit`: 0 altos/críticos (3 moderados en Tailwind 3). Pruebas: 15 pasan (unitarias + integración).
 - Punto 12 (revisión): el flujo de eliminación de datos ya existe en la app (Mi cuenta) además del correo de contacto.
+
+
+**Validación de entradas (numéricos y fechas).** Todo número del servidor pasa por `src/lib/validation.ts`: solo dígitos con punto/coma decimal; se rechazan vacío, texto mezclado (`12abc`), notación científica (`1e3`), hexadecimal (`0x10`) y separadores de miles; dinero 0–1e12 con máx. 2 decimales, cantidades > 0 con máx. 3, enteros y porcentajes con rango propio; las fechas deben existir y estar entre 2000 y 2100. Las cargas en lote (`parseMoney`, cantidades, días) aplican las mismas reglas por fila. Los mensajes de zod salen en español (`z.locales.es()`). El navegador refuerza con `min/max/step`, pero la autoridad es el servidor.

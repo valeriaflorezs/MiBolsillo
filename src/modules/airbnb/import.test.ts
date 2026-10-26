@@ -66,4 +66,19 @@ describe("destino del crédito", () => {
     expect(p.skipped).toBe(2);
     expect(p.errors.map((e) => e.row)).toEqual([3]);
   });
+
+  it("cargas en lote: números estrictos (cantidad entera, día, decimales y texto mezclado)", () => {
+    const capex = parseCapex([
+      { descripcion: "Silla", cantidad: "2", precio_unitario_presupuestado: "100000" },
+      { descripcion: "Mesa", cantidad: "1e2", precio_unitario_presupuestado: "100000" },
+      { descripcion: "Lámpara", cantidad: "2", precio_unitario_presupuestado: "100abc" },
+      { descripcion: "Cama", cantidad: "2", precio_unitario_presupuestado: "10.5555" },
+      { descripcion: "Sofá", cantidad: "1.5", precio_unitario_presupuestado: "10" },
+    ], new Set());
+    expect(capex.data.map((d) => d.itemDescription)).toEqual(["Silla"]);
+    expect(capex.errors.map((e) => e.row)).toEqual([1, 2, 3, 4]);
+    const tx = parseTransactions([{ fecha: "2026-03-07", monto: "10.123,45", cuenta: "Nequi" }, { fecha: "2026-03-07", monto: "100", cantidad: "1.2345", cuenta: "Nequi" }, { fecha: "2026-03-07", monto: "100", cantidad: "2,5", cuenta: "Nequi" }], { accounts: [{ id: "a2", name: "Nequi" }], categories: [] });
+    expect(tx.data.map((d) => [d.amount, d.quantity])).toEqual([[10123.45, null], [100, 2.5]]);
+    expect(tx.errors.map((e) => e.row)).toEqual([1]);
+  });
 });

@@ -28,7 +28,7 @@ export function AccountsPanel({ workspaceId, accounts, canEdit }: { workspaceId:
                     <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="accountId" value={a.id} />
                     <div><label className="label" htmlFor={`n${a.id}`}>Nombre</label><input id={`n${a.id}`} name="name" defaultValue={a.name} required className="input" /></div>
                     <div><label className="label" htmlFor={`t${a.id}`}>Tipo</label><select id={`t${a.id}`} name="type" defaultValue={a.type} className="input">{Object.entries(TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-                    <div><label className="label" htmlFor={`o${a.id}`}>Saldo inicial</label><input id={`o${a.id}`} name="openingBalance" type="number" step="any" defaultValue={a.openingBalance} className="input" /></div>
+                    <div><label className="label" htmlFor={`o${a.id}`}>Saldo inicial</label><input id={`o${a.id}`} name="openingBalance" type="number" min="-1000000000000" max="1000000000000" step="0.01" defaultValue={a.openingBalance} className="input" /></div>
                     <label className="flex items-center gap-2"><input type="checkbox" name="archived" defaultChecked={a.archived} />Archivar (se oculta de los formularios)</label>
                   </ActionForm>
                 </div>
@@ -45,7 +45,7 @@ export function AccountsPanel({ workspaceId, accounts, canEdit }: { workspaceId:
             <div className="grid gap-3 sm:grid-cols-3">
               <div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" placeholder="Nequi" /></div>
               <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" className="input">{Object.entries(TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-              <div><label className="label" htmlFor="openingBalance">Saldo inicial</label><input id="openingBalance" name="openingBalance" type="number" step="any" defaultValue={0} className="input" /></div>
+              <div><label className="label" htmlFor="openingBalance">Saldo inicial</label><input id="openingBalance" name="openingBalance" type="number" min="-1000000000000" max="1000000000000" step="0.01" defaultValue={0} className="input" /></div>
             </div>
           </ActionForm>
         </section>

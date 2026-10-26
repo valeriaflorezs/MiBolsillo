@@ -87,9 +87,9 @@ export default async function Reservations({ params, searchParams }: { params: P
             <div><label className="label" htmlFor="checkIn">Entrada</label><input id="checkIn" name="checkIn" type="date" required defaultValue={inputDate(start)} className="input" /></div>
             <div><label className="label" htmlFor="checkOut">Salida</label><input id="checkOut" name="checkOut" type="date" required className="input" /></div>
             <div><label className="label" htmlFor="externalCode">Código de reserva</label><input id="externalCode" name="externalCode" className="input" /></div>
-            <div><label className="label" htmlFor="grossAmount">Ingreso por noches</label><input id="grossAmount" name="grossAmount" type="number" min="0" step="any" required className="input" /></div>
-            <div><label className="label" htmlFor="cleaningFeeCharged">Tarifa de aseo cobrada</label><input id="cleaningFeeCharged" name="cleaningFeeCharged" type="number" min="0" step="any" defaultValue={0} className="input" /></div>
-            <div><label className="label" htmlFor="platformCommission">Comisión plataforma</label><input id="platformCommission" name="platformCommission" type="number" min="0" step="any" defaultValue={0} className="input" /></div>
+            <div><label className="label" htmlFor="grossAmount">Ingreso por noches</label><input id="grossAmount" name="grossAmount" type="number" max="1000000000000" min="0" step="0.01" required className="input" /></div>
+            <div><label className="label" htmlFor="cleaningFeeCharged">Tarifa de aseo cobrada</label><input id="cleaningFeeCharged" name="cleaningFeeCharged" type="number" max="1000000000000" min="0" step="0.01" defaultValue={0} className="input" /></div>
+            <div><label className="label" htmlFor="platformCommission">Comisión plataforma</label><input id="platformCommission" name="platformCommission" type="number" max="1000000000000" min="0" step="0.01" defaultValue={0} className="input" /></div>
             <div><label className="label" htmlFor="payoutStatus">Cobro</label><select id="payoutStatus" name="payoutStatus" className="input"><option value="PENDING">Por cobrar</option><option value="RECEIVED">Cobrado</option></select></div>
           </div>
         </ActionForm>

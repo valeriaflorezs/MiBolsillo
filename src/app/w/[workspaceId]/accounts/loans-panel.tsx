@@ -20,15 +20,15 @@ function LoanFields({ loan }: { loan?: LoanRow }) {
     <div className="grid gap-3 sm:grid-cols-3">
       <div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required defaultValue={loan?.name} className="input" placeholder="Préstamo Banco" /></div>
       <div><label className="label" htmlFor="lender">Banco</label><input id="lender" name="lender" defaultValue={loan?.lender ?? ""} className="input" placeholder="Bancolombia" /></div>
-      <div><label className="label" htmlFor="principal">Monto del crédito</label><input id="principal" name="principal" type="number" min="1" step="any" required defaultValue={loan ? num(loan.principal) : undefined} className="input" /></div>
-      <div><label className="label" htmlFor="ratePct">Tasa de interés (%)</label><input id="ratePct" name="ratePct" type="number" min="0" max="100" step="any" required defaultValue={loan ? num(loan.ratePct) : undefined} className="input" /></div>
+      <div><label className="label" htmlFor="principal">Monto del crédito</label><input id="principal" name="principal" type="number" max="1000000000000" min="0.01" step="0.01" required defaultValue={loan ? num(loan.principal) : undefined} className="input" /></div>
+      <div><label className="label" htmlFor="ratePct">Tasa de interés (%)</label><input id="ratePct" name="ratePct" type="number" min="0" max="100" step="0.0001" required defaultValue={loan ? num(loan.ratePct) : undefined} className="input" /></div>
       <div><label className="label" htmlFor="rateType">Tipo de tasa</label>
         <select id="rateType" name="rateType" defaultValue={loan?.rateType ?? "EFFECTIVE_ANNUAL"} className="input"><option value="EFFECTIVE_ANNUAL">Efectiva anual (E.A.)</option><option value="MONTHLY">Mensual</option></select></div>
       <div><label className="label" htmlFor="termMonths">Plazo (meses)</label><input id="termMonths" name="termMonths" type="number" min="1" max="600" step="1" required defaultValue={loan?.termMonths} className="input" /></div>
       <div><label className="label" htmlFor="firstPaymentDate">Fecha de la primera cuota</label><input id="firstPaymentDate" name="firstPaymentDate" type="date" required defaultValue={loan ? inputDate(loan.firstPaymentDate) : undefined} className="input" /></div>
-      <div><label className="label" htmlFor="monthlyPayment">Cuota del banco (opcional)</label><input id="monthlyPayment" name="monthlyPayment" type="number" min="0" step="any" defaultValue={loan?.monthlyPayment ? num(loan.monthlyPayment) : undefined} className="input" placeholder="Si la dejas vacía, se calcula" /></div>
-      <div><label className="label" htmlFor="insuranceMonthly">Seguro mensual (opcional)</label><input id="insuranceMonthly" name="insuranceMonthly" type="number" min="0" step="any" defaultValue={loan?.insuranceMonthly ? num(loan.insuranceMonthly) : undefined} className="input" placeholder="Seguro de vida / deudores" /></div>
-      <div><label className="label" htmlFor="managementFeeMonthly">Cuota de manejo mensual (opcional)</label><input id="managementFeeMonthly" name="managementFeeMonthly" type="number" min="0" step="any" defaultValue={loan?.managementFeeMonthly ? num(loan.managementFeeMonthly) : undefined} className="input" placeholder="Tarjetas de crédito" /></div>
+      <div><label className="label" htmlFor="monthlyPayment">Cuota del banco (opcional)</label><input id="monthlyPayment" name="monthlyPayment" type="number" max="1000000000000" min="0" step="0.01" defaultValue={loan?.monthlyPayment ? num(loan.monthlyPayment) : undefined} className="input" placeholder="Si la dejas vacía, se calcula" /></div>
+      <div><label className="label" htmlFor="insuranceMonthly">Seguro mensual (opcional)</label><input id="insuranceMonthly" name="insuranceMonthly" type="number" max="1000000000000" min="0" step="0.01" defaultValue={loan?.insuranceMonthly ? num(loan.insuranceMonthly) : undefined} className="input" placeholder="Seguro de vida / deudores" /></div>
+      <div><label className="label" htmlFor="managementFeeMonthly">Cuota de manejo mensual (opcional)</label><input id="managementFeeMonthly" name="managementFeeMonthly" type="number" max="1000000000000" min="0" step="0.01" defaultValue={loan?.managementFeeMonthly ? num(loan.managementFeeMonthly) : undefined} className="input" placeholder="Tarjetas de crédito" /></div>
       <div><label className="label" htmlFor="notes">Notas</label><input id="notes" name="notes" defaultValue={loan?.notes ?? ""} className="input" /></div>
     </div>
   );
@@ -126,9 +126,9 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
               <div className="grid gap-3 sm:grid-cols-2">
                 <div><label className="label" htmlFor="pdate">Fecha</label><input id="pdate" name="date" type="date" required defaultValue={inputDate(todayUtc())} className="input" /></div>
                 <div><label className="label" htmlFor="pkind">Tipo</label><select id="pkind" name="kind" className="input"><option value="INSTALLMENT">Cuota</option><option value="EXTRA">Abono extra a capital</option></select></div>
-                <div><label className="label" htmlFor="pamount">Valor pagado</label><input id="pamount" name="amount" type="number" min="1" step="any" required className="input" defaultValue={Math.round(s.cuotaTotal)} /></div>
-                <div><label className="label" htmlFor="pint">Intereses del extracto (opcional)</label><input id="pint" name="interestOverride" type="number" min="0" step="any" className="input" placeholder="Si no, se calculan" /></div>
-                <div className="sm:col-span-2"><label className="label" htmlFor="pfees">Seguro y cuota de manejo incluidos en el pago</label><input id="pfees" name="fees" type="number" min="0" step="any" className="input" defaultValue={s.fees > 0 ? Math.round(s.fees) : undefined} placeholder="0 si el pago no los incluye" /><p className="mt-1 text-xs text-muted">Se restan del pago antes de calcular intereses y capital. En un abono extra a capital se ignoran.</p></div>
+                <div><label className="label" htmlFor="pamount">Valor pagado</label><input id="pamount" name="amount" type="number" max="1000000000000" min="0.01" step="0.01" required className="input" defaultValue={Math.round(s.cuotaTotal)} /></div>
+                <div><label className="label" htmlFor="pint">Intereses del extracto (opcional)</label><input id="pint" name="interestOverride" type="number" max="1000000000000" min="0" step="0.01" className="input" placeholder="Si no, se calculan" /></div>
+                <div className="sm:col-span-2"><label className="label" htmlFor="pfees">Seguro y cuota de manejo incluidos en el pago</label><input id="pfees" name="fees" type="number" max="1000000000000" min="0" step="0.01" className="input" defaultValue={s.fees > 0 ? Math.round(s.fees) : undefined} placeholder="0 si el pago no los incluye" /><p className="mt-1 text-xs text-muted">Se restan del pago antes de calcular intereses y capital. En un abono extra a capital se ignoran.</p></div>
               </div>
             </ActionForm>
           )}
@@ -159,7 +159,7 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
               <div className="grid gap-3 sm:grid-cols-3">
                 <div><label className="label" htmlFor="acat">Categoría</label><input id="acat" name="category" className="input" placeholder="Airbnb" /></div>
                 <div><label className="label" htmlFor="aname">Concepto</label><input id="aname" name="name" required className="input" placeholder="Total inversión Airbnb" /></div>
-                <div><label className="label" htmlFor="aamount">Valor</label><input id="aamount" name="amount" type="number" min="0" step="any" required className="input" /></div>
+                <div><label className="label" htmlFor="aamount">Valor</label><input id="aamount" name="amount" type="number" max="1000000000000" min="0" step="0.01" required className="input" /></div>
               </div>
             </ActionForm>
           )}

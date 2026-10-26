@@ -58,6 +58,7 @@ Lista de lo que compras para dejar listo el apartamento. Escribe el **precio rea
 Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de contribución → gastos fijos → EBITDA operativo. Las compras CAPEX no entran en el EBITDA.
 
 ## Preguntas frecuentes
+- **Me dice «Monto inválido».** Escribe solo números, sin puntos de miles ni letras (por ejemplo `1500000`). Puedes usar punto o coma para los decimales (`12500.50` o `12500,50`), con máximo 2 decimales en dinero y 3 en cantidades. Las cantidades, tasas, días y plazos también deben ser números (los días y plazos, enteros). Las fechas deben existir (no 31 de febrero).
 - **Me dice “No tienes permiso”:** tu rol no permite esa acción; pídele al administrador.
 - **La invitación no funciona:** inicia sesión con el mismo correo al que se envió y verifica que no haya vencido.
 - **Mis datos:** puedes eliminar un negocio completo en **Miembros → Eliminar este negocio**. Para eliminar tu cuenta o ejercer otros derechos, escribe al correo de la política de privacidad.

@@ -6,11 +6,11 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
-import { dateStr, id, money, optText, positive } from "@/lib/validation";
+import { dateStr, id, intBetween, money, opt, percent, positive } from "@/lib/validation";
 
-const optMoney = z.preprocess((v) => (v === "" || v == null ? undefined : v), money.optional());
-const optDay = z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number({ message: "Día inválido" }).int().min(1, "Del 1 al 31").max(31, "Del 1 al 31").optional());
-const optPct = z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number({ message: "Tasa inválida" }).min(0).max(100, "La tasa parece demasiado alta").optional());
+const optMoney = opt(money);
+const optDay = opt(intBetween(1, 31, "Día"));
+const optPct = opt(percent(100));
 const cardFields = {
   name: z.string().trim().min(2, "Pon un nombre").max(40),
   creditLimit: optMoney, cutoffDay: optDay, paymentDay: optDay,

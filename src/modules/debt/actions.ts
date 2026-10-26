@@ -7,16 +7,16 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
-import { dateStr, id, money, optText, positive } from "@/lib/validation";
+import { dateStr, id, intBetween, money, opt, optText, percent, positive } from "@/lib/validation";
 
-const optMoney = z.preprocess((v) => (v === "" || v == null ? undefined : v), money.optional());
+const optMoney = opt(money);
 const loanFields = {
   name: z.string().trim().min(2, "Pon un nombre").max(80),
   lender: optText(80),
   principal: positive,
   rateType: z.enum(["EFFECTIVE_ANNUAL", "MONTHLY"]),
-  ratePct: z.coerce.number({ message: "Tasa inválida" }).min(0, "La tasa no puede ser negativa").max(100, "La tasa parece demasiado alta"),
-  termMonths: z.coerce.number({ message: "Plazo inválido" }).int("El plazo va en meses enteros").min(1).max(600),
+  ratePct: percent(100),
+  termMonths: intBetween(1, 600, "Plazo (meses)"),
   firstPaymentDate: dateStr,
   monthlyPayment: optMoney,
   insuranceMonthly: optMoney,
