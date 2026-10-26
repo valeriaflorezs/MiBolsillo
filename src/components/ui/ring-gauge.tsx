@@ -8,23 +8,20 @@ const arc = (a: number, b: number) => {
   const [x1, y1] = pt(a), [x2, y2] = pt(b);
   return `M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${b - a > 180 ? 1 : 0} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`;
 };
-/** Mismo tramo recorrido en sentido antihorario: el texto del arco inferior queda derecho y legible. */
-const arcReversed = (a: number, b: number) => {
-  const [x1, y1] = pt(a), [x2, y2] = pt(b);
-  return `M${x2.toFixed(2)},${y2.toFixed(2)} A${R},${R} 0 ${b - a > 180 ? 1 : 0} 0 ${x1.toFixed(2)},${y1.toFixed(2)}`;
-};
 const short = (n: number) => (Math.abs(n) >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : Math.abs(n) >= 1e3 ? `$${Math.round(n / 1e3)}k` : `$${Math.round(n)}`);
 
-/** Anillo con hueco superior y dos tramos con etiqueta sobre el arco (gastos vs resultado), según la referencia. */
+/** Anillo con hueco superior y dos tramos (gastos vs resultado); las cifras van en una leyenda horizontal, no sobre el arco. */
 export function RingGauge({ total, expense, label, children }: { total: number; expense: number; label: string; children?: React.ReactNode }) {
   const result = Math.max(0, total - expense);
   const base = Math.max(total, expense, 1);
-  const START = 28, SWEEP = 304, GAP = 2.5;
+  const START = 28, SWEEP = 304, GAP = 3;
+  const CAP = ((SW / 2) / R) * (180 / Math.PI); // los extremos redondeados se salen del tramo ±CAP grados
   const eSweep = (Math.min(expense, base) / base) * SWEEP;
+  const mid = START + eSweep;
   const segs = [
-    { id: "g", from: START, to: START + Math.max(eSweep - GAP, 0.1), fill: "rgb(var(--ring-a))", text: "rgb(var(--ring-a-text))", name: "Gastos", value: expense },
-    { id: "r", from: START + eSweep, to: START + SWEEP, fill: "rgb(var(--ring-b))", text: "rgb(var(--ring-b-text))", name: "Resultado", value: result },
-  ].filter((s) => s.to - s.from > 4);
+    { id: "g", from: START, to: expense > 0 && result > 0 ? mid - CAP - GAP / 2 : START + eSweep, fill: "rgb(var(--ring-a))", name: "Gastos", value: expense },
+    { id: "r", from: result > 0 && expense > 0 ? mid + CAP + GAP / 2 : mid, to: START + SWEEP, fill: "rgb(var(--ring-b))", name: "Resultado", value: result },
+  ];
   return (
     <figure className="relative mx-auto w-full max-w-sm pt-9">
       <div aria-hidden className="absolute left-1/2 top-0 z-10 flex -translate-x-1/2 gap-3">
@@ -34,20 +31,14 @@ export function RingGauge({ total, expense, label, children }: { total: number; 
       </div>
       <svg viewBox="0 0 300 300" className="w-full" role="img" aria-label={`${label}: ingresos ${cop(total)}, gastos ${cop(expense)}, resultado ${cop(result)}`}>
         <path d={arc(START, START + SWEEP)} stroke="rgb(255 255 255 / .22)" strokeWidth={SW} fill="none" strokeLinecap="round" />
-        {segs.map((s) => <path key={s.id} d={arc(s.from, s.to)} style={{ stroke: s.fill }} strokeWidth={SW} fill="none" strokeLinecap="round" />)}
-        {segs.map((s) => {
-          const mid = (s.from + s.to) / 2, flip = mid > 90 && mid < 270; // mitad inferior del anillo
-          return <path key={`p${s.id}`} id={`ring-${s.id}`} d={flip ? arcReversed(s.from, s.to) : arc(s.from, s.to)} fill="none" stroke="none" />;
-        })}
-        {segs.map((s) => (
-          <text key={`t${s.id}`} style={{ fill: s.text }} fontSize="13" fontWeight="600" letterSpacing=".4">
-            <textPath href={`#ring-${s.id}`} startOffset="50%" textAnchor="middle" dominantBaseline="central">{s.to - s.from > 80 ? `${s.name} ` : ""}{short(s.value)}</textPath>
-          </text>
-        ))}
+        {segs.filter((s) => s.value > 0).map((s) => <path key={s.id} d={arc(s.from, Math.max(s.to, s.from + 0.01))} style={{ stroke: s.fill }} strokeWidth={SW} fill="none" strokeLinecap="round" />)}
         <text x="150" y="146" textAnchor="middle" fontSize="34" fontWeight="700" style={{ fill: "rgb(var(--ring-center))" }}>{short(total)}</text>
         <text x="150" y="172" textAnchor="middle" fontSize="12" style={{ fill: "rgb(var(--ring-sub))" }}>{label}</text>
       </svg>
-      {children && <figcaption className="mt-5 flex flex-wrap justify-center gap-3">{children}</figcaption>}
+      <ul className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm">
+        {segs.map((s) => <li key={s.id} className="flex items-center gap-2"><span aria-hidden className="size-3 rounded-full" style={{ background: s.fill }} />{s.name} <strong>{short(s.value)}</strong></li>)}
+      </ul>
+      {children && <figcaption className="mt-4 flex flex-wrap justify-center gap-3">{children}</figcaption>}
     </figure>
   );
 }
