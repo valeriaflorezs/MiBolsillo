@@ -5,10 +5,11 @@ import { prisma } from "@/lib/db";
 import { cardSummary } from "@/lib/finance/card";
 import { applyPayments } from "@/lib/finance/loan";
 import { cop, num } from "@/lib/format";
-import { accountBalances } from "@/modules/core/queries";
+import { accountBalances, possibleDuplicates } from "@/modules/core/queries";
 import { AccountsPanel } from "./accounts-panel";
 import { CardsPanel } from "./cards-panel";
 import { LoansPanel } from "./loans-panel";
+import { EXPLAIN } from "@/lib/explain";
 
 export const metadata = { title: "Cuentas y deudas" };
 const TABS = [{ id: "cuentas", label: "Cuentas" }, { id: "tarjetas", label: "Tarjetas de crédito" }, { id: "creditos", label: "Créditos" }] as const;
@@ -40,17 +41,17 @@ export default async function AccountsAndDebt({ params, searchParams }: { params
       <div><h1 className="text-3xl font-semibold tracking-tight">Cuentas y deudas</h1><p className="text-muted">Tu dinero, tus tarjetas y tus créditos en un solo lugar.</p></div>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Dinero en cuentas" value={cop(money)} hint="Efectivo, bancos y billeteras" />
-        <KpiCard title="Deuda en tarjetas" value={cop(cardDebt)} tone={cardDebt > 0 ? "negative" : undefined} hint="Lo que debes en tarjetas de crédito" />
-        <KpiCard title="Saldo de créditos" value={cop(loanDebt)} tone={loanDebt > 0 ? "negative" : undefined} hint={`${loans.length} crédito(s) con el banco`} />
-        <KpiCard title="Posición neta" value={cop(net)} tone={net < 0 ? "negative" : "positive"} hint="Dinero menos deudas" />
+        <KpiCard info={EXPLAIN.moneyInAccounts} title="Dinero en cuentas" value={cop(money)} hint="Efectivo, bancos y billeteras" />
+        <KpiCard info={EXPLAIN.cardDebtTotal} title="Deuda en tarjetas" value={cop(cardDebt)} tone={cardDebt > 0 ? "negative" : undefined} hint="Lo que debes en tarjetas de crédito" />
+        <KpiCard info={EXPLAIN.loansBalance} title="Saldo de créditos" value={cop(loanDebt)} tone={loanDebt > 0 ? "negative" : undefined} hint={`${loans.length} crédito(s) con el banco`} />
+        <KpiCard info={EXPLAIN.netPosition} title="Posición neta" value={cop(net)} tone={net < 0 ? "negative" : "positive"} hint="Dinero menos deudas" />
       </div>
 
       <nav aria-label="Secciones" className="flex flex-wrap gap-2">
         {TABS.map((t) => <Link key={t.id} href={`${base}?t=${t.id}`} aria-current={t.id === tab ? "page" : undefined} className={t.id === tab ? "btn btn-primary" : "btn btn-ghost"}>{t.label}</Link>)}
       </nav>
 
-      {tab === "cuentas" && <AccountsPanel workspaceId={workspaceId} accounts={accounts} canEdit={canEdit} />}
+      {tab === "cuentas" && <AccountsPanel workspaceId={workspaceId} accounts={accounts} canEdit={canEdit} duplicates={tab === "cuentas" ? await possibleDuplicates(workspaceId) : []} />}
       {tab === "tarjetas" && <CardsPanel workspaceId={workspaceId} accounts={accounts} canEdit={canEdit} />}
       {tab === "creditos" && <LoansPanel workspaceId={workspaceId} loanId={sp.l} canEdit={canEdit} />}
     </>

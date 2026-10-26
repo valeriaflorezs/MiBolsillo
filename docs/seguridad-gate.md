@@ -66,3 +66,6 @@ Jurisdicción asumida: Colombia (Ley 1581 de 2012, Ley 1480 de 2011).
 
 
 **Validación de entradas (numéricos y fechas).** Todo número del servidor pasa por `src/lib/validation.ts`: solo dígitos con punto/coma decimal; se rechazan vacío, texto mezclado (`12abc`), notación científica (`1e3`), hexadecimal (`0x10`) y separadores de miles; dinero 0–1e12 con máx. 2 decimales, cantidades > 0 con máx. 3, enteros y porcentajes con rango propio; las fechas deben existir y estar entre 2000 y 2100. Las cargas en lote (`parseMoney`, cantidades, días) aplican las mismas reglas por fila. Los mensajes de zod salen en español (`z.locales.es()`). El navegador refuerza con `min/max/step`, pero la autoridad es el servidor.
+
+
+**Conciliación.** `reconcileAccountAction` exige `dashboard:full`, verifica que la cuenta sea del workspace, calcula la diferencia en el servidor (no confía en la diferencia del cliente), limita el ritmo (60/h) y registra un movimiento visible y auditable en una categoría fuera del PyG. `balancesFrom` (src/lib/finance/balances.ts) es la única fórmula de saldo.

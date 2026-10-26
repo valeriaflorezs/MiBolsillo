@@ -11,7 +11,7 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { deleteObjects } from "@/lib/storage/r2";
 import { CRED_DOMAIN, credentialEmail } from "@/lib/auth/credentials-shared";
 import { generatePassword, hashPassword, USERNAME_RE } from "@/lib/auth/credentials";
-import { DEFAULT_CATEGORIES } from "./defaults";
+import { DEFAULT_CATEGORIES, FINANCIAL_CATEGORIES } from "./defaults";
 
 const id = z.string().cuid();
 
@@ -34,7 +34,7 @@ export async function createWorkspaceAction(_: ActionState, fd: FormData): Promi
         data: { name: input.name, type: input.type, members: { create: { userId: user.id, role: "ADMIN" } } },
       });
       await tx.category.createMany({
-        data: DEFAULT_CATEGORIES[input.type].map((c) => ({
+        data: [...DEFAULT_CATEGORIES[input.type], ...FINANCIAL_CATEGORIES].map((c) => ({
           workspaceId: w.id,
           name: c.name,
           emoji: c.emoji,

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { can } from "@/lib/auth/rbac";
+import { categoryFilter } from "@/lib/category-filter";
+import { balancesFrom } from "@/lib/finance/balances";
 import { num } from "@/lib/format";
 import type { Prisma, Role, TransactionStatus, TransactionType } from "@/generated/prisma/client";
 
@@ -7,25 +9,15 @@ import type { Prisma, Role, TransactionStatus, TransactionType } from "@/generat
 export async function accountBalances(workspaceId: string, includeArchived = false) {
   const [accounts, tx] = await Promise.all([
     prisma.financialAccount.findMany({ where: { workspaceId, ...(includeArchived ? {} : { archived: false }) }, orderBy: { createdAt: "asc" } }),
-    prisma.transaction.findMany({ where: { workspaceId, status: "PAID" }, select: { type: true, amount: true, accountId: true, transferAccountId: true } }),
+    prisma.transaction.findMany({ where: { workspaceId }, select: { type: true, status: true, amount: true, accountId: true, transferAccountId: true } }),
   ]);
-  const bal = new Map(accounts.map((a) => [a.id, num(a.openingBalance)]));
-  for (const t of tx) {
-    const a = num(t.amount);
-    if (t.type === "INCOME") bal.set(t.accountId, (bal.get(t.accountId) ?? 0) + a);
-    else if (t.type === "EXPENSE") bal.set(t.accountId, (bal.get(t.accountId) ?? 0) - a);
-    else {
-      bal.set(t.accountId, (bal.get(t.accountId) ?? 0) - a);
-      if (t.transferAccountId) bal.set(t.transferAccountId, (bal.get(t.transferAccountId) ?? 0) + a);
-    }
-  }
-  return accounts.map((a) => ({ id: a.id, name: a.name, type: a.type, emoji: a.emoji, archived: a.archived, openingBalance: num(a.openingBalance), balance: bal.get(a.id) ?? 0 }));
+  return balancesFrom(accounts.map((a) => ({ id: a.id, name: a.name, type: a.type, emoji: a.emoji, archived: a.archived, openingBalance: num(a.openingBalance) })), tx.map((t) => ({ ...t, amount: num(t.amount) })));
 }
 
 export type TxFilter = {
   workspaceId: string; role: Role; userId: string; start: Date; end: Date;
   status?: TransactionStatus; q?: string; categoryId?: string; accountId?: string; type?: TransactionType;
-  page?: number; pageSize?: number;
+  page?: number; pageSize?: number; exclude?: string[];
 };
 
 const txInclude = {
@@ -42,7 +34,10 @@ function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
     ...(f.type ? { type: f.type } : {}),
     ...(f.categoryId ? { categoryId: f.categoryId } : {}),
     ...(f.accountId ? { OR: [{ accountId: f.accountId }, { transferAccountId: f.accountId }] } : {}),
-    ...(f.q ? { AND: [{ OR: [{ vendor: { contains: f.q, mode: "insensitive" } }, { description: { contains: f.q, mode: "insensitive" } }] }] } : {}),
+    AND: [
+      ...(f.q ? [{ OR: [{ vendor: { contains: f.q, mode: "insensitive" as const } }, { description: { contains: f.q, mode: "insensitive" as const } }] }] : []),
+      ...(f.exclude?.length ? [categoryFilter(f.exclude)] : []),
+    ],
     // El OPERATOR solo ve los GASTOS que él mismo registró.
     ...(can(f.role, "finance:read") ? {} : { createdById: f.userId, type: "EXPENSE" }),
   };
@@ -94,9 +89,9 @@ export async function getTransactionDetail(workspaceId: string, id: string, role
 }
 
 /** Gastos por pagar, vencidos primero. El OPERATOR solo ve los suyos. */
-export async function pendingPayables(workspaceId: string, role: Role, userId: string, take = 50) {
+export async function pendingPayables(workspaceId: string, role: Role, userId: string, take = 50, exclude?: string[]) {
   const rows = await prisma.transaction.findMany({
-    where: { workspaceId, status: "PENDING", type: { in: ["EXPENSE", "INCOME"] }, ...(can(role, "finance:read") ? {} : { createdById: userId, type: "EXPENSE" }) },
+    where: { workspaceId, status: "PENDING", type: { in: ["EXPENSE", "INCOME"] }, ...(can(role, "finance:read") ? {} : { createdById: userId, type: "EXPENSE" }), ...(exclude?.length ? { AND: [categoryFilter(exclude)] } : {}) },
     include: txInclude, orderBy: { date: "asc" }, take,
   });
   return rows.map(toRow);
@@ -111,3 +106,17 @@ export const categoryOptions = (workspaceId: string) =>
 
 export const accountOptions = (workspaceId: string) =>
   prisma.financialAccount.findMany({ where: { workspaceId, archived: false }, select: { id: true, name: true }, orderBy: { createdAt: "asc" } });
+
+/** Movimientos pagados que coinciden en cuenta, tipo, monto y fecha: candidatos a estar repetidos (p. ej. por cargar dos veces el mismo Excel). */
+export async function possibleDuplicates(workspaceId: string, limit = 15) {
+  const groups = await prisma.transaction.groupBy({
+    by: ["accountId", "type", "amount", "date"],
+    where: { workspaceId, status: "PAID", type: { in: ["INCOME", "EXPENSE"] } },
+    having: { id: { _count: { gt: 1 } } },
+    _count: { id: true },
+    orderBy: [{ date: "desc" }],
+    take: limit,
+  });
+  const names = new Map((await prisma.financialAccount.findMany({ where: { workspaceId }, select: { id: true, name: true } })).map((a) => [a.id, a.name]));
+  return groups.map((g) => ({ account: names.get(g.accountId) ?? "—", accountId: g.accountId, type: g.type, amount: num(g.amount), date: g.date, count: g._count.id, extra: (g._count.id - 1) * num(g.amount) }));
+}

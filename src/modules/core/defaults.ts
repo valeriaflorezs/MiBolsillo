@@ -55,6 +55,14 @@ export const DEFAULT_CATEGORIES: Record<WorkspaceType, DefaultCategory[]> = {
   GIG_ECONOMY: GIG,
 };
 
+/** Categorías de sistema: mueven dinero pero no son ventas ni gastos de la operación (fuera del PyG). */
+export const FINANCIAL_CATEGORIES: DefaultCategory[] = [
+  { name: "Desembolso de crédito", emoji: "🏦", income: true, pygLine: "NON_OPERATING" },
+  { name: "Ajuste de saldo a favor", emoji: "⚖️", income: true, pygLine: "NON_OPERATING" },
+  { name: "Ajuste de saldo en contra", emoji: "⚖️", kind: "FIXED_OPEX", pygLine: "NON_OPERATING" },
+  { name: "Intereses y cargos financieros", emoji: "🏦", kind: "FIXED_OPEX", pygLine: "NON_OPERATING" },
+];
+
 export const WORKSPACE_TYPE_LABEL: Record<WorkspaceType, string> = {
   AIRBNB: "Airbnb / alquiler corto",
   PERSONAL: "Finanzas personales",

@@ -6,6 +6,8 @@ import { cop, monthRange, num, pct } from "@/lib/format";
 import { budgetExecution } from "@/modules/airbnb/queries";
 import { saveBudgetAction } from "@/modules/core/finance-actions";
 import { copyBudgetAction } from "@/modules/core/crud-actions";
+import { InfoTip } from "@/components/ui/info-tip";
+import { EXPLAIN } from "@/lib/explain";
 
 export const metadata = { title: "Presupuesto" };
 
@@ -30,7 +32,7 @@ export default async function Budget({ params, searchParams }: { params: Promise
           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="month" value={key} />
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead><tr><th className="th">Categoría</th><th className="th">Presupuestado</th><th className="th text-right">Real</th><th className="th text-right">Ejecución</th></tr></thead>
+              <thead><tr><th className="th">Categoría</th><th className="th">Presupuestado</th><th className="th text-right">Real</th><th className="th text-right">Ejecución <InfoTip {...EXPLAIN.budgetExec} title="Ejecución" lines={["Real ÷ presupuestado de cada categoría. Pasa del 100 % (en rojo) cuando gastas más de lo presupuestado."]} className="[&>div]:left-auto [&>div]:right-0" /></th></tr></thead>
               <tbody className="divide-y divide-line">
                 {cats.map((c) => {
                   const r = by.get(c.id);

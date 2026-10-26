@@ -9,6 +9,8 @@ import { CategoryFilter } from "@/components/forms/category-filter";
 import { cop } from "@/lib/format";
 import { parseExclusion, parsePeriod, parseStatus, periodStats } from "@/modules/airbnb/queries";
 import { categoryOptions } from "@/modules/core/queries";
+import { EXPLAIN } from "@/lib/explain";
+import { InfoTip } from "@/components/ui/info-tip";
 
 export const metadata = { title: "Estadísticas" };
 const PERIODS = [{ key: "day", label: "Hoy" }, { key: "week", label: "Semana" }, { key: "month", label: "Mes" }, { key: "year", label: "Año" }] as const;
@@ -58,18 +60,18 @@ export default async function Stats({ params, searchParams }: { params: Promise<
       />
 
       <div className="grid gap-5 sm:grid-cols-3">
-        <KpiCard title="Ingresos" value={cop(data.pyg.grossRevenue)}><Delta now={data.pyg.grossRevenue} before={data.prev.income} /></KpiCard>
-        <KpiCard title="Gastos" value={cop(expense)}><Delta now={expense} before={data.prev.expense} invert /></KpiCard>
-        <KpiCard title="Resultado" value={cop(data.cashFlow)} tone={data.cashFlow < 0 ? "negative" : "positive"}><Delta now={data.cashFlow} before={data.prev.cash} /></KpiCard>
+        <KpiCard info={EXPLAIN.statsIncome} title="Ingresos" value={cop(data.pyg.grossRevenue)}><Delta now={data.pyg.grossRevenue} before={data.prev.income} /></KpiCard>
+        <KpiCard info={EXPLAIN.statsExpense} title="Gastos" value={cop(expense)}><Delta now={expense} before={data.prev.expense} invert /></KpiCard>
+        <KpiCard info={EXPLAIN.statsResult} title="Resultado" value={cop(data.pyg.grossRevenue - expense)} tone={data.pyg.grossRevenue - expense < 0 ? "negative" : "positive"}><Delta now={data.pyg.grossRevenue - expense} before={data.prev.income - data.prev.expense} /></KpiCard>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="card"><h2 className="mb-4 font-medium">Ingresos vs gastos</h2><BarChart data={data.series} current="" labelOf={(k) => k} /></section>
-        <section className="card"><h2 className="mb-4 font-medium">Gastos por categoría</h2><Donut items={data.breakdown.items} total={data.breakdown.total} /></section>
+        <section className="card"><h2 className="mb-4 flex items-center gap-2 font-medium">Ingresos vs gastos <InfoTip {...EXPLAIN.sixMonths} title="Ingresos vs gastos" lines={["Ingresos y gastos de cada día (o mes, si miras un año) del periodo, con el filtro actual."]} /></h2><BarChart data={data.series} current="" labelOf={(k) => k} /></section>
+        <section className="card"><h2 className="mb-4 flex items-center gap-2 font-medium">Gastos por categoría <InfoTip {...EXPLAIN.donut} /></h2><Donut items={data.breakdown.items} total={data.breakdown.total} /></section>
       </div>
 
       <section className="panel space-y-2">
-        <h2 className="font-medium">Mayores proveedores</h2>
+        <h2 className="flex items-center gap-2 font-medium">Mayores proveedores <InfoTip {...EXPLAIN.vendors} /></h2>
         {data.topVendors.length === 0 && <p className="text-sm text-white/70">Sin gastos con proveedor en este periodo.</p>}
         {data.topVendors.map((v, i) => <div key={v.vendor} className="flex items-center justify-between rounded-2xl bg-white/10 px-4 py-2.5 text-sm"><span>{i + 1}. {v.vendor}</span><strong>{cop(v.amount)}</strong></div>)}
       </section>

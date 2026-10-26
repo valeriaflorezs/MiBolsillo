@@ -11,6 +11,8 @@ import { prisma } from "@/lib/db";
 import { loanSummary, type LoanTerms } from "@/lib/finance/loan";
 import { cop, fmtDate, inputDate, num, pct, todayUtc } from "@/lib/format";
 import { addAllocationAction, addPaymentAction, createLoanAction, deleteAllocationAction, deleteLoanAction, deletePaymentAction, updateLoanAction } from "@/modules/debt/actions";
+import { EXPLAIN } from "@/lib/explain";
+import { InfoTip } from "@/components/ui/info-tip";
 
 const RATE_LABEL = { EFFECTIVE_ANNUAL: "E.A.", MONTHLY: "mensual" } as const;
 type LoanRow = Awaited<ReturnType<typeof prisma.loan.findMany>>[number];
@@ -74,7 +76,7 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
       </div>
 
       <section className="hero" aria-label="Saldo pendiente">
-        <p className="text-sm text-white/80">{paidOff ? "Crédito saldado 🎉" : "Saldo pendiente"}</p>
+        <p className="flex items-center gap-1.5 text-sm text-white/80">{paidOff ? "Crédito saldado 🎉" : "Saldo pendiente"} <InfoTip {...EXPLAIN.loanProgress} /></p>
         <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{cop(s.balance)}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <span className="chip-outline">{pct(s.pctPaid)} del capital pagado</span>
@@ -86,14 +88,14 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
       </section>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Próxima cuota" value={s.next ? cop(s.next.payment + s.next.fees) : "—"} hint={s.next ? `${fmtDate(s.next.date)} · cuota ${s.next.n}${s.overdue ? " (atrasada)" : ""}${s.fees ? ` · incluye ${cop(s.fees)} de seguro/manejo` : ""}` : "Sin cuotas pendientes"} tone={s.overdue ? "negative" : undefined} icon={<CalendarClock size={16} />} />
-        <KpiCard title="Intereses pagados" value={cop(s.paidInterest)} hint={`de ${cop(s.plannedInterest)} previstos en el plan`} icon={<Percent size={16} />} />
-        <KpiCard title="Pagado en total" value={cop(s.paidTotal)} hint={`${payments.length} pago(s)${s.paidFees ? ` · seguro y manejo ${cop(s.paidFees)}` : ""}`} icon={<PiggyBank size={16} />} />
-        <KpiCard title="Termina aprox." value={s.payoffDate ? fmtDate(s.payoffDate) + " " + s.payoffDate.getUTCFullYear() : paidOff ? "Saldado" : "—"} hint={s.monthsLeft === null ? (paidOff ? undefined : "La cuota no cubre los intereses") : `${s.monthsLeft} mes(es) · intereses restantes ≈ ${cop(s.interestLeft ?? 0)}${s.feesLeft ? ` · seguro/manejo ≈ ${cop(s.feesLeft)}` : ""}`} icon={<Landmark size={16} />} />
+        <KpiCard info={EXPLAIN.loanNextInstallment} title="Próxima cuota" value={s.next ? cop(s.next.payment + s.next.fees) : "—"} hint={s.next ? `${fmtDate(s.next.date)} · cuota ${s.next.n}${s.overdue ? " (atrasada)" : ""}${s.fees ? ` · incluye ${cop(s.fees)} de seguro/manejo` : ""}` : "Sin cuotas pendientes"} tone={s.overdue ? "negative" : undefined} icon={<CalendarClock size={16} />} />
+        <KpiCard info={EXPLAIN.loanInterestPaid} title="Intereses pagados" value={cop(s.paidInterest)} hint={`de ${cop(s.plannedInterest)} previstos en el plan`} icon={<Percent size={16} />} />
+        <KpiCard info={EXPLAIN.loanPaidTotal} title="Pagado en total" value={cop(s.paidTotal)} hint={`${payments.length} pago(s)${s.paidFees ? ` · seguro y manejo ${cop(s.paidFees)}` : ""}`} icon={<PiggyBank size={16} />} />
+        <KpiCard info={EXPLAIN.loanEnd} title="Termina aprox." value={s.payoffDate ? fmtDate(s.payoffDate) + " " + s.payoffDate.getUTCFullYear() : paidOff ? "Saldado" : "—"} hint={s.monthsLeft === null ? (paidOff ? undefined : "La cuota no cubre los intereses") : `${s.monthsLeft} mes(es) · intereses restantes ≈ ${cop(s.interestLeft ?? 0)}${s.feesLeft ? ` · seguro/manejo ≈ ${cop(s.feesLeft)}` : ""}`} icon={<Landmark size={16} />} />
       </div>
 
       <section className="card space-y-4" aria-label="Plan de pagos">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-medium">Plan de pagos</h2><p className="text-sm text-muted">Cuota mensual {cop(s.cuota)}{loan.monthlyPayment ? " (informada por el banco)" : " (calculada)"}{s.fees > 0 && <> + seguro/manejo {cop(s.fees)} = <strong>{cop(s.cuotaTotal)}</strong></>}</p></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="flex items-center gap-2 font-medium">Plan de pagos <InfoTip {...EXPLAIN.amortization} /></h2><p className="text-sm text-muted">Cuota mensual {cop(s.cuota)}{loan.monthlyPayment ? " (informada por el banco)" : " (calculada)"}{s.fees > 0 && <> + seguro/manejo {cop(s.fees)} = <strong>{cop(s.cuotaTotal)}</strong></>}</p></div>
         <AmortizationChart rows={s.plan} paidCount={Math.min(s.installmentsPaid, s.plan.length)} />
         <details>
           <summary className="cursor-pointer text-sm font-medium">Ver tabla de amortización</summary>

@@ -29,12 +29,13 @@ export function MonthNav({ base, month, extra = "" }: { base: string; month: str
   );
 }
 
-export function Filters({ base, month, status, showStatus = true }: { base: string; month: string; status?: string; showStatus?: boolean }) {
+export function Filters({ base, month, status, showStatus = true, x }: { base: string; month: string; status?: string; showStatus?: boolean; x?: string }) {
   const cur = status ?? "PAID";
+  const xq = x ? `&x=${x}` : ""; // conserva el filtro de categorías al cambiar de mes o estado
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <MonthNav base={base} month={month} extra={showStatus ? `&status=${cur}` : ""} />
-      {showStatus && <Segmented label="Estado" current={cur} items={STATUS.map((s) => ({ key: s.v, label: s.l, href: `${base}?month=${month}&status=${s.v}` }))} />}
+      <MonthNav base={base} month={month} extra={(showStatus ? `&status=${cur}` : "") + xq} />
+      {showStatus && <Segmented label="Estado" current={cur} items={STATUS.map((s) => ({ key: s.v, label: s.l, href: `${base}?month=${month}&status=${s.v}${xq}` }))} />}
     </div>
   );
 }

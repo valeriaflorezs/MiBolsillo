@@ -9,6 +9,8 @@ import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, inputDate, monthRange, num } from "@/lib/format";
 import { createReservationAction, reservationStatusAction } from "@/modules/airbnb/actions";
 import { deleteReservationAction } from "@/modules/airbnb/crud-actions";
+import { InfoTip } from "@/components/ui/info-tip";
+import { EXPLAIN } from "@/lib/explain";
 
 export const metadata = { title: "Reservas" };
 const DAY = 86_400_000;
@@ -35,7 +37,7 @@ export default async function Reservations({ params, searchParams }: { params: P
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-3xl font-semibold tracking-tight">Reservas</h1><p className="text-muted">Ingresos del mes <strong className="text-ink">{cop(gross)}</strong> · Por cobrar <strong className="text-ink">{cop(pending)}</strong></p></div>
+        <div><h1 className="text-3xl font-semibold tracking-tight">Reservas</h1><p className="text-muted">Ingresos del mes <InfoTip {...EXPLAIN.reservationsMonth} className="mr-1" /> <strong className="text-ink">{cop(gross)}</strong> · Por cobrar <strong className="text-ink">{cop(pending)}</strong></p></div>
         {canEdit && <a href="#nueva" className="btn btn-primary">+ Nueva reserva</a>}
       </div>
       <MonthNav base={base} month={key} />
@@ -57,7 +59,7 @@ export default async function Reservations({ params, searchParams }: { params: P
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div><div className="flex flex-wrap gap-2"><Chip tone="brand">{CHANNEL[sel.channel]}</Chip>{sel.status === "CANCELLED" ? <Chip tone="negative">Cancelada</Chip> : <Chip tone={sel.payoutStatus === "RECEIVED" ? "positive" : "neutral"}>{sel.payoutStatus === "RECEIVED" ? "Cobrada" : "Por cobrar"}</Chip>}</div>
                   <p className="mt-3 text-2xl font-semibold">{sel.guestName ?? "Huésped"}</p><p className="text-muted">{sel.property.name} · {fmtDate(sel.checkIn)} → {fmtDate(sel.checkOut)} · {nights} noche(s)</p></div>
-                <p className="text-right text-sm text-muted">Neto para ti<span className="block text-3xl font-semibold text-ink">{cop(num(sel.grossAmount) + num(sel.cleaningFeeCharged) - num(sel.platformCommission))}</span></p>
+                <p className="text-right text-sm text-muted">Neto para ti <InfoTip {...EXPLAIN.reservationNet} className="[&>div]:left-auto [&>div]:right-0" /><span className="block text-3xl font-semibold text-ink">{cop(num(sel.grossAmount) + num(sel.cleaningFeeCharged) - num(sel.platformCommission))}</span></p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[["Noches", num(sel.grossAmount)], ["Tarifa de aseo", num(sel.cleaningFeeCharged)], ["Comisión", -num(sel.platformCommission)]].map(([l, v]) => (

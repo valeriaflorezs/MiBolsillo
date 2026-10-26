@@ -11,6 +11,8 @@ import { cop, fmtDate, monthRange, txTitle, txVendorHint } from "@/lib/format";
 import { deleteTransactionAction } from "@/modules/core/crud-actions";
 import { markPaidAction } from "@/modules/core/finance-actions";
 import { accountOptions, categoryOptions, getTransactionDetail, searchTransactions } from "@/modules/core/queries";
+import { InfoTip } from "@/components/ui/info-tip";
+import { EXPLAIN } from "@/lib/explain";
 
 export const metadata = { title: "Movimientos" };
 type SP = { month?: string; status?: string; q?: string; cat?: string; acc?: string; type?: string; page?: string; sel?: string };
@@ -56,7 +58,7 @@ export default async function Transactions({ params, searchParams }: { params: P
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MonthNav base={base} month={key} extra={Object.entries({ status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, type: sp.type }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("")} />
-        <p className="text-sm text-muted">{data.total} movimiento(s){admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
+        <p className="text-sm text-muted">{data.total} movimiento(s) <InfoTip {...EXPLAIN.txTotals} />{admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[2fr_3fr]">
@@ -99,7 +101,7 @@ export default async function Transactions({ params, searchParams }: { params: P
                 <div><dt className="text-muted">Categoría</dt><dd className="font-medium">{selected.category ? `${selected.category.emoji ?? ""} ${selected.category.name}` : "—"}</dd></div>
                 <div><dt className="text-muted">Cuenta</dt><dd className="font-medium">{selected.account}{selected.transferAccount ? ` → ${selected.transferAccount}` : ""}</dd></div>
                 <div><dt className="text-muted">Registrado por</dt><dd className="font-medium">{selected.createdBy}</dd></div>
-                {selected.quantity != null && <div><dt className="text-muted">Cantidad</dt><dd className="font-medium">{selected.quantity} · {cop(selected.amount / selected.quantity)} c/u</dd></div>}
+                {selected.quantity != null && <div><dt className="flex items-center gap-1.5 text-muted">Cantidad <InfoTip {...EXPLAIN.unitValue} /></dt><dd className="font-medium">{selected.quantity} · {cop(selected.amount / selected.quantity)} c/u</dd></div>}
                 {selected.property && <div><dt className="text-muted">Propiedad</dt><dd className="font-medium">{selected.property}</dd></div>}
                 {selected.description && <div className="sm:col-span-2"><dt className="text-muted">Nota</dt><dd className="font-medium">{selected.description}</dd></div>}
               </dl>

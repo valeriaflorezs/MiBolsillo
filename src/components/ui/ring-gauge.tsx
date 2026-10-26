@@ -1,5 +1,6 @@
 import { BarChart3, TrendingUp, Wallet } from "lucide-react";
 import { cop } from "@/lib/format";
+import { InfoTip, type Explain } from "./info-tip";
 
 const CX = 150, CY = 150, R = 108, SW = 38;
 const rad = (deg: number) => ((deg - 90) * Math.PI) / 180; // 0° = arriba, sentido horario
@@ -11,7 +12,7 @@ const arc = (a: number, b: number) => {
 const short = (n: number) => (Math.abs(n) >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : Math.abs(n) >= 1e3 ? `$${Math.round(n / 1e3)}k` : `$${Math.round(n)}`);
 
 /** Anillo con hueco superior y dos tramos (gastos vs resultado); las cifras van en una leyenda horizontal, no sobre el arco. */
-export function RingGauge({ total, expense, label, children }: { total: number; expense: number; label: string; children?: React.ReactNode }) {
+export function RingGauge({ total, expense, label, info, children }: { total: number; expense: number; label: string; info?: Explain; children?: React.ReactNode }) {
   const result = Math.max(0, total - expense);
   const base = Math.max(total, expense, 1);
   const START = 28, SWEEP = 304, GAP = 3;
@@ -24,6 +25,7 @@ export function RingGauge({ total, expense, label, children }: { total: number; 
   ];
   return (
     <figure className="relative mx-auto w-full max-w-sm pt-9">
+      {info && <div className="absolute right-0 top-0 z-20 text-ink"><InfoTip {...info} className="[&>div]:left-auto [&>div]:right-0" /></div>}
       <div aria-hidden className="absolute left-1/2 top-0 z-10 flex -translate-x-1/2 gap-3">
         {[BarChart3, TrendingUp, Wallet].map((Icon, i) => (
           <span key={i} className={`grid size-11 place-items-center border border-white/50 bg-white/25 text-ink backdrop-blur-md ${i === 1 ? "rounded-b-2xl rounded-t-md" : "rounded-2xl"}`} style={{ boxShadow: "inset 0 1px 0 rgb(255 255 255 / .6)" }}><Icon size={18} /></span>

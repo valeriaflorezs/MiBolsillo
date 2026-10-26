@@ -8,7 +8,10 @@ import { prisma } from "@/lib/db";
 import { cardSummary } from "@/lib/finance/card";
 import { cop, fmtDate, inputDate, num, pct, todayUtc } from "@/lib/format";
 import { chargeCardFeesAction, createCardAction, payCardAction, updateCardAction } from "@/modules/cards/actions";
+import { reconcileAccountAction } from "@/modules/core/reconcile-actions";
 import type { accountBalances } from "@/modules/core/queries";
+import { EXPLAIN } from "@/lib/explain";
+import { InfoTip } from "@/components/ui/info-tip";
 
 type Balances = Awaited<ReturnType<typeof accountBalances>>;
 type CardRow = Awaited<ReturnType<typeof prisma.financialAccount.findMany>>[number];
@@ -54,7 +57,7 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
           <div className="hero">
             <p className="flex items-center gap-2 text-sm text-white/80"><CreditCard size={15} aria-hidden />{c.name}{c.archived && <Chip>Archivada</Chip>}</p>
             <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{cop(s.debt)}</p>
-            <p className="text-sm text-white/75">{s.credit > 0 ? `Saldo a favor ${cop(s.credit)}` : "Deuda actual"}</p>
+            <p className="flex items-center gap-1.5 text-sm text-white/75">{s.credit > 0 ? `Saldo a favor ${cop(s.credit)}` : "Deuda actual"} <InfoTip {...EXPLAIN.cardDebt} /></p>
             <div className="mt-4 flex flex-wrap gap-3">
               {s.nextCutoff && <span className="chip-outline">Corte: {fmtDate(s.nextCutoff)}</span>}
               {s.nextDue && <span className="chip-outline">Pagar antes del {fmtDate(s.nextDue)}{s.daysToDue !== null && s.debt > 0 ? ` · ${s.daysToDue === 0 ? "hoy" : `en ${s.daysToDue} día(s)`}` : ""}</span>}
@@ -67,10 +70,10 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard title="Compras desde el corte" value={spent === null ? "—" : cop(spent)} hint={s.lastCutoff ? `desde el ${fmtDate(s.lastCutoff)}` : "Define el día de corte"} icon={<ShoppingBag size={16} />} />
-            <KpiCard title="Cargos mensuales" value={cop(s.fees)} hint={s.fees ? "Cuota de manejo + seguro" : "Sin cuota de manejo ni seguro"} icon={<CalendarClock size={16} />} />
-            <KpiCard title="Intereses si no pagas" value={s.interestIfUnpaid === null ? "—" : cop(s.interestIfUnpaid)} hint={s.interestIfUnpaid === null ? "Define la tasa de interés" : "Estimado de un mes sobre la deuda actual"} icon={<Percent size={16} />} />
-            <KpiCard title="Cupo disponible" value={s.available === null ? "—" : cop(s.available)} hint={s.limit === null ? "Define el cupo total" : `de ${cop(s.limit)}`} icon={<CreditCard size={16} />} />
+            <KpiCard info={EXPLAIN.cardSinceCutoff} title="Compras desde el corte" value={spent === null ? "—" : cop(spent)} hint={s.lastCutoff ? `desde el ${fmtDate(s.lastCutoff)}` : "Define el día de corte"} icon={<ShoppingBag size={16} />} />
+            <KpiCard info={EXPLAIN.cardFees} title="Cargos mensuales" value={cop(s.fees)} hint={s.fees ? "Cuota de manejo + seguro" : "Sin cuota de manejo ni seguro"} icon={<CalendarClock size={16} />} />
+            <KpiCard info={EXPLAIN.cardInterest} title="Intereses si no pagas" value={s.interestIfUnpaid === null ? "—" : cop(s.interestIfUnpaid)} hint={s.interestIfUnpaid === null ? "Define la tasa de interés" : "Estimado de un mes sobre la deuda actual"} icon={<Percent size={16} />} />
+            <KpiCard info={EXPLAIN.cardAvailable} title="Cupo disponible" value={s.available === null ? "—" : cop(s.available)} hint={s.limit === null ? "Define el cupo total" : `de ${cop(s.limit)}`} icon={<CreditCard size={16} />} />
           </div>
 
           <div className="flex flex-wrap gap-3"><Link className="btn btn-ghost" href={`/w/${workspaceId}/transactions?acc=${c.id}`}>Ver movimientos de la tarjeta</Link></div>
@@ -100,6 +103,16 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
                 </ActionForm>
               </div>
             </div>
+          )}
+          {canEdit && !c.archived && (
+            <details className="card">
+              <summary className="cursor-pointer font-medium">Conciliar con el extracto del banco</summary>
+              <ActionForm action={reconcileAccountAction} submitLabel="Ajustar la deuda" className="mt-4 space-y-3">
+                <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="accountId" value={c.id} />
+                <p className="text-sm text-muted">La app calcula la deuda como deuda inicial + compras + cargos − pagos. Si el banco dice otra cosa, escribe aquí la deuda real y se registra la diferencia como un ajuste (fuera del PyG).</p>
+                <div className="max-w-xs"><label className="label" htmlFor={`rd${c.id}`}>Deuda real según el banco</label><input id={`rd${c.id}`} name="realDebt" type="number" min="0" max="1000000000000" step="0.01" required className="input" /></div>
+              </ActionForm>
+            </details>
           )}
           {canEdit && (
             <details className="card">

@@ -57,6 +57,16 @@ Lista de lo que compras para dejar listo el apartamento. Escribe el **precio rea
 ## Estado de resultados (PyG)
 Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de contribución → gastos fijos → EBITDA operativo. Las compras CAPEX no entran en el EBITDA.
 
+## Si las cifras no cuadran con tu banco (Conciliar)
+1. Ve a **Más → Cuentas y deudas → Cuentas** y abre **¿Cómo se calcula? · Conciliar** en la cuenta. Verás el saldo desglosado: saldo inicial + ingresos pagados − gastos pagados + transferencias recibidas − enviadas. Los movimientos «por pagar/por cobrar» no cuentan hasta que se marquen como pagados.
+2. Revisa lo más común: **saldo inicial** mal puesto (debe ser el saldo real el día que empezaste), movimientos **repetidos** (la sección *Posibles movimientos repetidos* los lista), movimientos sin marcar como pagados o transferencias registradas como gasto/ingreso.
+3. Si quieres dejarlo igual al banco, escribe el **saldo real hoy** y pulsa **Ajustar al saldo real**: se registra la diferencia como un *ajuste de saldo* que no cuenta como venta ni gasto del negocio. En una tarjeta usa **Conciliar con el extracto del banco** y escribe la deuda real.
+4. Un **desembolso de crédito** (el dinero que te presta el banco) debe registrarse como ingreso con la categoría **Desembolso de crédito**: así entra a tu cuenta y al flujo de caja, pero **no se cuenta como venta** en Ingresos, EBITDA ni Estadísticas. Si ya lo tenías en «Otros ingresos», edítalo y cámbiale la categoría.
+5. El **Saldo total en cuentas** del Resumen suma solo el dinero (efectivo, bancos, billeteras); la deuda de las tarjetas aparece aparte como «Tarjetas: debes…».
+
+## Botón «i» (cómo se calcula)
+Junto a cada cifra calculada hay un círculo pequeño con una **i**. Púlsalo (o enter con el teclado) para ver la fórmula en palabras; se cierra con Esc o tocando fuera.
+
 ## Preguntas frecuentes
 - **Me dice «Monto inválido».** Escribe solo números, sin puntos de miles ni letras (por ejemplo `1500000`). Puedes usar punto o coma para los decimales (`12500.50` o `12500,50`), con máximo 2 decimales en dinero y 3 en cantidades. Las cantidades, tasas, días y plazos también deben ser números (los días y plazos, enteros). Las fechas deben existir (no 31 de febrero).
 - **Me dice “No tienes permiso”:** tu rol no permite esa acción; pídele al administrador.
@@ -70,6 +80,7 @@ Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de
 - **Navegación:** en el computador, un **menú lateral izquierdo** que muestra solo iconos y se despliega con los nombres al acercar el cursor (también al navegar con el teclado); arriba quedan el selector de negocio, el botón **+ Movimiento**, los pendientes y tu avatar. En el celular, la barra inferior con el botón **+**. El menú de tu avatar cambia el tema claro/oscuro y cierra sesión.
 - **Movimientos:** en las listas, el resumen y los pendientes cada movimiento se muestra con su **nota** (qué compraste) como título y el proveedor al lado; si no tiene nota, se muestra el proveedor. Busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. Toca un movimiento para ver el detalle, abrir su comprobante, **editarlo** o **eliminarlo**. **Exportar CSV** descarga la lista filtrada.
   El Operador puede editar o eliminar sus propios gastos durante las 48 horas siguientes a registrarlos.
+- **Filtro de categorías (Resumen y Estadísticas):** el mismo filtro está en el Resumen: ahí también afecta el flujo de caja, el anillo, el margen, el EBITDA, los principales gastos, los últimos 6 meses, el presupuesto, la actividad reciente y lo por pagar. El saldo de las cuentas no se filtra (es dinero real).
 - **Filtro de categorías en Estadísticas:** pulsa **Categorías** y marca las que quieres ver; las que desmarques (por ejemplo gastos personales o de un familiar) no cuentan en ninguna cifra, gráfica ni lista de proveedores. Hay atajos *Todas*, *Ninguna* e *Invertir*, y puedes marcar «Recordar esta selección en este navegador». Las reservas siempre se incluyen. **Quitar filtro** vuelve a la vista completa.
 - **Estadísticas (Administrador):** elige Hoy, Semana, Mes o Año; compara con el periodo anterior, mira los gastos por categoría y los mayores proveedores.
 - **Pendientes (campana):** lo que debes pagar (con los vencidos marcados) y lo que te deben; márcalos como pagados o cobrados desde ahí.

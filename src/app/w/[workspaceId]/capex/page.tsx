@@ -9,6 +9,8 @@ import { cop, num } from "@/lib/format";
 import { addCapexAction, updateCapexAction } from "@/modules/airbnb/actions";
 import { CsvImport } from "@/components/forms/csv-import";
 import { importCapexAction } from "@/modules/airbnb/import-actions";
+import { EXPLAIN } from "@/lib/explain";
+import { InfoTip } from "@/components/ui/info-tip";
 
 export const metadata = { title: "CAPEX" };
 const CAT = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION: "Reformas", DECOR: "Decoración", LINENS_KITCHENWARE: "Ropa de cama y cocina", TECH: "Tecnología", OTHER: "Otros" } as const;
@@ -33,15 +35,15 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
       <h1 className="text-3xl font-semibold tracking-tight">CAPEX · Adecuación</h1>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <section className="card flex items-center gap-4"><ProgressRing value={rows.length ? bought.length / rows.length : 0} label="Ítems comprados" /><div><h2 className="text-sm text-muted">Comprado</h2><p className="font-medium">{bought.length} de {rows.length}</p></div></section>
-        <KpiCard title="Presupuesto total" value={cop(totalBudget)} />
-        <KpiCard title="Gastado (real)" value={cop(spent)} />
-        <KpiCard title="Variación en lo comprado" value={cop(varianceBought)} tone={varianceBought < 0 ? "negative" : "positive"} hint={varianceBought < 0 ? "Sobre el presupuesto" : "Ahorro vs presupuesto"} />
+        <KpiCard info={EXPLAIN.capexBudget} title="Presupuesto total" value={cop(totalBudget)} />
+        <KpiCard info={EXPLAIN.capexSpent} title="Gastado (real)" value={cop(spent)} />
+        <KpiCard info={EXPLAIN.capexVariance} title="Variación en lo comprado" value={cop(varianceBought)} tone={varianceBought < 0 ? "negative" : "positive"} hint={varianceBought < 0 ? "Sobre el presupuesto" : "Ahorro vs presupuesto"} />
       </div>
 
       <section className="card overflow-x-auto !p-2">
         {rows.length === 0 ? <p className="p-6 text-center text-muted">Aún no hay ítems. {admin ? "Agrega el primero abajo." : ""}</p> : (
           <table className="w-full">
-            <thead><tr><th className="th">Ítem</th><th className="th">Cant.</th><th className="th text-right">P. unit. presup.</th><th className="th text-right">Presupuestado</th><th className="th text-right">Real</th><th className="th text-right">Variación</th><th className="th">Compra</th></tr></thead>
+            <thead><tr><th className="th">Ítem</th><th className="th">Cant.</th><th className="th text-right">P. unit. presup.</th><th className="th text-right">Presupuestado</th><th className="th text-right">Real</th><th className="th text-right">Variación <InfoTip {...EXPLAIN.capexVariance} /></th><th className="th">Compra</th></tr></thead>
             <tbody className="divide-y divide-line">
               {rows.map((r) => (
                 <tr key={r.id} className={r.status === "PURCHASED" ? "bg-canvas/50" : ""}>
