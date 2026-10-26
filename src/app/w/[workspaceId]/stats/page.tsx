@@ -5,8 +5,10 @@ import { Donut } from "@/components/ui/donut";
 import { Segmented } from "@/components/ui/filters";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { pageCtx } from "@/lib/auth/permissions";
+import { CategoryFilter } from "@/components/forms/category-filter";
 import { cop } from "@/lib/format";
-import { parsePeriod, parseStatus, periodStats } from "@/modules/airbnb/queries";
+import { parseExclusion, parsePeriod, parseStatus, periodStats } from "@/modules/airbnb/queries";
+import { categoryOptions } from "@/modules/core/queries";
 
 export const metadata = { title: "Estadísticas" };
 const PERIODS = [{ key: "day", label: "Hoy" }, { key: "week", label: "Semana" }, { key: "month", label: "Mes" }, { key: "year", label: "Año" }] as const;
@@ -18,17 +20,19 @@ function Delta({ now, before, invert }: { now: number; before: number; invert?: 
   return <div><Chip tone={good ? "positive" : "negative"}>{d >= 0 ? "▲" : "▼"} {Math.abs(d * 100).toFixed(0)}% vs. periodo anterior</Chip></div>;
 }
 
-export default async function Stats({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ p?: string; o?: string; status?: string }> }) {
+export default async function Stats({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ p?: string; o?: string; status?: string; x?: string }> }) {
   const { workspaceId } = await params;
   const sp = await searchParams;
   await pageCtx(workspaceId, "finance:read");
   const period = parsePeriod(sp.p);
   const offset = Math.min(0, Math.max(-60, Number(sp.o) || 0)) || 0;
   const status = parseStatus(sp.status ?? "ALL");
-  const st = periodStats;
-  const data = await st(workspaceId, period, offset, status);
+  const cats = await categoryOptions(workspaceId);
+  const known = new Set([...cats.map((c) => c.id), "none"]);
+  const excluded = parseExclusion(sp.x).filter((x) => known.has(x));
+  const data = await periodStats(workspaceId, period, offset, status, excluded);
   const base = `/w/${workspaceId}/stats`;
-  const q = (o: Record<string, string | number>) => `${base}?${new URLSearchParams({ p: period, o: String(offset), status: sp.status ?? "ALL", ...Object.fromEntries(Object.entries(o).map(([k, v]) => [k, String(v)])) })}`;
+  const q = (o: Record<string, string | number>) => `${base}?${new URLSearchParams({ p: period, o: String(offset), status: sp.status ?? "ALL", ...(excluded.length ? { x: excluded.join(",") } : {}), ...Object.fromEntries(Object.entries(o).map(([k, v]) => [k, String(v)])) })}`;
   const expense = data.pyg.variableCosts.total + data.pyg.fixedOpex.total;
 
   return (
@@ -43,6 +47,15 @@ export default async function Stats({ params, searchParams }: { params: Promise<
         </div>
         <Segmented label="Estado" current={sp.status ?? "ALL"} items={[{ key: "ALL", label: "Todo", href: q({ status: "ALL" }) }, { key: "PAID", label: "Pagado / cobrado", href: q({ status: "PAID" }) }, { key: "PENDING", label: "Pendiente", href: q({ status: "PENDING" }) }]} />
       </div>
+
+      <CategoryFilter
+        workspaceId={workspaceId} excluded={excluded} hasParam={sp.x !== undefined}
+        base={{ p: period, o: String(offset), status: sp.status ?? "ALL" }}
+        groups={[
+          { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })), { id: "none", label: "Sin categoría" }] },
+          { title: "Ingresos", items: cats.filter((c) => !c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })) },
+        ]}
+      />
 
       <div className="grid gap-5 sm:grid-cols-3">
         <KpiCard title="Ingresos" value={cop(data.pyg.grossRevenue)}><Delta now={data.pyg.grossRevenue} before={data.prev.income} /></KpiCard>
