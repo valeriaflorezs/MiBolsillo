@@ -67,7 +67,7 @@ Ingresos brutos → costos variables (comisiones, aseo, amenities) → margen de
 
 ## Novedades de la versión 2.0
 - **Navegación:** en el computador, un **menú lateral izquierdo** que muestra solo iconos y se despliega con los nombres al acercar el cursor (también al navegar con el teclado); arriba quedan el selector de negocio, el botón **+ Movimiento**, los pendientes y tu avatar. En el celular, la barra inferior con el botón **+**. El menú de tu avatar cambia el tema claro/oscuro y cierra sesión.
-- **Movimientos:** busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. Toca un movimiento para ver el detalle, abrir su comprobante, **editarlo** o **eliminarlo**. **Exportar CSV** descarga la lista filtrada.
+- **Movimientos:** en las listas, el resumen y los pendientes cada movimiento se muestra con su **nota** (qué compraste) como título y el proveedor al lado; si no tiene nota, se muestra el proveedor. Busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. Toca un movimiento para ver el detalle, abrir su comprobante, **editarlo** o **eliminarlo**. **Exportar CSV** descarga la lista filtrada.
   El Operador puede editar o eliminar sus propios gastos durante las 48 horas siguientes a registrarlos.
 - **Estadísticas (Administrador):** elige Hoy, Semana, Mes o Año; compara con el periodo anterior, mira los gastos por categoría y los mayores proveedores.
 - **Pendientes (campana):** lo que debes pagar (con los vencidos marcados) y lo que te deben; márcalos como pagados o cobrados desde ahí.

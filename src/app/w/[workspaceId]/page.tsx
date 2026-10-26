@@ -8,7 +8,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { ProgressBar } from "@/components/ui/progress";
 import { RingGauge } from "@/components/ui/ring-gauge";
 import { can, pageCtx } from "@/lib/auth/permissions";
-import { cop, fmtDate, monthRange, pct } from "@/lib/format";
+import { cop, fmtDate, monthRange, pct, txTitle, txVendorHint } from "@/lib/format";
 import { airbnbMetrics, budgetExecution, categoryBreakdown, parseStatus, periodSummary, sixMonthSeries, upcomingReservations } from "@/modules/airbnb/queries";
 import { accountBalances, pendingPayables, searchTransactions } from "@/modules/core/queries";
 
@@ -134,7 +134,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
           <ul className="space-y-1">
             {pending.map((t) => (
               <li key={t.id}><Link href={`${base}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/30">
-                <span className="truncate font-medium">{t.vendor ?? t.category?.name ?? "Movimiento"} <span className="font-normal text-muted">· {fmtDate(t.date)}</span></span><span className="shrink-0 font-semibold">{cop(t.amount)}</span>
+                <span className="truncate font-medium">{txTitle(t, "Movimiento", t.category?.name)} <span className="font-normal text-muted">· {fmtDate(t.date)}</span></span><span className="shrink-0 font-semibold">{cop(t.amount)}</span>
               </Link></li>
             ))}
           </ul>
@@ -167,7 +167,7 @@ function RecentList({ workspaceId, rows }: { workspaceId: string; rows: Awaited<
         {rows.map((t) => (
           <li key={t.id}>
             <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm backdrop-blur hover:bg-white/20">
-              <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span><span className="min-w-0"><span className="block truncate font-medium">{t.vendor ?? t.category?.name ?? "Movimiento"}</span><span className="block text-xs text-white/65">{fmtDate(t.date)} · {t.account}</span></span></span>
+              <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span><span className="min-w-0"><span className="block truncate font-medium">{txTitle(t, "Movimiento", t.category?.name)}</span><span className="block text-xs text-white/65">{txVendorHint(t) ? `${txVendorHint(t)} · ` : ""}{fmtDate(t.date)} · {t.account}</span></span></span>
               <span className={`shrink-0 font-semibold ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
             </Link>
           </li>

@@ -20,3 +20,9 @@ export const num = (d: { toString(): string } | null | undefined) => (d == null 
 /** Fecha dentro de `n` días (aislada para no llamar a Date.now() directamente en componentes). */
 export const daysFromNow = (n: number) => new Date(Date.now() + n * 86_400_000);
 export const todayUtc = () => new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");
+
+/** Título de un movimiento en listas: la nota (qué se compró) primero, luego el proveedor, luego la categoría. */
+export const txTitle = (t: { description?: string | null; vendor?: string | null }, fallback: string, categoryName?: string | null) =>
+  t.description?.trim() || t.vendor || categoryName || fallback;
+/** Dónde se compró, solo si el título ya es la nota (para no repetirlo). */
+export const txVendorHint = (t: { description?: string | null; vendor?: string | null }) => (t.description?.trim() && t.vendor ? t.vendor : null);

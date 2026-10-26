@@ -4,7 +4,7 @@ import { Chip } from "@/components/ui/chip";
 import { FolderCard } from "@/components/ui/folder-card";
 import { prisma } from "@/lib/db";
 import { can, pageCtx } from "@/lib/auth/permissions";
-import { cop, fmtDate, num, todayUtc } from "@/lib/format";
+import { cop, fmtDate, num, todayUtc, txTitle, txVendorHint } from "@/lib/format";
 import { reservationStatusAction } from "@/modules/airbnb/actions";
 import { markPaidAction } from "@/modules/core/finance-actions";
 import { pendingPayables } from "@/modules/core/queries";
@@ -32,8 +32,8 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
         {pay.map((t) => (
           <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl inset px-4 py-3">
             <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="min-w-0">
-              <p className="truncate font-medium">{t.category?.emoji} {t.vendor ?? t.category?.name ?? "Gasto"}</p>
-              <p className="text-sm text-muted">{fmtDate(t.date)} {overdue(t.date) && <Chip tone="negative">Vencido</Chip>}</p>
+              <p className="truncate font-medium">{t.category?.emoji} {txTitle(t, "Gasto", t.category?.name)}</p>
+              <p className="text-sm text-muted">{txVendorHint(t) ? `${txVendorHint(t)} · ` : ""}{fmtDate(t.date)} {overdue(t.date) && <Chip tone="negative">Vencido</Chip>}</p>
             </Link>
             <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong>
               {canWrite && <ActionForm action={markPaidAction} submitLabel="Pagado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}</div>
@@ -45,7 +45,7 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
         <FolderCard tab="Por cobrar" meta={<>{incoming.length + receivables.length} pendiente(s)</>}>
           <div className="space-y-2">
           {incoming.map((t) => (
-            <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl inset px-4 py-3"><span>{t.vendor ?? t.category?.name ?? "Ingreso"} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
+            <div key={t.id} className="flex items-center justify-between gap-3 rounded-2xl inset px-4 py-3"><span>{txTitle(t, "Ingreso", t.category?.name)} <span className="text-sm text-muted">· {fmtDate(t.date)}</span></span>
               <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong>{canWrite && <ActionForm action={markPaidAction} submitLabel="Cobrado" variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}</div></div>
           ))}
           {receivables.map((r) => (
