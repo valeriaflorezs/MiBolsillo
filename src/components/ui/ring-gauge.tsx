@@ -8,6 +8,11 @@ const arc = (a: number, b: number) => {
   const [x1, y1] = pt(a), [x2, y2] = pt(b);
   return `M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${b - a > 180 ? 1 : 0} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`;
 };
+/** Mismo tramo recorrido en sentido antihorario: el texto del arco inferior queda derecho y legible. */
+const arcReversed = (a: number, b: number) => {
+  const [x1, y1] = pt(a), [x2, y2] = pt(b);
+  return `M${x2.toFixed(2)},${y2.toFixed(2)} A${R},${R} 0 ${b - a > 180 ? 1 : 0} 0 ${x1.toFixed(2)},${y1.toFixed(2)}`;
+};
 const short = (n: number) => (Math.abs(n) >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : Math.abs(n) >= 1e3 ? `$${Math.round(n / 1e3)}k` : `$${Math.round(n)}`);
 
 /** Anillo con hueco superior y dos tramos con etiqueta sobre el arco (gastos vs resultado), según la referencia. */
@@ -29,7 +34,11 @@ export function RingGauge({ total, expense, label, children }: { total: number; 
       </div>
       <svg viewBox="0 0 300 300" className="w-full" role="img" aria-label={`${label}: ingresos ${cop(total)}, gastos ${cop(expense)}, resultado ${cop(result)}`}>
         <path d={arc(START, START + SWEEP)} stroke="rgb(255 255 255 / .22)" strokeWidth={SW} fill="none" strokeLinecap="round" />
-        {segs.map((s) => <path key={s.id} id={`ring-${s.id}`} d={arc(s.from, s.to)} style={{ stroke: s.fill }} strokeWidth={SW} fill="none" strokeLinecap="round" />)}
+        {segs.map((s) => <path key={s.id} d={arc(s.from, s.to)} style={{ stroke: s.fill }} strokeWidth={SW} fill="none" strokeLinecap="round" />)}
+        {segs.map((s) => {
+          const mid = (s.from + s.to) / 2, flip = mid > 90 && mid < 270; // mitad inferior del anillo
+          return <path key={`p${s.id}`} id={`ring-${s.id}`} d={flip ? arcReversed(s.from, s.to) : arc(s.from, s.to)} fill="none" stroke="none" />;
+        })}
         {segs.map((s) => (
           <text key={`t${s.id}`} style={{ fill: s.text }} fontSize="13" fontWeight="600" letterSpacing=".4">
             <textPath href={`#ring-${s.id}`} startOffset="50%" textAnchor="middle" dominantBaseline="central">{s.to - s.from > 80 ? `${s.name} ` : ""}{short(s.value)}</textPath>
