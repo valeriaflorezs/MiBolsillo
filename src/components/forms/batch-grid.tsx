@@ -181,7 +181,7 @@ export function BatchGrid({ kind, workspaceId, propertyId, properties = [], targ
                           <input data-cell={`${r}-${ci}`} value={row[ci]} onChange={(e) => setCell(r, ci, e.target.value)} onPaste={(e) => onPaste(e, r, ci)} onKeyDown={(e) => onKey(e, r, ci)}
                             list={opts?.length ? `dl-${kind}-${c.key}` : undefined} inputMode={c.numeric ? "decimal" : undefined} autoComplete="off" spellCheck={false}
                             aria-label={`${c.label}, fila ${r + 1}`} aria-invalid={err ? true : undefined}
-                            className={`w-full bg-transparent px-2 py-2 outline-none focus:bg-white/60 ${c.numeric ? "text-right" : ""}`} />
+                            className={`w-full bg-transparent px-2 py-2 outline-none focus:bg-surface focus:text-ink focus:shadow-[inset_0_0_0_2px_rgb(var(--brand))] ${c.numeric ? "text-right" : ""}`} />
                         </td>
                       );
                     })}

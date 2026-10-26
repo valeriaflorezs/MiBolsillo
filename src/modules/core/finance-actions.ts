@@ -40,6 +40,7 @@ export async function createTransactionAction(_: ActionState, fd: FormData): Pro
       status: z.enum(["PAID", "PENDING"]).default("PAID"),
       amount: money, date: dateStr,
       accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId, attachmentId: optId,
+      quantity: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number({ message: "Cantidad inválida" }).positive("La cantidad debe ser mayor a 0").max(1e7).optional()),
       vendor: optText(80), description: optText(300),
     }).parse(Object.fromEntries(fd));
     const { userId, role } = await requireWorkspace(i.workspaceId, "transaction:create");

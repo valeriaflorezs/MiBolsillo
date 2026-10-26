@@ -98,6 +98,7 @@ export default async function Transactions({ params, searchParams }: { params: P
                 <div><dt className="text-muted">Categoría</dt><dd className="font-medium">{selected.category ? `${selected.category.emoji ?? ""} ${selected.category.name}` : "—"}</dd></div>
                 <div><dt className="text-muted">Cuenta</dt><dd className="font-medium">{selected.account}{selected.transferAccount ? ` → ${selected.transferAccount}` : ""}</dd></div>
                 <div><dt className="text-muted">Registrado por</dt><dd className="font-medium">{selected.createdBy}</dd></div>
+                {selected.quantity != null && <div><dt className="text-muted">Cantidad</dt><dd className="font-medium">{selected.quantity} · {cop(selected.amount / selected.quantity)} c/u</dd></div>}
                 {selected.property && <div><dt className="text-muted">Propiedad</dt><dd className="font-medium">{selected.property}</dd></div>}
                 {selected.description && <div className="sm:col-span-2"><dt className="text-muted">Nota</dt><dd className="font-medium">{selected.description}</dd></div>}
               </dl>

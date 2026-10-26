@@ -31,6 +31,7 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
     const i = z.object({
       workspaceId: id, transactionId: id, type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]), status: z.enum(["PAID", "PENDING"]),
       amount: positive, date: dateStr, accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId,
+      quantity: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number({ message: "Cantidad inválida" }).positive("La cantidad debe ser mayor a 0").max(1e7).optional()),
       vendor: optText(80), description: optText(300),
     }).parse(Object.fromEntries(fd));
     const { userId, role } = await requireWorkspace(i.workspaceId, "transaction:create");
@@ -42,7 +43,7 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
     const { transactionId, workspaceId, ...data } = i;
     await prisma.transaction.update({
       where: { id: transactionId },
-      data: { ...data, transferAccountId: i.type === "TRANSFER" ? i.transferAccountId ?? null : null, categoryId: i.categoryId ?? null, propertyId: i.propertyId ?? null, paidAt: i.status === "PAID" ? tx.paidAt ?? i.date : null },
+      data: { ...data, transferAccountId: i.type === "TRANSFER" ? i.transferAccountId ?? null : null, quantity: i.quantity ?? null, categoryId: i.categoryId ?? null, propertyId: i.propertyId ?? null, paidAt: i.status === "PAID" ? tx.paidAt ?? i.date : null },
     });
     refresh(workspaceId);
     return "Cambios guardados";

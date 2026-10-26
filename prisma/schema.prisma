@@ -300,6 +300,7 @@ model Transaction {
   type                 TransactionType
   status               TransactionStatus @default(PAID)
   amount               Decimal           @db.Decimal(14, 2) // siempre positivo; el signo lo da `type`
+  quantity             Decimal?          @db.Decimal(12, 3) // unidades compradas (informativo; el monto es el total)
   date                 DateTime // fecha contable (devengo)
   dueDate              DateTime? // vencimiento si está PENDING
   paidAt               DateTime? // fecha real de pago/cobro (flujo de caja)

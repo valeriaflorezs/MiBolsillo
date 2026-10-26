@@ -39,6 +39,15 @@ describe("parsers de carga en lote", () => {
     expect(p.data[0]).toMatchObject({ type: "EXPENSE", status: "PENDING", amount: 120000, accountId: "a2", categoryId: "c1" });
     expect(p.data[1]).toMatchObject({ type: "INCOME", status: "PAID", categoryId: null });
     expect(p.errors.map((e) => e.row)).toEqual([2, 3, 4]);
+    // cantidad opcional: vacía = null, número válido se conserva, inválida reporta la fila
+    const q = parseTransactions([
+      { fecha: "2026-03-07", monto: "100", cantidad: "4", cuenta: "Nequi" },
+      { fecha: "2026-03-07", monto: "100", cuenta: "Nequi" },
+      { fecha: "2026-03-07", monto: "100", cantidad: "0", cuenta: "Nequi" },
+      { fecha: "2026-03-07", monto: "100", cantidad: "abc", cuenta: "Nequi" },
+    ], lk);
+    expect(q.data.map((d) => d.quantity)).toEqual([4, null]);
+    expect(q.errors.map((e) => e.row)).toEqual([2, 3]);
     // con una sola cuenta, la cuenta es opcional
     expect(parseTransactions([{ fecha: "2026-03-07", monto: "5" }], { accounts: [{ id: "a1", name: "Efectivo" }], categories: [] }).data[0].accountId).toBe("a1");
   });

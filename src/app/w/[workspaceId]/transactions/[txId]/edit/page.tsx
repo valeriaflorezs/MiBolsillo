@@ -28,6 +28,7 @@ export default async function EditTransaction({ params }: { params: Promise<{ wo
               <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" defaultValue={tx.type} className="input"><option value="EXPENSE">Gasto</option><option value="INCOME">Ingreso</option><option value="TRANSFER">Transferencia</option></select></div>
             ) : <input type="hidden" name="type" value="EXPENSE" />}
             <div><label className="label" htmlFor="amount">Monto</label><input id="amount" name="amount" type="number" min="1" step="any" required defaultValue={tx.amount} className="input" /></div>
+            <div><label className="label" htmlFor="quantity">Cantidad (opcional)</label><input id="quantity" name="quantity" type="number" min="0" step="any" defaultValue={tx.quantity ?? undefined} className="input" placeholder="Unidades compradas" /></div>
             <div><label className="label" htmlFor="date">Fecha</label><input id="date" name="date" type="date" required defaultValue={inputDate(tx.date)} className="input" /></div>
             <div><label className="label" htmlFor="status">Estado</label><select id="status" name="status" defaultValue={tx.status} className="input"><option value="PAID">Pagado</option><option value="PENDING">Por pagar</option></select></div>
             <div><label className="label" htmlFor="vendor">Proveedor</label><input id="vendor" name="vendor" maxLength={80} defaultValue={tx.vendor ?? ""} className="input" /></div>

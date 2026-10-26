@@ -17,7 +17,7 @@ Una aplicación web para llevar tus finanzas personales y las de tus negocios (p
 
 **Dar acceso de solo lectura con usuario y contraseña** (por ejemplo, a un familiar sin cuenta de Google): **Miembros → Dar acceso de solo lectura**. Escribe el nombre y elige un usuario; la app genera la contraseña y la muestra **una sola vez** (cópiala y compártela por un canal privado). La persona entra desde la pantalla de inicio, en «o con usuario y contraseña». Si la pierde, usa **Nueva contraseña**; para cortar el acceso, usa **Quitar**. Estas cuentas no pueden crear negocios propios.
 
-**Carga en lote (editor tipo tabla).** En el menú, **Carga en lote** (solo administradores). Elige qué cargar: *Movimientos*, y en negocios Airbnb también *CAPEX* y *Gastos fijos*. Puedes:
+**Carga en lote (editor tipo tabla).** En el menú, **Carga en lote** (solo administradores). Elige qué cargar: *Movimientos* (columnas Fecha, Tipo, Monto, Cantidad opcional, Proveedor, Descripción, Categoría, Cuenta y Estado), y en negocios Airbnb también *CAPEX* y *Gastos fijos*. Puedes:
 - **Pegar desde Excel o Google Sheets:** copia las celdas (con o sin encabezados), haz clic en cualquier celda de la tabla y pega con Ctrl+V. En el celular usa «Pegar texto copiado de Excel».
 - **Subir un `.xlsx` o `.csv`:** la app detecta la hoja y las columnas por sus encabezados, y muestra las categorías del Excel para que elijas cuáles traer. Nada se guarda todavía.
 - **Editar como en una hoja:** Enter baja a la celda de abajo, × quita la fila.
@@ -41,7 +41,7 @@ Para invitar a alguien: **Miembros → Invitar**. Copia el enlace y envíaselo; 
 1. Pulsa **+ Gasto**.
 2. Arrastra la factura (JPG, PNG, WebP o PDF de hasta 8 MB) o pulsa **Elegir archivo**. En el celular puedes tomar la foto.
 3. La app lee el comprobante y sugiere monto, fecha, proveedor y categoría. **Revisa siempre los datos** y corrígelos si hace falta.
-4. Elige la cuenta, el estado (**Pagado** o **Por pagar**) y pulsa **Guardar**.
+4. Elige la cuenta, el estado (**Pagado** o **Por pagar**) y pulsa **Guardar**. Si compraste varias unidades, escribe la **Cantidad** (opcional): el monto sigue siendo el total y en el detalle verás el valor por unidad.
 Si la lectura falla, puedes llenar el formulario a mano.
 
 ## Resumen (Administrador)

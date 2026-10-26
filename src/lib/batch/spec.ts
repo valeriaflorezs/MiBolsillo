@@ -20,6 +20,7 @@ export const BATCH_SPECS: Record<BatchKind, BatchSpec> = {
       { key: "fecha", label: "Fecha", width: "9rem", match: is("fecha", "date"), help: "AAAA-MM-DD o DD/MM/AAAA" },
       { key: "tipo", label: "Tipo", width: "8rem", options: ["Gasto", "Ingreso"], match: is("tipo", "type") },
       { key: "monto", label: "Monto", width: "9rem", numeric: true, match: is("monto", "valor", "importe", "amount", "total") },
+      { key: "cantidad", label: "Cant.", width: "5rem", numeric: true, match: is("cantidad", "cant", "qty", "unidades") },
       { key: "proveedor", label: "Proveedor", width: "11rem", match: is("proveedor", "tienda", "comercio", "vendor") },
       { key: "descripcion", label: "Descripción", width: "13rem", match: is("descripcion", "concepto", "detalle", "nota", "item") },
       { key: "categoria", label: "Categoría", width: "11rem", match: is("categoria", "category") },

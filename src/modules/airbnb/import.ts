@@ -135,8 +135,8 @@ export function parseDate(raw: string): Date | null {
 }
 
 export type TxLookups = { accounts: { id: string; name: string }[]; categories: { id: string; name: string }[] };
-/** Columnas: fecha, tipo (gasto/ingreso), monto, proveedor, descripcion, categoria, cuenta, estado (pagado/pendiente). */
-export function parseTransactions(objs: Obj[], lk: TxLookups): Parsed<{ type: "EXPENSE" | "INCOME"; status: "PAID" | "PENDING"; amount: number; date: Date; accountId: string; categoryId: string | null; vendor: string | null; description: string | null }> {
+/** Columnas: fecha, tipo (gasto/ingreso), monto, cantidad (opcional), proveedor, descripcion, categoria, cuenta, estado (pagado/pendiente). */
+export function parseTransactions(objs: Obj[], lk: TxLookups): Parsed<{ type: "EXPENSE" | "INCOME"; status: "PAID" | "PENDING"; amount: number; quantity: number | null; date: Date; accountId: string; categoryId: string | null; vendor: string | null; description: string | null }> {
   const out: ReturnType<typeof parseTransactions> = { data: [], skipped: 0, errors: [], warnings: [] };
   const acc = new Map(lk.accounts.map((a) => [norm(a.name), a.id]));
   const cat = new Map(lk.categories.map((c) => [norm(c.name.replace(/^\p{Extended_Pictographic}\s*/u, "")), c.id]));
@@ -145,16 +145,18 @@ export function parseTransactions(objs: Obj[], lk: TxLookups): Parsed<{ type: "E
     const type = TYPE[norm(o.tipo || "gasto")];
     const amount = money(o.monto);
     const status = STATUS[norm(o.estado || "pagado")];
+    const quantity = o.cantidad ? money(o.cantidad) : null;
     const accountId = o.cuenta ? acc.get(norm(o.cuenta)) : lk.accounts.length === 1 ? lk.accounts[0].id : undefined;
     const categoryId = o.categoria ? cat.get(norm(o.categoria.replace(/^\p{Extended_Pictographic}\s*/u, ""))) : null;
     if (!date) return out.errors.push({ row, msg: "fecha inválida (usa AAAA-MM-DD o DD/MM/AAAA)." });
     if (!type) return out.errors.push({ row, msg: `tipo “${o.tipo}” no reconocido (Gasto o Ingreso).` });
     if (amount === undefined || !Number.isFinite(amount) || amount <= 0 || amount > 1e12) return out.errors.push({ row, msg: "monto inválido (positivo; el tipo define si es gasto o ingreso)." });
+    if (o.cantidad && (quantity === undefined || quantity === null || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1e7)) return out.errors.push({ row, msg: "cantidad inválida (número mayor a 0)." });
     if (!status) return out.errors.push({ row, msg: `estado “${o.estado}” no reconocido (Pagado o Pendiente).` });
     if (!accountId) return out.errors.push({ row, msg: o.cuenta ? `cuenta “${o.cuenta}” no existe.` : "falta la cuenta." });
     if (o.categoria && !categoryId) return out.errors.push({ row, msg: `categoría “${o.categoria}” no existe.` });
     if ((o.proveedor ?? "").length > 80 || (o.descripcion ?? "").length > 300) return out.errors.push({ row, msg: "texto demasiado largo." });
-    out.data.push({ type, status, amount, date, accountId, categoryId: categoryId ?? null, vendor: o.proveedor || null, description: o.descripcion || null });
+    out.data.push({ type, status, amount, quantity: quantity ?? null, date, accountId, categoryId: categoryId ?? null, vendor: o.proveedor || null, description: o.descripcion || null });
   });
   return out;
 }

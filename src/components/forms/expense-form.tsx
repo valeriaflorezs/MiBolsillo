@@ -24,13 +24,13 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
   const [file, setFile] = useState("");
   const [ocr, setOcr] = useState<{ msg: string; kind: "info" | "error" | "ok" } | null>(null);
   const [drag, setDrag] = useState(false);
-  const [vals, setVals] = useState({ vendor: "", date: today(), amount: "", categoryId: "" });
+  const [vals, setVals] = useState({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "" });
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
     const r = await action(prev, fd);
     if (r?.ok) { // limpia el formulario para el siguiente gasto
       setAttachmentId(""); setFile(""); setOcr(null);
-      setVals({ vendor: "", date: today(), amount: "", categoryId: "" });
+      setVals({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "" });
       formRef.current?.reset();
     }
     return r;
@@ -56,6 +56,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
       date: d.date ?? v.date,
       amount: d.total != null ? String(d.total) : v.amount,
       categoryId: d.categoryId ?? v.categoryId,
+      quantity: v.quantity,
     }));
     setOcr({ msg: "Datos sugeridos: revísalos antes de guardar.", kind: "ok" });
   }
@@ -97,6 +98,10 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
         <div>
           <label className="label" htmlFor="amount">Monto (COP)</label>
           <input id="amount" name="amount" type="number" inputMode="decimal" min="1" step="any" required className="input" value={vals.amount} onChange={(e) => setVals({ ...vals, amount: e.target.value })} />
+        </div>
+        <div>
+          <label className="label" htmlFor="quantity">Cantidad (opcional)</label>
+          <input id="quantity" name="quantity" type="number" inputMode="decimal" min="0" step="any" className="input" placeholder="Unidades compradas" value={vals.quantity} onChange={(e) => setVals({ ...vals, quantity: e.target.value })} />
         </div>
         <div>
           <label className="label" htmlFor="date">Fecha</label>
