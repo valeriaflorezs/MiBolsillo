@@ -24,4 +24,11 @@ describe("filtro de categorías de los resúmenes", () => {
     expect(categoryFilter(["none"])).toEqual({ categoryId: { not: null } });
     expect(categoryFilter([A, "none"])).toEqual({ categoryId: { notIn: [A], not: null } });
   });
+
+  it("excluir cuentas (a:<id>) filtra por cuenta, solo o combinado con categorías", () => {
+    expect(parseExclusion(`a:${A},${B},a:zzz`)).toEqual([`a:${A}`, B]);
+    expect(categoryFilter([`a:${A}`])).toEqual({ accountId: { notIn: [A] } });
+    expect(categoryFilter([`a:${A}`, "none"])).toEqual({ AND: [{ categoryId: { not: null } }, { accountId: { notIn: [A] } }] });
+    expect(categoryFilter([B, `a:${A}`])).toEqual({ AND: [{ OR: [{ categoryId: null }, { categoryId: { notIn: [B] } }] }, { accountId: { notIn: [A] } }] });
+  });
 });

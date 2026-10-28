@@ -42,14 +42,14 @@ export function CategoryFilter({ workspaceId, groups, excluded, base, hasParam }
   const included = all.length - off.size;
 
   return (
-    <section className="card space-y-3" aria-label="Filtro de categorías">
+    <section className="card space-y-3" aria-label="Filtro de categorías y cuentas">
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 text-left">
-        <span className="flex items-center gap-2 font-medium"><Filter size={16} aria-hidden />Categorías</span>
+        <span className="flex items-center gap-2 font-medium"><Filter size={16} aria-hidden />Categorías y cuentas</span>
         <span className="text-sm text-muted">{excluded.length ? `${excluded.length} fuera del resumen` : "Todas incluidas"} · {open ? "Ocultar" : "Elegir"}</span>
       </button>
       {open && (
         <div className="space-y-4">
-          <p className="text-sm text-muted">Marca las categorías que quieres ver; las que desmarques no cuentan en ninguna cifra ni gráfica.</p>
+          <p className="text-sm text-muted">Marca las categorías y cuentas que quieres ver; las que desmarques no cuentan en ninguna cifra ni gráfica.</p>
           <div className="flex flex-wrap gap-2 text-sm">
             <button type="button" className="btn btn-ghost" onClick={() => setOff(new Set())}>Todas</button>
             <button type="button" className="btn btn-ghost" onClick={() => setOff(new Set(all))}>Ninguna</button>

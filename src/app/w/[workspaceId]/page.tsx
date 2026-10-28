@@ -49,7 +49,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
   const status = parseStatus(sp.status);
   const cats = await categoryOptions(workspaceId);
   const known = new Set([...cats.map((c) => c.id), "none"]);
-  const excluded = parseExclusion(sp.x).filter((x) => known.has(x));
+  const excluded = parseExclusion(sp.x).filter((x) => known.has(x) || x.startsWith("a:"));
   const [sum, series, budget, breakdown, balances, recent, pending] = await Promise.all([
     periodSummary(workspaceId, start, end, status, excluded),
     sixMonthSeries(workspaceId, key, status, excluded),
