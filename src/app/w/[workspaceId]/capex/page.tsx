@@ -32,7 +32,13 @@ export default async function Capex({ params, searchParams }: { params: Promise<
     canBuy ? prisma.transaction.findMany({ where: { workspaceId, type: "EXPENSE", capexItemId: null }, select: { id: true, description: true, vendor: true, amount: true, date: true }, orderBy: { date: "desc" }, take: 300 }) : Promise.resolve([]),
   ]);
   const expenseOptions = expenses.map((e) => ({ id: e.id, label: e.description || e.vendor || "Gasto sin descripción", detail: `${e.date.toISOString().slice(0, 10)}${e.vendor && e.description ? ` · ${e.vendor}` : ""} · ${cop(num(e.amount))}` }));
-  const rows = items.map((i) => ({ ...i, v: capexVariance({ quantity: i.quantity, budgetedUnitPrice: num(i.budgetedUnitPrice), actualUnitPrice: i.actualUnitPrice == null ? null : num(i.actualUnitPrice) }) }));
+  // Con gastos vinculados, lo real es la suma de esos gastos (así un precio guardado antes de cambiar la cantidad no distorsiona).
+  const rows = items.map((i) => {
+    const v = capexVariance({ quantity: i.quantity, budgetedUnitPrice: num(i.budgetedUnitPrice), actualUnitPrice: i.actualUnitPrice == null ? null : num(i.actualUnitPrice) });
+    if (i.status !== "PURCHASED" || !i.transactions.length) return { ...i, v };
+    const actual = i.transactions.reduce((a, t) => a + num(t.amount), 0);
+    return { ...i, v: { budgeted: v.budgeted, actual, variance: v.budgeted - actual } };
+  });
   const bought = rows.filter((r) => r.status === "PURCHASED");
   const pending = rows.filter((r) => r.status !== "PURCHASED");
   const totalBudget = rows.reduce((a, r) => a + r.v.budgeted, 0);
@@ -42,7 +48,7 @@ export default async function Capex({ params, searchParams }: { params: Promise<
   const q = sp.q?.trim().toLowerCase();
   const filter = (r: (typeof rows)[number]) =>
     (!q || `${r.itemDescription} ${r.store ?? ""}`.toLowerCase().includes(q)) && (!sp.cat || r.capexCategory === sp.cat) && (!sp.prop || r.propertyId === sp.prop);
-  const list = (done ? bought : pending).filter(filter);
+  const list = (done ? [...bought].sort((a, b) => a.itemDescription.localeCompare(b.itemDescription, "es", { numeric: true, sensitivity: "base" })) : pending).filter(filter);
   const sumBudget = list.reduce((a, r) => a + r.v.budgeted, 0);
   const sumActual = list.reduce((a, r) => a + (r.v.actual ?? 0), 0);
   const href = (vista: string) => `/w/${workspaceId}/capex${vista ? `?vista=${vista}` : ""}`;
