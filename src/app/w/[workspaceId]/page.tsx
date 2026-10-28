@@ -12,7 +12,7 @@ import { RingGauge } from "@/components/ui/ring-gauge";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, monthRange, pct, txTitle, txVendorHint } from "@/lib/format";
 import { budgetExecution, categoryBreakdown, parseExclusion, parseStatus, periodSummary, sixMonthSeries } from "@/modules/airbnb/queries";
-import { accountBalances, categoryOptions, pendingPayables, searchTransactions } from "@/modules/core/queries";
+import { accountBalances, accountOptions, categoryOptions, pendingPayables, searchTransactions } from "@/modules/core/queries";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
 
@@ -48,9 +48,9 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
   }
 
   const status = parseStatus(sp.status);
-  const cats = await categoryOptions(workspaceId);
-  const known = new Set([...cats.map((c) => c.id), "none"]);
-  const excluded = parseExclusion(sp.x).filter((x) => known.has(x) || x.startsWith("a:"));
+  const [cats, accs] = await Promise.all([categoryOptions(workspaceId), accountOptions(workspaceId)]);
+  const known = new Set([...cats.map((c) => c.id), ...accs.map((a) => `a:${a.id}`), "none"]);
+  const excluded = parseExclusion(sp.x).filter((x) => known.has(x));
   const [sum, series, budget, breakdown, balances, recent, pending] = await Promise.all([
     periodSummary(workspaceId, start, end, status, excluded),
     sixMonthSeries(workspaceId, key, status, excluded),
@@ -80,7 +80,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
         base={{ month: key, ...(sp.status ? { status: sp.status } : {}) }}
         groups={[
           { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: c.name })), { id: "none", label: "Sin categoría" }] },
-          { title: "Ingresos", items: cats.filter((c) => !c.expenseKind).map((c) => ({ id: c.id, label: c.name })) },
+          { title: "Cuentas", items: accs.map((a) => ({ id: `a:${a.id}`, label: a.name })) },
         ]}
       />
 
