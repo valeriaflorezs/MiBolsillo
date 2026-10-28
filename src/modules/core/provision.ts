@@ -13,7 +13,7 @@ export async function provisionWorkspace(tx: Prisma.TransactionClient, input: { 
       pygLine: c.pygLine,
     })),
   });
-  await tx.financialAccount.create({ data: { workspaceId: w.id, name: "Efectivo", type: "CASH", emoji: "💵" } });
+  await tx.financialAccount.create({ data: { workspaceId: w.id, name: "Efectivo", type: "CASH", emoji: "payments" } });
   if (input.type === "AIRBNB") await tx.property.create({ data: { workspaceId: w.id, name: input.propertyName || input.name } });
   return w;
 }

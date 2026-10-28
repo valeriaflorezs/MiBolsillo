@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/icons";
 import { BarChart } from "@/components/ui/charts";
 import { Chip } from "@/components/ui/chip";
 import { Donut } from "@/components/ui/donut";
@@ -19,7 +20,7 @@ function Delta({ now, before, invert }: { now: number; before: number; invert?: 
   if (!before) return <div><Chip>Sin comparación</Chip></div>;
   const d = (now - before) / Math.abs(before);
   const good = invert ? d <= 0 : d >= 0;
-  return <div><Chip tone={good ? "positive" : "negative"}>{d >= 0 ? "▲" : "▼"} {Math.abs(d * 100).toFixed(0)}% vs. periodo anterior</Chip></div>;
+  return <div><Chip tone={good ? "positive" : "negative"}><Icon name={d >= 0 ? "trending_up" : "trending_down"} size={14} className="mr-1 inline" /> {Math.abs(d * 100).toFixed(0)}% vs. periodo anterior</Chip></div>;
 }
 
 export default async function Stats({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ p?: string; o?: string; status?: string; x?: string }> }) {
@@ -54,7 +55,7 @@ export default async function Stats({ params, searchParams }: { params: Promise<
         workspaceId={workspaceId} excluded={excluded} hasParam={sp.x !== undefined}
         base={{ p: period, o: String(offset), status: sp.status ?? "ALL" }}
         groups={[
-          { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })), { id: "none", label: "Sin categoría" }] },
+          { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: c.name })), { id: "none", label: "Sin categoría" }] },
           { title: "Cuentas", items: accs.map((a) => ({ id: `a:${a.id}`, label: a.name })) },
         ]}
       />

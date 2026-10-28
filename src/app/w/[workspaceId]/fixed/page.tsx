@@ -6,6 +6,9 @@ import { pageCtx } from "@/lib/auth/permissions";
 import { cop, monthRange, num } from "@/lib/format";
 import { createFixedExpenseAction, generateFixedAction, toggleFixedAction } from "@/modules/airbnb/actions";
 import { CsvImport } from "@/components/forms/csv-import";
+import { FormDialog } from "@/components/forms/form-dialog";
+import { IconAction } from "@/components/forms/icon-action";
+import { IconButton } from "@/components/ui/icon-button";
 import { importFixedAction } from "@/modules/airbnb/import-actions";
 
 export const metadata = { title: "Gastos fijos" };
@@ -23,10 +26,28 @@ export default async function Fixed({ params, searchParams }: { params: Promise<
   const monthly = rows.filter((r) => r.active && r.frequency === "MONTHLY").reduce((a, r) => a + num(r.amount), 0);
   return (
     <>
-      <div><h1 className="text-3xl font-semibold tracking-tight">Gastos fijos (OPEX)</h1><p className="text-muted">Mensual recurrente: {cop(monthly)}</p></div>
+      <div className="flex items-start justify-between gap-3">
+        <div><h1 className="text-3xl font-semibold tracking-tight">Gastos fijos (OPEX)</h1><p className="text-muted">Mensual recurrente: {cop(monthly)}</p></div>
+        <div className="flex items-center gap-2">
+          <FormDialog label="Importar desde CSV / Excel" icon="upload" tone="default" title="Importar gastos fijos desde CSV / Excel"><CsvImport action={importFixedAction} workspaceId={workspaceId} properties={properties} title="Importar gastos fijos" columns="nombre, concepto, monto, frecuencia, dia" /></FormDialog>
+          <FormDialog label="Nuevo gasto fijo" title="Nuevo gasto fijo" wide>
+            <ActionForm action={createFixedExpenseAction} submitLabel="Crear">
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+                <div><label className="label" htmlFor="concept">Concepto</label><select id="concept" name="concept" className="input">{Object.entries(CONCEPT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                <div className="sm:col-span-2"><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" placeholder="Administración edificio" /></div>
+                <div><label className="label" htmlFor="amount">Monto</label><input id="amount" name="amount" type="number" max="1000000000000" min="0.01" step="0.01" required className="input" /></div>
+                <div><label className="label" htmlFor="frequency">Frecuencia</label><select id="frequency" name="frequency" className="input">{Object.entries(FREQ).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                <div><label className="label" htmlFor="dayOfMonth">Día del mes</label><input id="dayOfMonth" name="dayOfMonth" type="number" min="1" max="28" defaultValue={1} className="input" /></div>
+              </div>
+            </ActionForm>
+          </FormDialog>
+        </div>
+      </div>
       <section className="card flex flex-wrap items-center justify-between gap-3">
         <MonthNav base={`/w/${workspaceId}/fixed`} month={key} />
-        <ActionForm action={generateFixedAction} submitLabel="Generar gastos del mes" variant="ghost" resetOnSuccess={false} className="flex items-center gap-3">
+        <ActionForm action={generateFixedAction} submitLabel="Generar gastos del mes" submitIcon="restart" variant="ghost" resetOnSuccess={false} className="flex items-center gap-3">
           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="month" value={key} />
         </ActionForm>
       </section>
@@ -40,27 +61,12 @@ export default async function Fixed({ params, searchParams }: { params: Promise<
                   <td className="td">{r.name}<p className="text-xs text-muted">{r.property.name}</p></td>
                   <td className="td">{CONCEPT[r.concept]}</td><td className="td">{FREQ[r.frequency]}</td>
                   <td className="td text-right">{cop(num(r.amount))}</td>
-                  <td className="td"><div className="flex items-center gap-2"><Link href={`/w/${workspaceId}/fixed/${r.id}/edit`} className="btn btn-ghost">Editar</Link><ActionForm action={toggleFixedAction} submitLabel={r.active ? "Pausar" : "Activar"} variant="ghost" className="flex"><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="fixedId" value={r.id} /></ActionForm></div></td>
+                  <td className="td"><div className="flex items-center gap-2"><IconButton href={`/w/${workspaceId}/fixed/${r.id}/edit`} icon="edit" label="Editar gasto fijo" /><IconAction action={toggleFixedAction} icon={r.active ? "pause" : "play"} label={r.active ? "Pausar" : "Activar"} fields={{ workspaceId, fixedId: r.id }} /></div></td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </section>
-      <CsvImport action={importFixedAction} workspaceId={workspaceId} properties={properties} title="Importar gastos fijos desde CSV / Excel" columns="nombre, concepto, monto, frecuencia, dia" />
-      <section className="card space-y-4">
-        <h2 className="font-medium">Nuevo gasto fijo</h2>
-        <ActionForm action={createFixedExpenseAction} submitLabel="Crear">
-          <input type="hidden" name="workspaceId" value={workspaceId} />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-            <div><label className="label" htmlFor="concept">Concepto</label><select id="concept" name="concept" className="input">{Object.entries(CONCEPT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-            <div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" placeholder="Administración edificio" /></div>
-            <div><label className="label" htmlFor="amount">Monto</label><input id="amount" name="amount" type="number" max="1000000000000" min="0.01" step="0.01" required className="input" /></div>
-            <div><label className="label" htmlFor="frequency">Frecuencia</label><select id="frequency" name="frequency" className="input">{Object.entries(FREQ).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-            <div><label className="label" htmlFor="dayOfMonth">Día del mes</label><input id="dayOfMonth" name="dayOfMonth" type="number" min="1" max="28" defaultValue={1} className="input" /></div>
-          </div>
-        </ActionForm>
       </section>
     </>
   );

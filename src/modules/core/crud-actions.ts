@@ -31,7 +31,7 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
   return run(async () => {
     const i = z.object({
       workspaceId: id, transactionId: id, type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]), status: z.enum(["PAID", "PENDING"]),
-      amount: positive, date: dateStr, accountId: id, transferAccountId: optId, categoryId: optId,
+      amount: positive, date: dateStr, accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId,
       quantity: opt(quantity),
       vendor: optText(80), description: optText(300),
     }).parse(Object.fromEntries(fd));
@@ -40,13 +40,13 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
     if (!tx || !canMutateTx(role, tx, userId)) throw new Error("FORBIDDEN");
     if (i.type !== "EXPENSE" && role !== "ADMIN") throw new Error("FORBIDDEN");
     if (i.type === "TRANSFER" && (!i.transferAccountId || i.transferAccountId === i.accountId)) throw userError("Elige una cuenta destino distinta.");
-    await assertOwned(i.workspaceId, { account: i.accountId, transfer: i.transferAccountId, category: i.categoryId });
+    await assertOwned(i.workspaceId, { account: i.accountId, transfer: i.transferAccountId, category: i.categoryId, property: i.propertyId });
     const { transactionId, workspaceId, ...data } = i;
     await prisma.$transaction(async (db) => {
       await db.transaction.update({
         where: { id: transactionId },
         data: {
-          ...data, transferAccountId: i.type === "TRANSFER" ? i.transferAccountId ?? null : null, quantity: i.quantity ?? null, categoryId: i.categoryId ?? null, paidAt: i.status === "PAID" ? tx.paidAt ?? i.date : null,
+          ...data, transferAccountId: i.type === "TRANSFER" ? i.transferAccountId ?? null : null, quantity: i.quantity ?? null, categoryId: i.categoryId ?? null, propertyId: i.type === "TRANSFER" ? null : i.propertyId ?? null, paidAt: i.status === "PAID" ? tx.paidAt ?? i.date : null,
           ...(i.type !== "EXPENSE" ? { capexItemId: null } : {}),
         },
       });
@@ -107,7 +107,7 @@ function categoryData(i: { kind: z.infer<typeof KIND>; pygLine: z.infer<typeof P
 
 export async function createCategoryAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
-    const i = z.object({ workspaceId: id, name: z.string().trim().min(2).max(40), emoji: optText(8), kind: KIND, pygLine: PYG.default("OTHER_VARIABLE") }).parse(Object.fromEntries(fd));
+    const i = z.object({ workspaceId: id, name: z.string().trim().min(2).max(40), emoji: optText(24), kind: KIND, pygLine: PYG.default("OTHER_VARIABLE") }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "dashboard:full");
     await prisma.category.create({ data: { workspaceId: i.workspaceId, name: i.name, emoji: i.emoji, ...categoryData(i) } });
     refresh(i.workspaceId);
@@ -117,7 +117,7 @@ export async function createCategoryAction(_: ActionState, fd: FormData): Promis
 
 export async function updateCategoryAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
-    const i = z.object({ workspaceId: id, categoryId: id, name: z.string().trim().min(2).max(40), emoji: optText(8), kind: KIND, pygLine: PYG.default("OTHER_VARIABLE"), archived: bool }).parse(Object.fromEntries(fd));
+    const i = z.object({ workspaceId: id, categoryId: id, name: z.string().trim().min(2).max(40), emoji: optText(24), kind: KIND, pygLine: PYG.default("OTHER_VARIABLE"), archived: bool }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "dashboard:full");
     const r = await prisma.category.updateMany({ where: { id: i.categoryId, workspaceId: i.workspaceId }, data: { name: i.name, emoji: i.emoji ?? null, archived: i.archived, ...categoryData(i) } });
     if (!r.count) throw new Error("NOT_FOUND");

@@ -1,7 +1,7 @@
 import { ActionForm } from "./action-form";
 import type { ActionState } from "@/lib/actions";
 
-/** Importador de CSV (sube el archivo al servidor, que lo valida fila por fila). */
+/** Importador de CSV (sube el archivo al servidor, que lo valida fila por fila). Se muestra dentro de una ventana (FormDialog). */
 export function CsvImport({ action, workspaceId, properties, columns, title }: {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   workspaceId: string;
@@ -10,10 +10,9 @@ export function CsvImport({ action, workspaceId, properties, columns, title }: {
   title: string;
 }) {
   return (
-    <details className="card">
-      <summary className="cursor-pointer font-medium">{title}</summary>
-      <div className="mt-4 space-y-3">
-        <p className="text-sm text-muted">Columnas del archivo (primera fila = encabezados): <code>{columns}</code>. En Excel: Guardar como → CSV. Los ítems que ya existen no se duplican.</p>
+    <div className="space-y-3" aria-label={title}>
+      <div className="space-y-3">
+        <p className="text-sm text-muted">Columnas del archivo (primera fila = encabezados): <code>{columns}</code>. En Excel: Guardar como CSV. Los ítems que ya existen no se duplican.</p>
         <ActionForm action={action} submitLabel="Importar" className="space-y-3">
           <input type="hidden" name="workspaceId" value={workspaceId} />
           <div className="grid gap-3 sm:grid-cols-2">
@@ -22,6 +21,6 @@ export function CsvImport({ action, workspaceId, properties, columns, title }: {
           </div>
         </ActionForm>
       </div>
-    </details>
+    </div>
   );
 }

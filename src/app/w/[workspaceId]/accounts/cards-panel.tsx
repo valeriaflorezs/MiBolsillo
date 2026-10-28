@@ -1,6 +1,7 @@
 import { CalendarClock, CreditCard, Percent, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Chip } from "@/components/ui/chip";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ProgressBar } from "@/components/ui/progress";
@@ -50,7 +51,10 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
 
   return (
     <>
+      <div className="flex items-start justify-between gap-3">
       <p className="text-muted">Cada tarjeta es una cuenta: tus compras con ella se registran como gastos en <Link className="underline" href={`/w/${workspaceId}/expenses/new`}>Movimientos</Link> eligiéndola como cuenta, y su pago es una transferencia desde tu banco.</p>
+      {canEdit && <FormDialog label="Agregar tarjeta de crédito" title="Agregar tarjeta de crédito" wide><ActionForm action={createCardAction} submitLabel="Crear tarjeta"><input type="hidden" name="workspaceId" value={workspaceId} /><CardFields idp="new" /></ActionForm></FormDialog>}
+      </div>
       {active.length === 0 && <p className="card text-muted">Aún no has registrado tarjetas de crédito.</p>}
       {rows.map(({ c, s, spent }) => (
         <section key={c.id} className={`space-y-5 ${c.archived ? "opacity-60" : ""}`} aria-label={c.name}>
@@ -104,35 +108,29 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
               </div>
             </div>
           )}
-          {canEdit && !c.archived && (
-            <details className="card">
-              <summary className="cursor-pointer font-medium">Conciliar con el extracto del banco</summary>
-              <ActionForm action={reconcileAccountAction} submitLabel="Ajustar la deuda" className="mt-4 space-y-3">
+          {canEdit && (
+            <div className="flex items-center gap-2">
+              {!c.archived && (
+                <FormDialog label="Conciliar con el extracto del banco" icon="calculate" tone="default" title="Conciliar con el extracto del banco">
+              <ActionForm action={reconcileAccountAction} submitLabel="Ajustar la deuda" className="space-y-3">
                 <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="accountId" value={c.id} />
                 <p className="text-sm text-muted">La app calcula la deuda como deuda inicial + compras + cargos − pagos. Si el banco dice otra cosa, escribe aquí la deuda real y se registra la diferencia como un ajuste (fuera del PyG).</p>
                 <div className="max-w-xs"><label className="label" htmlFor={`rd${c.id}`}>Deuda real según el banco</label><input id={`rd${c.id}`} name="realDebt" type="number" min="0" max="1000000000000" step="0.01" required className="input" /></div>
               </ActionForm>
-            </details>
-          )}
-          {canEdit && (
-            <details className="card">
-              <summary className="cursor-pointer font-medium">Editar {c.name}</summary>
-              <ActionForm action={updateCardAction} submitLabel="Guardar cambios" resetOnSuccess={false} className="mt-4 space-y-4">
+                </FormDialog>
+              )}
+              <FormDialog label={`Editar ${c.name}`} icon="edit" tone="default" title={`Editar ${c.name}`} wide>
+              <ActionForm action={updateCardAction} submitLabel="Guardar cambios" resetOnSuccess={false} className="space-y-4">
                 <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="cardId" value={c.id} />
                 <CardFields card={c} debt={c.openingBalance ? -num(c.openingBalance) : 0} idp={`e${c.id}`} />
                 <p className="text-xs text-muted">«Deuda actual» es el saldo con el que empezaste a llevar la tarjeta aquí; las compras y pagos se suman encima.</p>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="archived" defaultChecked={c.archived} />Archivar (se oculta de los formularios)</label>
               </ActionForm>
-            </details>
+              </FormDialog>
+            </div>
           )}
         </section>
       ))}
-      {canEdit && (
-        <section className="card space-y-4">
-          <h2 className="font-medium">Agregar tarjeta de crédito</h2>
-          <ActionForm action={createCardAction} submitLabel="Crear tarjeta"><input type="hidden" name="workspaceId" value={workspaceId} /><CardFields idp="new" /></ActionForm>
-        </section>
-      )}
     </>
   );
 }
