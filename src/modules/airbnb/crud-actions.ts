@@ -10,7 +10,6 @@ import { requireWorkspace } from "@/lib/auth/permissions";
 import { bool, dateStr, id, intBetween, money, opt, optText, positive } from "@/lib/validation";
 
 const refresh = (w: string) => revalidatePath(`/w/${w}`, "layout");
-const CAPEX_CAT = z.enum(["FURNITURE", "APPLIANCES", "RENOVATION", "DECOR", "LINENS_KITCHENWARE", "TECH", "OTHER"]);
 
 async function ownProperty(workspaceId: string, propertyId: string) {
   if (!(await prisma.property.count({ where: { id: propertyId, workspaceId } }))) throw new Error("FORBIDDEN");
@@ -30,11 +29,12 @@ export async function updatePropertyAction(_: ActionState, fd: FormData): Promis
 export async function updateCapexItemAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({
-      workspaceId: id, itemId: id, propertyId: id, capexCategory: CAPEX_CAT, itemDescription: z.string().trim().min(2).max(120),
+      workspaceId: id, itemId: id, propertyId: id, categoryId: id, itemDescription: z.string().trim().min(2).max(120),
       quantity: intBetween(1, 10_000, "Cantidad"), budgetedUnitPrice: money, store: optText(60),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);
+    if (!(await prisma.category.count({ where: { id: i.categoryId, workspaceId: i.workspaceId, expenseKind: "CAPEX" } }))) throw userError("Elige una categoría de tipo CAPEX.");
     const { itemId, workspaceId, ...data } = i;
     // Si el ítem ya tiene gastos, su precio real se recalcula con la nueva cantidad.
     await prisma.$transaction(async (tx) => {

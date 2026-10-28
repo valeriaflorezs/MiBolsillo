@@ -15,6 +15,10 @@ async function ownProperty(workspaceId: string, propertyId: string) {
   if (!(await prisma.property.count({ where: { id: propertyId, workspaceId } }))) throw new Error("FORBIDDEN");
 }
 
+async function ownCapexCategory(workspaceId: string, categoryId: string) {
+  if (!(await prisma.category.count({ where: { id: categoryId, workspaceId, expenseKind: "CAPEX" } }))) throw userError("Elige una categoría de tipo CAPEX.");
+}
+
 export async function createPropertyAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({ workspaceId: id, name: z.string().trim().min(2).max(80), address: optText(160) }).parse(Object.fromEntries(fd));
@@ -29,12 +33,13 @@ export async function addCapexAction(_: ActionState, fd: FormData): Promise<Acti
   return run(async () => {
     const i = z.object({
       workspaceId: id, propertyId: id,
-      capexCategory: z.enum(["FURNITURE", "APPLIANCES", "RENOVATION", "DECOR", "LINENS_KITCHENWARE", "TECH", "OTHER"]),
+      categoryId: id,
       itemDescription: z.string().trim().min(2, "Describe el ítem").max(120),
       quantity: intBetween(1, 10_000, "Cantidad"), budgetedUnitPrice: money, store: optText(60),
     }).parse(Object.fromEntries(fd));
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);
+    await ownCapexCategory(i.workspaceId, i.categoryId);
     await prisma.capexItem.create({ data: i });
     refresh(i.workspaceId);
     return "Ítem agregado";

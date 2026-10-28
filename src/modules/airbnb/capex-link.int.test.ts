@@ -9,7 +9,7 @@ describe.skipIf(!process.env.DATABASE_URL)("ítem CAPEX con varios gastos", () =
     workspaceId = (await prisma.workspace.create({ data: { name: "Capex link test", type: "AIRBNB" } })).id;
     const propertyId = (await prisma.property.create({ data: { workspaceId, name: "P" } })).id;
     accountId = (await prisma.financialAccount.create({ data: { workspaceId, name: "Caja", type: "CASH" } })).id;
-    itemId = (await prisma.capexItem.create({ data: { workspaceId, propertyId, capexCategory: "OTHER", itemDescription: "Set de cuchillos", quantity: 2, budgetedUnitPrice: 100000 } })).id;
+    itemId = (await prisma.capexItem.create({ data: { workspaceId, propertyId, categoryId: (await prisma.category.create({ data: { workspaceId, name: "Menaje", expenseKind: "CAPEX", pygLine: "CAPEX" } })).id, itemDescription: "Set de cuchillos", quantity: 2, budgetedUnitPrice: 100000 } })).id;
   });
   afterAll(async () => {
     await prisma.workspace.delete({ where: { id: workspaceId } });

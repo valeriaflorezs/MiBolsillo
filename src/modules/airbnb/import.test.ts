@@ -10,10 +10,10 @@ describe("parsers de carga en lote", () => {
   });
 
   it("deduce la categoría de CAPEX por el nombre del ítem", () => {
-    expect(inferCapexCategory("Nevera 470L")).toBe("APPLIANCES");
-    expect(inferCapexCategory("Colchon de 1.60")).toBe("FURNITURE");
-    expect(inferCapexCategory("Set de Toallas")).toBe("LINENS_KITCHENWARE");
-    expect(inferCapexCategory("Grifo de Regadera")).toBe("RENOVATION");
+    expect(inferCapexCategory("Nevera 470L")).toBe("Electrodomésticos");
+    expect(inferCapexCategory("Colchon de 1.60")).toBe("Muebles");
+    expect(inferCapexCategory("Set de Toallas")).toBe("Ropa de cama y cocina");
+    expect(inferCapexCategory("Grifo de Regadera")).toBe("Reformas");
     expect(inferCapexCategory("Cosa rara")).toBeUndefined();
   });
 
@@ -22,7 +22,7 @@ describe("parsers de carga en lote", () => {
     const lax = parseCapex(o, new Set(), { lenientCategory: true });
     expect(lax.errors).toEqual([]);
     expect(lax.warnings).toHaveLength(1);
-    expect(lax.data[0]).toMatchObject({ capexCategory: "APPLIANCES", status: "PURCHASED", quantity: 1 });
+    expect(lax.data[0]).toMatchObject({ categoryName: "Electrodomésticos", status: "PURCHASED", quantity: 1 });
     expect(parseCapex(o, new Set()).errors).toHaveLength(1);
   });
 

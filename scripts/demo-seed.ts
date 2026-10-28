@@ -34,9 +34,9 @@ async function main() {
     if (off % 2 === 0) await mk("INCOME", 150000, "Otros ingresos", "Servicio extra", 18);
   }
   await prisma.capexItem.createMany({ data: [
-    { workspaceId: ws.id, propertyId: prop.id, capexCategory: "FURNITURE", itemDescription: "Cama queen", quantity: 1, budgetedUnitPrice: 1800000, actualUnitPrice: 1650000, status: "PURCHASED", purchasedAt: new Date(), store: "Homecenter" },
-    { workspaceId: ws.id, propertyId: prop.id, capexCategory: "APPLIANCES", itemDescription: "Nevera 300 L", quantity: 1, budgetedUnitPrice: 2400000, store: "Alkosto" },
-    { workspaceId: ws.id, propertyId: prop.id, capexCategory: "DECOR", itemDescription: "Cuadros decorativos", quantity: 4, budgetedUnitPrice: 90000 },
+    { workspaceId: ws.id, propertyId: prop.id, categoryId: cats["Muebles y reformas"], itemDescription: "Cama queen", quantity: 1, budgetedUnitPrice: 1800000, actualUnitPrice: 1650000, status: "PURCHASED", purchasedAt: new Date(), store: "Homecenter" },
+    { workspaceId: ws.id, propertyId: prop.id, categoryId: cats["Muebles y reformas"], itemDescription: "Nevera 300 L", quantity: 1, budgetedUnitPrice: 2400000, store: "Alkosto" },
+    { workspaceId: ws.id, propertyId: prop.id, categoryId: cats["Muebles y reformas"], itemDescription: "Cuadros decorativos", quantity: 4, budgetedUnitPrice: 90000 },
   ] });
   await prisma.fixedExpense.createMany({ data: [
     { workspaceId: ws.id, propertyId: prop.id, concept: "HOA", name: "Administración edificio", amount: 320000, frequency: "MONTHLY", startsOn: ym(-6) },

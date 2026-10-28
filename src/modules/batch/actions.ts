@@ -9,7 +9,7 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { BATCH_SPECS, MAX_BATCH_ROWS } from "@/lib/batch/spec";
 import { id } from "@/lib/validation";
 import { norm } from "@/lib/csv";
-import { parseAllocations, parseCapex, parseFixed, parseTransactions, type RowIssue } from "@/modules/airbnb/import";
+import { createCapexRows, parseAllocations, parseCapex, parseFixed, parseTransactions, type RowIssue } from "@/modules/airbnb/import";
 
 export type BatchResult = { ok: boolean; message: string; errors: RowIssue[]; warnings: RowIssue[] };
 
@@ -63,9 +63,10 @@ export async function batchAction(raw: unknown): Promise<BatchResult> {
       if (!(await prisma.property.count({ where: { id: propertyId, workspaceId: w } }))) throw new Error("FORBIDDEN");
       if (i.kind === "capex") {
         const existing = new Set((await prisma.capexItem.findMany({ where: { workspaceId: w, propertyId }, select: { itemDescription: true } })).map((x) => norm(x.itemDescription)));
-        const p = parseCapex(objs, existing, { lenientCategory: true });
+        const own = await prisma.category.findMany({ where: { workspaceId: w, expenseKind: "CAPEX", parentId: null, archived: false }, select: { name: true } });
+        const p = parseCapex(objs, existing, { lenientCategory: true, categoryNames: own.map((c) => c.name) });
         res = p;
-        write = () => prisma.capexItem.createMany({ data: p.data.map((d) => ({ ...d, workspaceId: w, propertyId })) });
+        write = () => createCapexRows(w, propertyId, p.data);
       } else {
         const existing = new Set((await prisma.fixedExpense.findMany({ where: { workspaceId: w, propertyId }, select: { name: true } })).map((x) => norm(x.name)));
         const p = parseFixed(objs, existing);
