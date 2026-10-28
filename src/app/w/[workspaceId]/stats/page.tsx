@@ -8,7 +8,7 @@ import { pageCtx } from "@/lib/auth/permissions";
 import { CategoryFilter } from "@/components/forms/category-filter";
 import { cop } from "@/lib/format";
 import { parseExclusion, parsePeriod, parseStatus, periodStats } from "@/modules/airbnb/queries";
-import { categoryOptions } from "@/modules/core/queries";
+import { accountOptions, categoryOptions } from "@/modules/core/queries";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
 
@@ -29,8 +29,8 @@ export default async function Stats({ params, searchParams }: { params: Promise<
   const period = parsePeriod(sp.p);
   const offset = Math.min(0, Math.max(-60, Number(sp.o) || 0)) || 0;
   const status = parseStatus(sp.status ?? "ALL");
-  const cats = await categoryOptions(workspaceId);
-  const known = new Set([...cats.map((c) => c.id), "none"]);
+  const [cats, accs] = await Promise.all([categoryOptions(workspaceId), accountOptions(workspaceId)]);
+  const known = new Set([...cats.map((c) => c.id), ...accs.map((a) => `a:${a.id}`), "none"]);
   const excluded = parseExclusion(sp.x).filter((x) => known.has(x));
   const data = await periodStats(workspaceId, period, offset, status, excluded);
   const base = `/w/${workspaceId}/stats`;
@@ -55,7 +55,7 @@ export default async function Stats({ params, searchParams }: { params: Promise<
         base={{ p: period, o: String(offset), status: sp.status ?? "ALL" }}
         groups={[
           { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })), { id: "none", label: "Sin categoría" }] },
-          { title: "Ingresos", items: cats.filter((c) => !c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })) },
+          { title: "Cuentas", items: accs.map((a) => ({ id: `a:${a.id}`, label: a.name })) },
         ]}
       />
 

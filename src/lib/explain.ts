@@ -68,5 +68,5 @@ export const EXPLAIN = {
   // ── Otros ──
   txTotals: { title: "Ingresos y gastos de la lista", lines: ["Suma de los movimientos que ves con los filtros actuales (mes, estado, categoría, cuenta, tipo y búsqueda). Las transferencias no cuentan como ingreso ni gasto."] },
   unitValue: { title: "Valor por unidad", lines: ["Monto total ÷ cantidad."] },
-  categoryFilter: { title: "Filtro de categorías", lines: ["Lo que desmarques no cuenta en ninguna cifra ni gráfica de la pantalla."] },
+  categoryFilter: { title: "Filtro de categorías y cuentas", lines: ["Lo que desmarques (una categoría o una cuenta) no cuenta en ninguna cifra ni gráfica de la pantalla."] },
 } satisfies Record<string, Explain>;
