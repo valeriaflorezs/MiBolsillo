@@ -5,11 +5,6 @@ export interface PygExpenseRow {
   pygLine: PygLine;
   amount: number;
 }
-export interface PygReservationRow {
-  grossAmount: number;
-  cleaningFeeCharged: number;
-  platformCommission: number;
-}
 
 export interface Pyg {
   grossRevenue: number;
@@ -26,13 +21,11 @@ const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 const line = (rows: PygExpenseRow[], l: PygLine) => sum(rows.filter((r) => r.pygLine === l).map((r) => r.amount));
 
 /**
- * Ingresos brutos = noches + tarifa de aseo cobrada al huésped.
- * Comisión de plataforma viene de la reserva; el resto de costos, de transacciones EXPENSE.
+ * Ingresos brutos = ingresos de la operación (movimientos INCOME). Los costos salen de las transacciones EXPENSE.
  */
-export function buildPyg(reservations: PygReservationRow[], expenses: PygExpenseRow[], otherRevenue = 0): Pyg {
-  const grossRevenue = sum(reservations.map((r) => r.grossAmount + r.cleaningFeeCharged)) + otherRevenue;
+export function buildPyg(expenses: PygExpenseRow[], grossRevenue = 0): Pyg {
 
-  const commissions = sum(reservations.map((r) => r.platformCommission)) + line(expenses, "COMMISSION");
+  const commissions = line(expenses, "COMMISSION");
   const cleaning = line(expenses, "CLEANING");
   const amenities = line(expenses, "AMENITIES");
   const otherVar = line(expenses, "OTHER_VARIABLE");

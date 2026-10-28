@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import { buildPyg, capexVariance } from "./pyg";
 
 describe("buildPyg", () => {
-  const reservations = [
-    { grossAmount: 1_000_000, cleaningFeeCharged: 80_000, platformCommission: 150_000 },
-  ];
+  const revenue = 1_080_000;
   const expenses = [
+    { pygLine: "COMMISSION" as const, amount: 150_000 },
     { pygLine: "CLEANING" as const, amount: 80_000 },
     { pygLine: "AMENITIES" as const, amount: 20_000 },
     { pygLine: "ADMIN" as const, amount: 300_000 },
@@ -14,7 +13,7 @@ describe("buildPyg", () => {
   ];
 
   it("calcula margen de contribución y EBITDA, dejando CAPEX fuera", () => {
-    const pyg = buildPyg(reservations, expenses);
+    const pyg = buildPyg(expenses, revenue);
     expect(pyg.grossRevenue).toBe(1_080_000);
     expect(pyg.variableCosts.total).toBe(250_000);
     expect(pyg.contributionMargin).toBe(830_000);
@@ -24,7 +23,7 @@ describe("buildPyg", () => {
   });
 
   it("no divide por cero sin ingresos", () => {
-    expect(buildPyg([], []).ebitdaPct).toBe(0);
+    expect(buildPyg([]).ebitdaPct).toBe(0);
   });
 });
 

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { capexCategoryFor, markCapexPurchased } from "@/modules/airbnb/capex-link";
 import { dateStr, id, money, opt, optId, optText, positive, quantity, signedMoney } from "@/lib/validation";
 
 
@@ -35,7 +36,7 @@ export async function createTransactionAction(_: ActionState, fd: FormData): Pro
       type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]).default("EXPENSE"),
       status: z.enum(["PAID", "PENDING"]).default("PAID"),
       amount: positive, date: dateStr,
-      accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId, attachmentId: optId,
+      accountId: id, transferAccountId: optId, categoryId: optId, propertyId: optId, attachmentId: optId, capexItemId: optId,
       quantity: opt(quantity),
       vendor: optText(80), description: optText(300),
     }).parse(Object.fromEntries(fd));
@@ -51,12 +52,21 @@ export async function createTransactionAction(_: ActionState, fd: FormData): Pro
       i.categoryId ? prisma.category.count({ where: { id: i.categoryId, workspaceId: w } }) : 1,
       i.propertyId ? prisma.property.count({ where: { id: i.propertyId, workspaceId: w } }) : 1,
       i.attachmentId ? prisma.attachment.count({ where: { id: i.attachmentId, workspaceId: w, transactionId: null, uploadedById: userId } }) : 1,
+      i.capexItemId ? prisma.capexItem.count({ where: { id: i.capexItemId, workspaceId: w } }) : 1,
     ]);
+    if (i.capexItemId && i.type !== "EXPENSE") throw userError("Un ítem de CAPEX solo se vincula a un gasto.");
     if (checks.some((c) => !c)) throw new Error("FORBIDDEN");
     if (i.type === "TRANSFER" && (!i.transferAccountId || i.transferAccountId === i.accountId)) throw userError("Elige una cuenta destino distinta.");
 
     const { attachmentId, ...data } = i;
     await prisma.$transaction(async (tx) => {
+      // Gasto que cierra un ítem CAPEX: lo marca comprado con el valor real pagado y lo clasifica como CAPEX.
+      const item = i.capexItemId ? await tx.capexItem.findUnique({ where: { id: i.capexItemId } }) : null;
+      if (item) {
+        data.categoryId ??= (await capexCategoryFor(tx, w, item.categoryId)) ?? undefined;
+        data.propertyId ??= item.propertyId;
+        await markCapexPurchased(tx, item.id, i.amount, item.quantity, new Date(i.date));
+      }
       const t = await tx.transaction.create({
         data: { ...data, createdById: userId, paidAt: i.status === "PAID" ? i.date : null },
       });

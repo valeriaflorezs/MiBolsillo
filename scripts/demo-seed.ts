@@ -21,10 +21,10 @@ async function main() {
   ]);
   const prop = await prisma.property.create({ data: { workspaceId: ws.id, name: "Apto 302", address: "Cra 7 #45-10, Bogotá" } });
   for (let off = -5; off <= 0; off++) {
-    await prisma.reservation.create({ data: { workspaceId: ws.id, propertyId: prop.id, channel: "AIRBNB", guestName: `Huésped ${6 + off}A`, externalCode: `HM${off + 10}A`, checkIn: day(off, 3), checkOut: day(off, 8), grossAmount: 900000 + off * 20000, cleaningFeeCharged: 80000, platformCommission: 140000, payoutStatus: off === 0 ? "PENDING" : "RECEIVED" } });
-    await prisma.reservation.create({ data: { workspaceId: ws.id, propertyId: prop.id, channel: "BOOKING", guestName: `Huésped ${6 + off}B`, externalCode: `HM${off + 10}B`, checkIn: day(off, 14), checkOut: day(off, 20), grossAmount: 1100000, cleaningFeeCharged: 80000, platformCommission: 165000, payoutStatus: "RECEIVED" } });
     const mk = (type: "EXPENSE" | "INCOME", amount: number, cat: string, vendor: string, n: number, by = admin.id, status: "PAID" | "PENDING" = "PAID", acc = nequi.id) =>
       prisma.transaction.create({ data: { workspaceId: ws.id, type, amount, categoryId: cats[cat], vendor, date: day(off, n), accountId: acc, createdById: by, status, propertyId: prop.id, paidAt: status === "PAID" ? day(off, n) : null } });
+    await mk("INCOME", 1000000 + off * 20000, "Otros ingresos", "Huésped Airbnb", 4);
+    await mk("INCOME", 1180000, "Otros ingresos", "Huésped Booking", 15);
     await mk("EXPENSE", 80000, "Aseo", "Aseo Express", 9, op.id);
     await mk("EXPENSE", 80000, "Aseo", "Aseo Express", 21, op.id);
     await mk("EXPENSE", 45000, "Amenities e insumos", "Éxito", 10, op.id, "PAID", cash.id);
@@ -33,7 +33,6 @@ async function main() {
     await mk("EXPENSE", 90000, "Internet y apps", "Netflix + WiFi", 15, admin.id, "PAID", bank.id);
     if (off % 2 === 0) await mk("INCOME", 150000, "Otros ingresos", "Servicio extra", 18);
   }
-  await prisma.reservation.create({ data: { workspaceId: ws.id, propertyId: prop.id, channel: "AIRBNB", guestName: "Camila Rojas", externalCode: "HMNEXT", checkIn: new Date(now.getTime() + 3 * 86_400_000), checkOut: new Date(now.getTime() + 7 * 86_400_000), grossAmount: 780000, cleaningFeeCharged: 80000, platformCommission: 117000 } });
   await prisma.capexItem.createMany({ data: [
     { workspaceId: ws.id, propertyId: prop.id, capexCategory: "FURNITURE", itemDescription: "Cama queen", quantity: 1, budgetedUnitPrice: 1800000, actualUnitPrice: 1650000, status: "PURCHASED", purchasedAt: new Date(), store: "Homecenter" },
     { workspaceId: ws.id, propertyId: prop.id, capexCategory: "APPLIANCES", itemDescription: "Nevera 300 L", quantity: 1, budgetedUnitPrice: 2400000, store: "Alkosto" },

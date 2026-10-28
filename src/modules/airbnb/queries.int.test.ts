@@ -25,10 +25,7 @@ describe.skipIf(!process.env.DATABASE_URL)("periodSummary / listTransactions", (
       prisma.category.create({ data: { workspaceId, name: "HOA", expenseKind: "FIXED_OPEX", pygLine: "ADMIN" } }),
     ]);
     const acc = await prisma.financialAccount.create({ data: { workspaceId, name: "Efectivo", type: "CASH" } });
-    const prop = await prisma.property.create({ data: { workspaceId, name: "P" } });
-    await prisma.reservation.create({
-      data: { workspaceId, propertyId: prop.id, checkIn: new Date("2026-03-05T00:00:00Z"), checkOut: new Date("2026-03-08T00:00:00Z"), grossAmount: 1_000_000, cleaningFeeCharged: 80_000, platformCommission: 150_000, payoutStatus: "RECEIVED" },
-    });
+    await prisma.transaction.create({ data: { workspaceId, type: "INCOME", accountId: acc.id, amount: 1_080_000, date: new Date("2026-03-05T00:00:00Z"), createdById: adminId } });
     const base = { workspaceId, type: "EXPENSE" as const, accountId: acc.id, date: new Date("2026-03-10T00:00:00Z") };
     await prisma.transaction.create({ data: { ...base, amount: 80_000, categoryId: cleaning.id, createdById: operatorId } });
     await prisma.transaction.create({ data: { ...base, amount: 300_000, categoryId: admin.id, createdById: adminId, status: "PENDING" } });
@@ -43,20 +40,20 @@ describe.skipIf(!process.env.DATABASE_URL)("periodSummary / listTransactions", (
   it("devengo: incluye gastos pagados y por pagar", async () => {
     const { pyg } = await periodSummary(workspaceId, start, end, undefined);
     expect(pyg.grossRevenue).toBe(1_080_000);
-    expect(pyg.contributionMargin).toBe(1_080_000 - 150_000 - 80_000);
-    expect(pyg.ebitda).toBe(1_080_000 - 150_000 - 80_000 - 300_000);
+    expect(pyg.contributionMargin).toBe(1_080_000 - 80_000);
+    expect(pyg.ebitda).toBe(1_080_000 - 80_000 - 300_000);
   });
 
   it("filtro PAID excluye el gasto por pagar", async () => {
     const { pyg, cashFlow } = await periodSummary(workspaceId, start, end, "PAID");
     expect(pyg.fixedOpex.total).toBe(0);
-    expect(cashFlow).toBe(1_080_000 - 150_000 - 80_000);
+    expect(cashFlow).toBe(1_080_000 - 80_000);
   });
 
   it("OPERATOR solo ve los gastos que registró; ADMIN ve todos", async () => {
     const f = { workspaceId, start, end };
     expect(await listTransactions({ ...f, role: "OPERATOR", userId: operatorId })).toHaveLength(1);
-    expect(await listTransactions({ ...f, role: "ADMIN", userId: adminId })).toHaveLength(2);
+    expect(await listTransactions({ ...f, role: "ADMIN", userId: adminId })).toHaveLength(3);
   });
 
   it("no mezcla datos entre workspaces", async () => {

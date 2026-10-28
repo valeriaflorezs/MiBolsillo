@@ -63,11 +63,11 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
 
       <section className="card space-y-4">
         <h2 className="font-medium">Dar acceso de solo lectura</h2>
-        <p className="text-sm text-muted">Crea un usuario y una contraseña para que otra persona <strong>vea</strong> la información de este negocio (resumen, movimientos, CAPEX, reservas, PyG) sin poder agregar, editar ni borrar nada. No necesita cuenta de Google. La contraseña se muestra una sola vez: compártela por un canal privado.</p>
+        <p className="text-sm text-muted">Crea un usuario y una contraseña para que otra persona <strong>vea</strong> la información de este negocio (resumen, movimientos, CAPEX, PyG) sin poder agregar, editar ni borrar nada. No necesita cuenta de Google. La contraseña se muestra una sola vez: compártela por un canal privado.</p>
         <ActionForm action={createViewerAction} submitLabel="Crear acceso" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <div><label className="label" htmlFor="vname">Nombre</label><input id="vname" name="name" required className="input" placeholder="Hermano de Tania" /></div>
-          <div><label className="label" htmlFor="vuser">Usuario</label><input id="vuser" name="username" required autoCapitalize="none" spellCheck={false} className="input" placeholder="hermano.tania" /></div>
+          <div><label className="label" htmlFor="vname">Nombre</label><input id="vname" name="name" required className="input" placeholder="Nombre de la persona" /></div>
+          <div><label className="label" htmlFor="vuser">Usuario</label><input id="vuser" name="username" required autoCapitalize="none" spellCheck={false} className="input" placeholder="nombre.apellido" /></div>
         </ActionForm>
       </section>
 
@@ -95,7 +95,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
 
       <section className="card space-y-3 border border-negative/30">
         <h2 className="font-medium text-negative">Eliminar este negocio</h2>
-        <p className="text-sm text-muted">Borra definitivamente movimientos, reservas, CAPEX, miembros y comprobantes. No se puede deshacer.</p>
+        <p className="text-sm text-muted">Borra definitivamente movimientos, CAPEX, miembros y comprobantes. No se puede deshacer.</p>
         <ActionForm action={deleteWorkspaceAction} submitLabel="Eliminar definitivamente" variant="ghost" resetOnSuccess={false}>
           <input type="hidden" name="workspaceId" value={workspaceId} />
           <label className="label" htmlFor="confirm">Escribe «{workspace.name}» para confirmar</label>

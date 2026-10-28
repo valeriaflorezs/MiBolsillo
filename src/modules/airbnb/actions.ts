@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { monthRange } from "@/lib/format";
-import { dateStr, id, intBetween, money, opt, optText, positive } from "@/lib/validation";
+import { dateStr, id, intBetween, money, opt, optId, optText, positive } from "@/lib/validation";
+import { capexCategoryFor, markCapexPurchased } from "./capex-link";
 
 const refresh = (w: string) => revalidatePath(`/w/${w}`, "layout");
 
@@ -40,58 +41,45 @@ export async function addCapexAction(_: ActionState, fd: FormData): Promise<Acti
   });
 }
 
-/** Marca comprado (con precio real) o deshace la compra. Permitido al OPERATOR. */
+/**
+ * Marca comprado (con precio real) o deshace la compra. Permitido al OPERATOR.
+ * Si se elige una cuenta, también registra el gasto (CAPEX) vinculado al ítem: así no hay que ingresarlo dos veces.
+ */
 export async function updateCapexAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({
       workspaceId: id, itemId: id, intent: z.enum(["buy", "undo"]),
-      actualUnitPrice: opt(money),
+      actualUnitPrice: opt(money), accountId: optId,
     }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "capex:update");
+    const { userId } = await requireWorkspace(i.workspaceId, "capex:update");
     const item = await prisma.capexItem.findFirst({ where: { id: i.itemId, workspaceId: i.workspaceId } });
     if (!item) throw new Error("NOT_FOUND");
     if (i.intent === "buy") {
-      await prisma.capexItem.update({
-        where: { id: item.id },
-        data: { status: "PURCHASED", purchasedAt: new Date(), actualUnitPrice: i.actualUnitPrice ?? item.budgetedUnitPrice },
+      const unit = i.actualUnitPrice ?? Number(item.budgetedUnitPrice);
+      const total = Math.round(unit * item.quantity * 100) / 100;
+      if (i.accountId && !(await prisma.financialAccount.count({ where: { id: i.accountId, workspaceId: i.workspaceId } }))) throw new Error("FORBIDDEN");
+      const now = new Date();
+      await prisma.$transaction(async (tx) => {
+        await markCapexPurchased(tx, item.id, total, item.quantity, now);
+        const linked = await tx.transaction.count({ where: { capexItemId: item.id } });
+        if (i.accountId && !linked && total > 0) {
+          await tx.transaction.create({
+            data: {
+              workspaceId: i.workspaceId, type: "EXPENSE", status: "PAID", amount: total, quantity: item.quantity, date: now, paidAt: now,
+              accountId: i.accountId, categoryId: await capexCategoryFor(tx, i.workspaceId, item.categoryId), propertyId: item.propertyId,
+              vendor: item.store, description: item.itemDescription, capexItemId: item.id, createdById: userId,
+            },
+          });
+        }
       });
     } else {
-      await prisma.capexItem.update({ where: { id: item.id }, data: { status: "PENDING", purchasedAt: null, actualUnitPrice: null } });
+      await prisma.$transaction([
+        prisma.transaction.deleteMany({ where: { workspaceId: i.workspaceId, capexItemId: item.id } }),
+        prisma.capexItem.update({ where: { id: item.id }, data: { status: "PENDING", purchasedAt: null, actualUnitPrice: null } }),
+      ]);
     }
     refresh(i.workspaceId);
-  });
-}
-
-export async function createReservationAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const i = z.object({
-      workspaceId: id, propertyId: id, channel: z.enum(["AIRBNB", "BOOKING", "DIRECT", "OTHER"]),
-      guestName: optText(80), externalCode: optText(40), checkIn: dateStr, checkOut: dateStr,
-      grossAmount: money, cleaningFeeCharged: money, platformCommission: money, payoutStatus: z.enum(["PENDING", "RECEIVED"]),
-    }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "airbnb:manage");
-    await ownProperty(i.workspaceId, i.propertyId);
-    if (i.checkOut <= i.checkIn) throw userError("La salida debe ser posterior a la entrada.");
-    try {
-      await prisma.reservation.create({ data: { ...i, payoutDate: i.payoutStatus === "RECEIVED" ? new Date() : null } });
-    } catch {
-      throw userError("Ya existe una reserva con ese código en esta propiedad.");
-    }
-    refresh(i.workspaceId);
-    return "Reserva guardada";
-  });
-}
-
-export async function reservationStatusAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const i = z.object({ workspaceId: id, reservationId: id, intent: z.enum(["received", "cancel"]) }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "airbnb:manage");
-    const r = await prisma.reservation.updateMany({
-      where: { id: i.reservationId, workspaceId: i.workspaceId },
-      data: i.intent === "received" ? { payoutStatus: "RECEIVED", payoutDate: new Date() } : { status: "CANCELLED" },
-    });
-    if (!r.count) throw new Error("NOT_FOUND");
-    refresh(i.workspaceId);
+    revalidatePath(`/w/${i.workspaceId}/accounts`);
   });
 }
 

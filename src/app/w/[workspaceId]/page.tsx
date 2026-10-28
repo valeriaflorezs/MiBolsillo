@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CalendarDays, Moon, TrendingUp } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CalendarDays, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { StackedBars } from "@/components/ui/charts";
@@ -10,7 +10,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { RingGauge } from "@/components/ui/ring-gauge";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, monthRange, pct, txTitle, txVendorHint } from "@/lib/format";
-import { airbnbMetrics, budgetExecution, categoryBreakdown, parseExclusion, parseStatus, periodSummary, sixMonthSeries, upcomingReservations } from "@/modules/airbnb/queries";
+import { budgetExecution, categoryBreakdown, parseExclusion, parseStatus, periodSummary, sixMonthSeries } from "@/modules/airbnb/queries";
 import { accountBalances, categoryOptions, pendingPayables, searchTransactions } from "@/modules/core/queries";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -47,11 +47,10 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
   }
 
   const status = parseStatus(sp.status);
-  const isAirbnb = ctx.workspace.type === "AIRBNB";
   const cats = await categoryOptions(workspaceId);
   const known = new Set([...cats.map((c) => c.id), "none"]);
   const excluded = parseExclusion(sp.x).filter((x) => known.has(x));
-  const [sum, series, budget, breakdown, balances, recent, pending, metrics, arrivals] = await Promise.all([
+  const [sum, series, budget, breakdown, balances, recent, pending] = await Promise.all([
     periodSummary(workspaceId, start, end, status, excluded),
     sixMonthSeries(workspaceId, key, status, excluded),
     budgetExecution(workspaceId, key, start, end, excluded),
@@ -59,8 +58,6 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
     accountBalances(workspaceId),
     searchTransactions({ workspaceId, role: ctx.role, userId: ctx.userId, start, end, pageSize: 6, exclude: excluded }),
     pendingPayables(workspaceId, ctx.role, ctx.userId, 5, excluded),
-    isAirbnb ? airbnbMetrics(workspaceId, start, end) : null,
-    isAirbnb ? upcomingReservations(workspaceId) : [],
   ]);
   const canWrite = can(ctx.role, "transaction:create");
   const { pyg } = sum;
@@ -118,14 +115,6 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
         </div>
       </div>
 
-      {metrics && (
-        <div className="grid gap-5 sm:grid-cols-3">
-          <KpiCard info={EXPLAIN.occupancy} title="Ocupación" value={pct(metrics.occupancy)} hint={`${metrics.nights} de ${metrics.available} noches`} icon={<Moon size={16} />}><ProgressBar value={metrics.occupancy} label="Ocupación" /></KpiCard>
-          <KpiCard info={EXPLAIN.adr} title="Tarifa media (ADR)" value={cop(metrics.adr)} hint="Ingreso por noche vendida" />
-          <KpiCard info={EXPLAIN.revpar} title="RevPAR" value={cop(metrics.revpar)} hint="Ingreso por noche disponible" />
-        </div>
-      )}
-
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="panel min-w-0" aria-label="Principales gastos">
           <div className="mb-5 flex items-center justify-between"><h2 className="flex items-center gap-2 font-semibold">Principales gastos <InfoTip {...EXPLAIN.topExpenses} /></h2><Link className="text-sm text-white/80 underline" href={`${base}/stats`}>Ver todo</Link></div>
@@ -157,20 +146,8 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
           </ul>
           <Link className="mt-4 inline-block text-sm font-medium underline" href={`${base}/pending`}>Ver todos los pendientes</Link>
         </FolderCard>
-        {isAirbnb ? (
-          <FolderCard className="min-w-0" tab="Próximas llegadas" meta={<>{arrivals.length} reserva(s)</>}>
-            {arrivals.length === 0 && <p className="text-sm text-muted">Sin reservas futuras.</p>}
-            <ul className="space-y-1">
-              {arrivals.map((r) => (
-                <li key={r.id}><Link href={`${base}/reservations?sel=${r.id}`} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/30">
-                  <span className="truncate font-medium">{r.guest ?? "Huésped"} <span className="font-normal text-muted">· {fmtDate(r.checkIn)} → {fmtDate(r.checkOut)}</span></span><span className="shrink-0 font-semibold">{cop(r.amount)}</span>
-                </Link></li>
-              ))}
-            </ul>
-          </FolderCard>
-        ) : <RecentList workspaceId={workspaceId} rows={recent.rows} />}
+        <RecentList workspaceId={workspaceId} rows={recent.rows} />
       </div>
-      {isAirbnb && <RecentList workspaceId={workspaceId} rows={recent.rows} />}
     </>
   );
 }

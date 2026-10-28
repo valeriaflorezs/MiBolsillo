@@ -1,7 +1,7 @@
 import type { Role, WorkspaceType } from "@/generated/prisma/client";
 import { can } from "@/lib/auth/rbac";
 
-export type NavIcon = "home" | "tx" | "stats" | "capex" | "pyg" | "res" | "fixed" | "props" | "accounts" | "budget" | "cats" | "wish" | "settings" | "pending" | "account" | "batch" | "debt";
+export type NavIcon = "home" | "tx" | "stats" | "capex" | "pyg" | "fixed" | "props" | "accounts" | "budget" | "cats" | "wish" | "settings" | "pending" | "account" | "batch" | "debt";
 export type Tab = { href: string; label: string; icon: NavIcon };
 
 /** Secciones visibles según tipo de negocio y rol (la autorización real está en cada página/acción). */
@@ -16,7 +16,6 @@ export function tabsFor(workspaceId: string, type: WorkspaceType, role: Role): {
   if (type === "AIRBNB") {
     primary.push({ href: `${b}/capex`, label: "CAPEX", icon: "capex" });
     if (can(role, "pyg:read")) primary.push({ href: `${b}/pyg`, label: "PyG", icon: "pyg" });
-    if (can(role, "data:read") && reader) primary.push({ href: `${b}/reservations`, label: "Reservas", icon: "res" });
     if (can(role, "airbnb:manage")) more.push({ href: `${b}/fixed`, label: "Gastos fijos", icon: "fixed" }, { href: `${b}/properties`, label: "Propiedades", icon: "props" });
   }
   if (reader) more.push({ href: `${b}/accounts`, label: "Cuentas y deudas", icon: "accounts" });

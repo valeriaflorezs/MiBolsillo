@@ -47,7 +47,7 @@ export default async function Pyg({ params, searchParams }: { params: Promise<{ 
           </tbody>
         </table>
       </section>
-      <p className="text-sm text-muted">Base devengo: incluye gastos pagados y por pagar, y reservas por fecha de entrada. CAPEX ({cop(p.capex)} este mes) no afecta el EBITDA.</p>
+      <p className="text-sm text-muted">Base devengo: incluye ingresos y gastos pagados y por pagar. CAPEX ({cop(p.capex)} este mes) no afecta el EBITDA.</p>
     </>
   );
 }

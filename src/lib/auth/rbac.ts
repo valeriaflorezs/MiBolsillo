@@ -6,9 +6,9 @@ export type Permission =
   | "capex:update"
   | "dashboard:full" // EBITDA, margen, flujo de caja total (escritura sobre cuentas/categorías)
   | "finance:read" // ver todo (EBITDA, PyG, movimientos de todos); sin escribir
-  | "data:read" // ver movimientos, CAPEX y reservas
+  | "data:read" // ver movimientos, CAPEX
   | "pyg:read"
-  | "airbnb:manage" // reservas, gastos fijos, propiedades
+  | "airbnb:manage" // gastos fijos, propiedades
   | "budget:write"
   | "member:manage";
 

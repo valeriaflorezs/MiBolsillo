@@ -49,7 +49,7 @@ export function CategoryFilter({ workspaceId, groups, excluded, base, hasParam }
       </button>
       {open && (
         <div className="space-y-4">
-          <p className="text-sm text-muted">Marca las categorías que quieres ver; las que desmarques no cuentan en ninguna cifra ni gráfica. Las reservas siempre se incluyen.</p>
+          <p className="text-sm text-muted">Marca las categorías que quieres ver; las que desmarques no cuentan en ninguna cifra ni gráfica.</p>
           <div className="flex flex-wrap gap-2 text-sm">
             <button type="button" className="btn btn-ghost" onClick={() => setOff(new Set())}>Todas</button>
             <button type="button" className="btn btn-ghost" onClick={() => setOff(new Set(all))}>Ninguna</button>

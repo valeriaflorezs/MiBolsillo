@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { buildPyg, type PygExpenseRow } from "@/lib/finance/pyg";
-import { num, shiftMonth, todayUtc } from "@/lib/format";
+import { num, shiftMonth } from "@/lib/format";
 import type { TransactionStatus } from "@/generated/prisma/client";
 
 export type StatusFilter = TransactionStatus | undefined; // undefined = todo (devengo)
@@ -12,15 +12,9 @@ export { categoryFilter, parseExclusion, type CategoryExclusion } from "@/lib/ca
 /** Ingreso de la operación: sin categoría o con categoría de línea REVENUE (excluye desembolsos de crédito, ajustes, etc.). */
 const OPERATING_INCOME = { OR: [{ categoryId: null }, { category: { pygLine: "REVENUE" as const } }] };
 
-const payout = (s: StatusFilter) => (s === "PAID" ? { payoutStatus: "RECEIVED" as const } : s === "PENDING" ? { payoutStatus: "PENDING" as const } : {});
-
 /** Resumen de un rango: ingresos, gastos por línea de PyG, flujo de caja y estado de resultados. */
 export async function periodSummary(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion) {
-  const [reservations, incomeTx, incomeOperating, expenseTx] = await Promise.all([
-    prisma.reservation.findMany({
-      where: { workspaceId, status: { not: "CANCELLED" }, checkIn: { gte: start, lt: end }, ...payout(status) },
-      select: { grossAmount: true, cleaningFeeCharged: true, platformCommission: true },
-    }),
+  const [incomeTx, incomeOperating, expenseTx] = await Promise.all([
     // Todo el dinero que entró (para el flujo de caja)…
     prisma.transaction.aggregate({
       where: { workspaceId, type: "INCOME", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...categoryFilter(exclude) },
@@ -36,11 +30,10 @@ export async function periodSummary(workspaceId: string, start: Date, end: Date,
       select: { amount: true, categoryId: true, category: { select: { pygLine: true } } },
     }),
   ]);
-  const res = reservations.map((r) => ({ grossAmount: num(r.grossAmount), cleaningFeeCharged: num(r.cleaningFeeCharged), platformCommission: num(r.platformCommission) }));
   const expenses: PygExpenseRow[] = expenseTx.map((t) => ({ pygLine: t.category?.pygLine ?? "OTHER_VARIABLE", amount: num(t.amount) }));
-  const pyg = buildPyg(res, expenses, num(incomeOperating._sum.amount));
-  const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0) + res.reduce((a, r) => a + r.platformCommission, 0);
-  const cashIn = res.reduce((a, r) => a + r.grossAmount + r.cleaningFeeCharged, 0) + num(incomeTx._sum.amount);
+  const pyg = buildPyg(expenses, num(incomeOperating._sum.amount));
+  const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
+  const cashIn = num(incomeTx._sum.amount);
   return { pyg, cashFlow: cashIn - totalExpenses, expenseByCategory: expenseTx };
 }
 
@@ -71,28 +64,6 @@ export async function sixMonthSeries(workspaceId: string, endMonth: string, stat
   );
 }
 
-const DAY = 86_400_000;
-/** Ocupación, tarifa media por noche (ADR) y RevPAR del mes. Las reservas se prorratean por noches dentro del mes. */
-export async function airbnbMetrics(workspaceId: string, start: Date, end: Date) {
-  const [reservations, properties] = await Promise.all([
-    prisma.reservation.findMany({
-      where: { workspaceId, status: { not: "CANCELLED" }, checkIn: { lt: end }, checkOut: { gt: start } },
-      select: { checkIn: true, checkOut: true, grossAmount: true },
-    }),
-    prisma.property.count({ where: { workspaceId, active: true } }),
-  ]);
-  let nights = 0, lodging = 0;
-  for (const r of reservations) {
-    const total = Math.max(1, Math.round((r.checkOut.getTime() - r.checkIn.getTime()) / DAY));
-    const from = Math.max(r.checkIn.getTime(), start.getTime()), to = Math.min(r.checkOut.getTime(), end.getTime());
-    const inMonth = Math.max(0, Math.round((to - from) / DAY));
-    nights += inMonth;
-    lodging += (num(r.grossAmount) * inMonth) / total;
-  }
-  const available = properties * Math.round((end.getTime() - start.getTime()) / DAY);
-  return { nights, available, occupancy: available ? nights / available : 0, adr: nights ? lodging / nights : 0, revpar: available ? lodging / available : 0, reservations: reservations.length };
-}
-
 /** Gastos por categoría (top 6 + "Otros") para la dona. */
 export async function categoryBreakdown(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion) {
   const rows = await prisma.transaction.groupBy({
@@ -112,15 +83,6 @@ export async function categoryBreakdown(workspaceId: string, start: Date, end: D
   const rest = named.slice(6).reduce((a, r) => a + r.value, 0);
   if (rest > 0) top.push({ label: "Otros", value: rest });
   return { items: top, total: named.reduce((a, r) => a + r.value, 0) };
-}
-
-export async function upcomingReservations(workspaceId: string, take = 4) {
-  const today = todayUtc();
-  const rows = await prisma.reservation.findMany({
-    where: { workspaceId, status: { not: "CANCELLED" }, checkIn: { gte: today } },
-    include: { property: { select: { name: true } } }, orderBy: { checkIn: "asc" }, take,
-  });
-  return rows.map((r) => ({ id: r.id, guest: r.guestName, property: r.property.name, checkIn: r.checkIn, checkOut: r.checkOut, amount: num(r.grossAmount) + num(r.cleaningFeeCharged), channel: r.channel }));
 }
 
 export type Period = "day" | "week" | "month" | "year";
@@ -159,14 +121,13 @@ export async function periodStats(workspaceId: string, period: Period, offset: n
   const buckets: { key: string; start: Date; end: Date }[] = [];
   if (period === "year") for (let m = 0; m < 12; m++) buckets.push({ key: String(m + 1).padStart(2, "0"), start: new Date(Date.UTC(cur.start.getUTCFullYear(), m, 1)), end: new Date(Date.UTC(cur.start.getUTCFullYear(), m + 1, 1)) });
   else for (let t = cur.start.getTime(); t < cur.end.getTime(); t += 86_400_000) buckets.push({ key: String(new Date(t).getUTCDate()), start: new Date(t), end: new Date(t + 86_400_000) });
-  const [tx, res] = await Promise.all([
+  const [tx] = await Promise.all([
     prisma.transaction.findMany({ where: { workspaceId, type: { in: ["INCOME", "EXPENSE"] }, date: { gte: cur.start, lt: cur.end }, ...(status ? { status } : {}), ...categoryFilter(exclude) }, select: { type: true, amount: true, date: true, category: { select: { pygLine: true } } } }),
-    prisma.reservation.findMany({ where: { workspaceId, status: { not: "CANCELLED" }, checkIn: { gte: cur.start, lt: cur.end }, ...payout(status) }, select: { grossAmount: true, cleaningFeeCharged: true, platformCommission: true, checkIn: true } }),
   ]);
   const series = buckets.map((b) => {
     const inB = (d: Date) => d >= b.start && d < b.end;
-    const income = tx.filter((t) => t.type === "INCOME" && inB(t.date) && (!t.category || t.category.pygLine === "REVENUE")).reduce((a, t) => a + num(t.amount), 0) + res.filter((r) => inB(r.checkIn)).reduce((a, r) => a + num(r.grossAmount) + num(r.cleaningFeeCharged), 0);
-    const expense = tx.filter((t) => t.type === "EXPENSE" && inB(t.date)).reduce((a, t) => a + num(t.amount), 0) + res.filter((r) => inB(r.checkIn)).reduce((a, r) => a + num(r.platformCommission), 0);
+    const income = tx.filter((t) => t.type === "INCOME" && inB(t.date) && (!t.category || t.category.pygLine === "REVENUE")).reduce((a, t) => a + num(t.amount), 0);
+    const expense = tx.filter((t) => t.type === "EXPENSE" && inB(t.date)).reduce((a, t) => a + num(t.amount), 0);
     return { month: b.key, income, expense };
   });
   const topVendors = await prisma.transaction.groupBy({

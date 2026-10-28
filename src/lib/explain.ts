@@ -13,16 +13,16 @@ export const EXPLAIN = {
     "Para los gastos, bajar es bueno (verde); para ingresos y resultado, subir es bueno. Sin cifra anterior no se puede comparar.",
   ] },
   ring: { title: "Anillo de ingresos", lines: [
-    "Centro: ingresos del mes = noches y tarifa de aseo de las reservas + otros ingresos de la operación. No incluye desembolsos de crédito ni ajustes de saldo.",
+    "Centro: ingresos del mes = ingresos registrados de la operación (arriendos y otros). No incluye desembolsos de crédito ni ajustes de saldo.",
     "Gastos = costos variables + gastos fijos (no incluye CAPEX ni intereses y cargos financieros). Resultado = ingresos − gastos.",
     "Margen = margen de contribución ÷ ingresos. EBITDA % = EBITDA ÷ ingresos.",
   ] },
   cashFlow: { title: "Flujo de caja", lines: [
-    "Todo el dinero que entró en el periodo (reservas, ingresos y desembolsos) − todo lo que salió (gastos, comisiones y compras CAPEX).",
+    "Todo el dinero que entró en el periodo (ingresos y desembolsos) − todo lo que salió (gastos, comisiones y compras CAPEX).",
     "Respeta el filtro de estado (pagado/por pagar) y de categorías. Es dinero, no utilidad: por eso puede diferir del EBITDA.",
   ] },
   margin: { title: "Margen de contribución", lines: [
-    "Ingresos − costos variables (comisiones de plataforma, aseo, amenities e insumos y otros costos variables).",
+    "Ingresos − costos variables (comisiones, aseo, amenities e insumos y otros costos variables).",
     "El porcentaje es margen ÷ ingresos: cuánto de cada peso vendido queda después de los costos que dependen de las ventas.",
   ] },
   ebitda: { title: "EBITDA operativo", lines: [
@@ -33,29 +33,21 @@ export const EXPLAIN = {
     "Gastos del mes en las categorías que tienen presupuesto ÷ suma de esos presupuestos.",
     "Pasa del 100 % cuando gastas más de lo presupuestado. Las categorías sin presupuesto no entran en este porcentaje.",
   ] },
-  occupancy: { title: "Ocupación", lines: [
-    "Noches ocupadas del mes ÷ noches disponibles (días del mes × propiedades activas).",
-    "Una reserva que cruza de mes se reparte por las noches que caen dentro de cada mes.",
-  ] },
-  adr: { title: "Tarifa media por noche (ADR)", lines: ["Ingreso por hospedaje del mes ÷ noches vendidas.", "El ingreso de reservas largas se prorratea por noche dentro del mes."] },
-  revpar: { title: "RevPAR", lines: ["Ingreso por hospedaje del mes ÷ noches disponibles.", "Equivale a ocupación × tarifa media por noche."] },
   topExpenses: { title: "Principales gastos", lines: ["Gastos del periodo agrupados por categoría, de mayor a menor. El porcentaje es la parte de cada categoría sobre el total de gastos.", "Respeta el filtro de categorías."] },
   sixMonths: { title: "Últimos 6 meses", lines: ["Ingresos y gastos de cada uno de los últimos seis meses, con el mismo filtro de estado y categorías."] },
-  statsIncome: { title: "Ingresos", lines: ["Ingresos de la operación del periodo: reservas (noches + aseo cobrado) y otros ingresos con categoría de venta.", "No cuenta desembolsos de crédito ni ajustes de saldo."] },
-  statsExpense: { title: "Gastos", lines: ["Costos variables + gastos fijos del periodo (incluye comisiones de plataforma).", "No cuenta CAPEX ni cargos financieros."] },
+  statsIncome: { title: "Ingresos", lines: ["Ingresos de la operación del periodo: ingresos registrados con categoría de venta (o sin categoría).", "No cuenta desembolsos de crédito ni ajustes de saldo."] },
+  statsExpense: { title: "Gastos", lines: ["Costos variables + gastos fijos del periodo (incluye comisiones).", "No cuenta CAPEX ni cargos financieros."] },
   statsResult: { title: "Resultado", lines: ["Ingresos − Gastos del periodo, las dos cifras de arriba.", "No incluye CAPEX, desembolsos de crédito ni ajustes de saldo. Para el movimiento real de dinero mira el «Flujo de caja» del Resumen."] },
   donut: { title: "Gastos por categoría", lines: ["Suma de los gastos de cada categoría en el periodo; se muestran las 6 mayores y el resto como «Otros».", "El porcentaje es la categoría ÷ total de gastos del periodo."] },
   vendors: { title: "Mayores proveedores", lines: ["Suma de los gastos del periodo agrupados por proveedor (el nombre escrito en cada gasto). Se muestran los 5 mayores."] },
-  pygRevenue: { title: "Ingresos brutos", lines: ["Noches + tarifa de aseo cobrada de las reservas (por fecha de entrada) + otros ingresos de la operación.", "Base devengo: cuenta lo pagado y lo pendiente."] },
-  pygVariable: { title: "Costos variables", lines: ["Comisión de la plataforma de cada reserva + gastos de categorías de comisión, aseo, amenities y otros variables."] },
+  pygRevenue: { title: "Ingresos brutos", lines: ["Ingresos de la operación registrados en Movimientos (arriendos y otros).", "Base devengo: cuenta lo pagado y lo pendiente."] },
+  pygVariable: { title: "Costos variables", lines: ["Gastos de categorías de comisión, aseo, amenities y otros variables."] },
   pygMargin: { title: "Margen de contribución", lines: ["Ingresos brutos − costos variables.", "El % es cada renglón ÷ ingresos brutos."] },
   pygEbitda: { title: "EBITDA operativo", lines: ["Margen de contribución − gastos fijos (administración, servicios, internet, mantenimiento y otros fijos).", "CAPEX, intereses y ajustes quedan fuera."] },
-  // ── CAPEX / Reservas ──
+  // ── CAPEX ──
   capexBudget: { title: "Presupuesto total", lines: ["Suma de cantidad × precio unitario presupuestado de todos los ítems."] },
   capexSpent: { title: "Gastado (real)", lines: ["Suma de cantidad × precio unitario real de los ítems ya comprados."] },
   capexVariance: { title: "Variación", lines: ["Presupuestado − real, solo de lo ya comprado.", "Positivo (verde) = ahorro; negativo (rojo) = te pasaste del presupuesto."] },
-  reservationNet: { title: "Neto para ti", lines: ["Noches + tarifa de aseo cobrada − comisión de la plataforma.", "Es lo que te queda de la reserva antes de tus costos de aseo y operación."] },
-  reservationsMonth: { title: "Ingresos del mes y por cobrar", lines: ["Ingresos del mes = noches + aseo cobrado de las reservas con entrada este mes (sin canceladas).", "Por cobrar = esas mismas reservas aún no cobradas, menos la comisión de la plataforma."] },
   // ── Cuentas y deudas ──
   netPosition: { title: "Posición neta", lines: ["Dinero en cuentas − deuda en tarjetas − saldo de créditos.", "Es lo que te quedaría si pagaras hoy todas tus deudas con el dinero que tienes."] },
   moneyInAccounts: { title: "Dinero en cuentas", lines: ["Suma del saldo de efectivo, bancos, billeteras y fondos (sin tarjetas de crédito).", "Saldo de cada cuenta = saldo inicial + ingresos pagados − gastos pagados ± transferencias."] },
@@ -76,5 +68,5 @@ export const EXPLAIN = {
   // ── Otros ──
   txTotals: { title: "Ingresos y gastos de la lista", lines: ["Suma de los movimientos que ves con los filtros actuales (mes, estado, categoría, cuenta, tipo y búsqueda). Las transferencias no cuentan como ingreso ni gasto."] },
   unitValue: { title: "Valor por unidad", lines: ["Monto total ÷ cantidad."] },
-  categoryFilter: { title: "Filtro de categorías", lines: ["Lo que desmarques no cuenta en ninguna cifra ni gráfica de la pantalla. Las reservas siempre se incluyen."] },
+  categoryFilter: { title: "Filtro de categorías", lines: ["Lo que desmarques no cuenta en ninguna cifra ni gráfica de la pantalla."] },
 } satisfies Record<string, Explain>;

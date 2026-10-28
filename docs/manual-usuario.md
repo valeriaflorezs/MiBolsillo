@@ -10,10 +10,10 @@ Una aplicación web para llevar tus finanzas personales y las de tus negocios (p
 3. Con el selector de arriba a la izquierda cambias entre tus negocios o creas otro.
 
 ## Roles
-- **Administrador:** ve y hace todo, incluido el Estado de resultados, el presupuesto, las cuentas y las reservas.
+- **Administrador:** ve y hace todo, incluido el Estado de resultados, el presupuesto y las cuentas.
 - **Operador:** registra gastos, insumos y facturas de aseo y marca compras del CAPEX. No ve ingresos, EBITDA ni PyG, y solo ve los gastos que él registró.
 
-- **Solo lectura:** ve el resumen, movimientos, CAPEX, reservas, PyG y estadísticas, pero no puede agregar, editar ni borrar nada.
+- **Solo lectura:** ve el resumen, movimientos, CAPEX, PyG y estadísticas, pero no puede agregar, editar ni borrar nada.
 
 **Dar acceso de solo lectura con usuario y contraseña** (por ejemplo, a un familiar sin cuenta de Google): **Miembros → Dar acceso de solo lectura**. Escribe el nombre y elige un usuario; la app genera la contraseña y la muestra **una sola vez** (cópiala y compártela por un canal privado). La persona entra desde la pantalla de inicio, en «o con usuario y contraseña». Si la pierde, usa **Nueva contraseña**; para cortar el acceso, usa **Quitar**. Estas cuentas no pueden crear negocios propios.
 
@@ -50,8 +50,7 @@ Muestra flujo de caja, margen de contribución, EBITDA operativo y ejecución de
 ## CAPEX (compras de adecuación)
 Lista de lo que compras para dejar listo el apartamento. Escribe el **precio real** y pulsa **Comprado ✓**; la variación (presupuestado − real) se calcula sola: verde es ahorro, rojo es sobrecosto. **Deshacer** revierte la compra.
 
-## Reservas y gastos fijos (Administrador)
-- **Reservas:** registra entrada, salida, ingreso, tarifa de aseo y comisión. Marca **Cobrada** cuando llegue el pago.
+## Gastos fijos (Administrador)
 - **Gastos fijos:** crea administración, servicios y suscripciones una vez. Cada mes pulsa **Generar gastos del mes** para crearlos como “Por pagar”; luego márcalos como pagados en **Gastos**.
 
 ## Estado de resultados (PyG)
@@ -81,10 +80,10 @@ Junto a cada cifra calculada hay un círculo pequeño con una **i**. Púlsalo (o
 - **Movimientos:** en las listas, el resumen y los pendientes cada movimiento se muestra con su **nota** (qué compraste) como título y el proveedor al lado; si no tiene nota, se muestra el proveedor. Busca por proveedor o nota, filtra por categoría, cuenta, estado y tipo, y pasa de página. Toca un movimiento para ver el detalle, abrir su comprobante, **editarlo** o **eliminarlo**. **Exportar CSV** descarga la lista filtrada.
   El Operador puede editar o eliminar sus propios gastos durante las 48 horas siguientes a registrarlos.
 - **Filtro de categorías (Resumen y Estadísticas):** el mismo filtro está en el Resumen: ahí también afecta el flujo de caja, el anillo, el margen, el EBITDA, los principales gastos, los últimos 6 meses, el presupuesto, la actividad reciente y lo por pagar. El saldo de las cuentas no se filtra (es dinero real).
-- **Filtro de categorías en Estadísticas:** pulsa **Categorías** y marca las que quieres ver; las que desmarques (por ejemplo gastos personales o de un familiar) no cuentan en ninguna cifra, gráfica ni lista de proveedores. Hay atajos *Todas*, *Ninguna* e *Invertir*, y puedes marcar «Recordar esta selección en este navegador». Las reservas siempre se incluyen. **Quitar filtro** vuelve a la vista completa.
+- **Filtro de categorías en Estadísticas:** pulsa **Categorías** y marca las que quieres ver; las que desmarques (por ejemplo gastos personales o de un familiar) no cuentan en ninguna cifra, gráfica ni lista de proveedores. Hay atajos *Todas*, *Ninguna* e *Invertir*, y puedes marcar «Recordar esta selección en este navegador». **Quitar filtro** vuelve a la vista completa.
 - **Estadísticas (Administrador):** elige Hoy, Semana, Mes o Año; compara con el periodo anterior, mira los gastos por categoría y los mayores proveedores.
 - **Pendientes (campana):** lo que debes pagar (con los vencidos marcados) y lo que te deben; márcalos como pagados o cobrados desde ahí.
-- **Airbnb:** el resumen muestra ocupación, tarifa media por noche (ADR) y RevPAR. En **Reservas** ves el detalle con el neto para ti; en **Propiedades** administras tus apartamentos.
+- **Airbnb:** las reservas se llevan en la app de Airbnb; aquí registras el ingreso como un movimiento cuando te pagan. En **Propiedades** administras tus apartamentos.
 - **Categorías (Administrador):** crea y edita categorías; la “línea del PyG” decide dónde suma cada gasto en el estado de resultados.
 - **Presupuesto:** copia el presupuesto del mes anterior con un clic.
 - **Mi cuenta (avatar → Mi cuenta y privacidad):** ver tus negocios y **eliminar tu cuenta**. Si eres el único administrador de un negocio, ese negocio se elimina con todo; si hay otro administrador, los registros pasan a esa persona.
