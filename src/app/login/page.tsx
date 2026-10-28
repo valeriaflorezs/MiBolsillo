@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 import { Logo } from "@/components/ui/logo";
 import { auth, signIn } from "@/lib/auth/config";
 import { CredentialsForm } from "./credentials-form";
@@ -12,7 +13,10 @@ function safeNext(n?: string) {
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeNext((await searchParams).next);
-  if ((await auth())?.user) redirect(next);
+  const session = (await auth())?.user;
+  // Con una cuenta desactivada no se redirige (evita un bucle con "/"): se avisa y se deja ver el formulario.
+  const disabled = session?.id ? !(await prisma.user.findUnique({ where: { id: session.id }, select: { active: true } }))?.active : false;
+  if (session && !disabled) redirect(next);
   return (
     <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-8 px-4 py-10 lg:grid-cols-2">
       <section className="panel hidden min-h-[28rem] flex-col justify-between lg:flex">
@@ -27,7 +31,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
       <section className="card w-full space-y-6 text-center lg:text-left">
         <div className="flex justify-center lg:hidden"><Logo height={34} /></div>
-        <div><h1 className="text-3xl font-semibold tracking-tight">Bienvenido</h1><p className="mt-1 text-muted">Entra con Google o con el usuario que te dieron.</p></div>
+        <div><h1 className="text-3xl font-semibold tracking-tight">Bienvenido</h1><p className="mt-1 text-muted">Entra con Google o con el usuario que te dieron.</p>{disabled && <p role="alert" className="mt-3 rounded-xl border border-negative/40 p-3 text-sm text-negative">Tu cuenta está desactivada. Habla con el administrador.</p>}</div>
         <form action={async () => { "use server"; await signIn("google", { redirectTo: next }); }}>
           <button type="submit" className="btn btn-primary w-full !py-3">Continuar con Google</button>
         </form>

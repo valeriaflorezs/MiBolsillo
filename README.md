@@ -53,3 +53,7 @@ Calidad: `npm run lint && npm run typecheck && npm test` (las pruebas de integra
 ## Despliegue
 
 Railway construye la imagen del `Dockerfile` en cada push; al arrancar aplica las migraciones (`prisma migrate deploy`) y expone `/api/health`. Variables necesarias: ver [`.env.example`](.env.example) y el manual de sistema. No subas secretos al repositorio.
+
+## Panel de administración de la plataforma
+
+`/admin` (enlace «Administración» en el menú de la cuenta) tiene tres pestañas: **Empresas y usuarios** (crear usuarios de solo lectura con clave, nueva clave, activar/desactivar), **Actividad** (ingresos, consultas, cambios, fallos, con filtros y CSV) y **Consumo de IA** (solicitudes y tokens del OCR de comprobantes). Solo entran los correos de Google listados en la variable `ADMIN_EMAILS` (separados por coma). La actividad y el consumo se registran desde que se despliega esta versión.

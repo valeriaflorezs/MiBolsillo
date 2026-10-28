@@ -57,7 +57,8 @@ export async function createInviteAction(_: ActionState, fd: FormData): Promise<
     const input = z
       .object({ workspaceId: id, email: z.string().trim().toLowerCase().email("Correo inválido"), role: z.enum(["ADMIN", "OPERATOR", "VIEWER"]) })
       .parse(Object.fromEntries(fd));
-    const { userId } = await requireWorkspace(input.workspaceId, "member:manage");
+    const { userId, role } = await requireWorkspace(input.workspaceId, "member:invite");
+    if (input.role === "ADMIN" && role !== "ADMIN") throw userError("Solo un administrador puede invitar a otro administrador.");
     rateLimit(`invite:${userId}`, 20, 3_600_000);
     const token = randomBytes(24).toString("base64url");
     const expiresAt = new Date(Date.now() + 7 * 86_400_000);
@@ -112,10 +113,12 @@ export async function acceptInvite(token: string) {
   const invite = await prisma.workspaceInvite.findUnique({ where: { token } });
   if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) return { error: "La invitación no es válida o expiró." };
   if (invite.email !== user.email?.toLowerCase()) return { error: `Esta invitación es para ${invite.email}. Inicia sesión con ese correo.` };
+  // Un administrador que ya es miembro no baja de rol por aceptar una invitación (p. ej. creada por un Operador).
+  const current = await prisma.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId: invite.workspaceId, userId: user.id } }, select: { role: true } });
   await prisma.$transaction([
     prisma.workspaceMember.upsert({
       where: { workspaceId_userId: { workspaceId: invite.workspaceId, userId: user.id } },
-      update: { role: invite.role },
+      update: { role: current?.role === "ADMIN" ? "ADMIN" : invite.role },
       create: { workspaceId: invite.workspaceId, userId: user.id, role: invite.role },
     }),
     prisma.workspaceInvite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } }),
@@ -151,7 +154,7 @@ export async function createViewerAction(_: ActionState, fd: FormData): Promise<
         username: z.string().trim().toLowerCase().regex(USERNAME_RE, "Usuario de 4 a 30 caracteres: letras minúsculas, números, punto, guion o guion bajo."),
       })
       .parse(Object.fromEntries(fd));
-    const { userId } = await requireWorkspace(input.workspaceId, "member:manage");
+    const { userId } = await requireWorkspace(input.workspaceId, "member:invite"); // las cuentas de solo lectura también las puede crear un Operador
     rateLimit(`viewer:${userId}`, 20, 3_600_000);
     if (await prisma.user.findUnique({ where: { username: input.username }, select: { id: true } })) throw userError("Ese usuario ya existe. Elige otro.");
     const password = generatePassword();
@@ -165,7 +168,7 @@ export async function createViewerAction(_: ActionState, fd: FormData): Promise<
       },
     });
     revalidatePath(`/w/${input.workspaceId}/settings`);
-    return `Cuenta creada. Usuario: ${input.username} · Contraseña: ${password} — cópiala ahora, no se vuelve a mostrar.`;
+    return { message: "Cuenta creada", secret: { title: `Acceso para ${input.name}`, note: "Cópialo ahora: la contraseña no se vuelve a mostrar. Compártela por un canal privado.", items: [{ label: "Usuario", value: input.username }, { label: "Contraseña", value: password }] } };
   });
 }
 
@@ -179,6 +182,6 @@ export async function resetViewerPasswordAction(_: ActionState, fd: FormData): P
     if (!target?.user.username) throw new Error("NOT_FOUND");
     const password = generatePassword();
     await prisma.user.update({ where: { id: target.user.id }, data: { passwordHash: await hashPassword(password) } });
-    return `Nueva contraseña de ${target.user.username}: ${password} — cópiala ahora, no se vuelve a mostrar.`;
+    return { message: "Contraseña renovada", secret: { title: `Nueva contraseña de ${target.user.username}`, note: "Cópiala ahora: no se vuelve a mostrar.", items: [{ label: "Usuario", value: target.user.username }, { label: "Contraseña", value: password }] } };
   });
 }

@@ -1,6 +1,8 @@
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { SideNav } from "@/components/shell/side-nav";
 import { TopNav } from "@/components/shell/top-nav";
+import { ViewTracker } from "@/components/shell/view-tracker";
+import { isPlatformAdmin } from "@/lib/auth/platform";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { prisma } from "@/lib/db";
 import { can, pageCtx } from "@/lib/auth/permissions";
@@ -32,11 +34,12 @@ export default async function WorkspaceLayout({ children, params }: { children: 
   const managed = Boolean(session?.user?.email?.endsWith(CRED_DOMAIN)); // cuentas con usuario/contraseña no crean negocios
   return (
     <>
+      <ViewTracker workspaceId={workspaceId} />
       <SideNav workspaceId={workspaceId} primary={primary} more={more} pending={pending} />
       <div className="md:pl-[5.75rem]">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-4 py-6 pb-44 md:pb-8">
         <TopNav
-          pending={pending} canWrite={canWrite} canCreateWorkspace={!managed}
+          pending={pending} canWrite={canWrite} canCreateWorkspace={!managed} platformAdmin={isPlatformAdmin(session?.user?.email)}
           workspaces={memberships.map((m) => m.workspace)} currentId={workspaceId}
           user={{ name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null }}
           signOutAction={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}
