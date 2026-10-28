@@ -9,7 +9,7 @@ import { cop, num } from "@/lib/format";
 import { addCapexAction, updateCapexAction } from "@/modules/airbnb/actions";
 import { CsvImport } from "@/components/forms/csv-import";
 import { importCapexAction } from "@/modules/airbnb/import-actions";
-import { accountOptions } from "@/modules/core/queries";
+import { ExpensePicker } from "@/components/forms/expense-picker";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
 
@@ -21,11 +21,12 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
   const ctx = await pageCtx(workspaceId, "data:read");
   const canBuy = can(ctx.role, "capex:update");
   const admin = can(ctx.role, "airbnb:manage");
-  const [items, properties, accounts] = await Promise.all([
+  const [items, properties, expenses] = await Promise.all([
     prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } } }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { capexCategory: "asc" }] }),
     prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true } }),
-    canBuy ? accountOptions(workspaceId) : Promise.resolve([]),
+    canBuy ? prisma.transaction.findMany({ where: { workspaceId, type: "EXPENSE", capexItemId: null }, select: { id: true, description: true, vendor: true, amount: true, date: true }, orderBy: { date: "desc" }, take: 300 }) : Promise.resolve([]),
   ]);
+  const expenseOptions = expenses.map((e) => ({ id: e.id, label: e.description || e.vendor || "Gasto sin descripción", detail: `${e.date.toISOString().slice(0, 10)}${e.vendor && e.description ? ` · ${e.vendor}` : ""} · ${cop(num(e.amount))}` }));
   const rows = items.map((i) => ({ ...i, v: capexVariance({ quantity: i.quantity, budgetedUnitPrice: num(i.budgetedUnitPrice), actualUnitPrice: i.actualUnitPrice == null ? null : num(i.actualUnitPrice) }) }));
   const bought = rows.filter((r) => r.status === "PURCHASED");
   const totalBudget = rows.reduce((a, r) => a + r.v.budgeted, 0);
@@ -56,12 +57,17 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
                   <td className="td text-right">{r.v.actual == null ? "—" : cop(r.v.actual)}</td>
                   <td className={`td text-right font-medium ${r.v.variance == null ? "" : r.v.variance < 0 ? "text-negative" : "text-positive"}`}>{r.v.variance == null ? "—" : cop(r.v.variance)}</td>
                   <td className="td">
-                    {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Deshacer" : "Comprado ✓"} variant={r.status === "PURCHASED" ? "ghost" : "primary"} className="flex items-center gap-2" resetOnSuccess={false}>
-                      <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} />
-                      <input type="hidden" name="intent" value={r.status === "PURCHASED" ? "undo" : "buy"} />
-                      {r.status === "PENDING" && <><label className="sr-only" htmlFor={`p${r.id}`}>Precio unitario real</label><input id={`p${r.id}`} name="actualUnitPrice" type="number" max="1000000000000" min="0" step="0.01" placeholder="Precio real" className="input !w-28" />
-                      {accounts.length > 0 && <><label className="sr-only" htmlFor={`a${r.id}`}>Cuenta con la que se pagó</label><select id={`a${r.id}`} name="accountId" className="input !w-36" defaultValue="" title="Si eliges una cuenta, también se registra el gasto en Movimientos"><option value="">Sin registrar gasto</option>{accounts.map((a) => <option key={a.id} value={a.id}>Pagado con {a.name}</option>)}</select></>}</>}
-                    </ActionForm>}
+                    {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : r.status === "PURCHASED" ? (
+                      <ActionForm action={updateCapexAction} submitLabel="Deshacer" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
+                        <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="undo" />
+                        <span className="text-sm text-muted">Comprado ✓</span>
+                      </ActionForm>
+                    ) : (
+                      <ActionForm action={updateCapexAction} submitLabel="Asignar" className="flex items-center gap-2" resetOnSuccess={false}>
+                        <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
+                        <ExpensePicker name="transactionId" options={expenseOptions} />
+                      </ActionForm>
+                    )}
                   </td>
                 </tr>
               ))}
