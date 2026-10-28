@@ -18,7 +18,7 @@ Cada persona puede administrar varios *negocios* (por ejemplo “Airbnb Apto 302
 - **Resumen financiero.** Saldo total, flujo de caja, margen de contribución, EBITDA operativo, ejecución del presupuesto, ingresos vs. gastos, gastos por categoría y filtros por mes y por estado (pagado / por pagar, cobrado / por cobrar).
 - **Movimientos.** Gastos, ingresos y transferencias entre cuentas (Nequi, bancos, efectivo, tarjetas); búsqueda, filtros, paginación, edición, eliminación y exportación a CSV.
 - **Facturas con OCR.** Arrastra una foto o PDF: la app lee monto, fecha y proveedor, sugiere la categoría y guarda el comprobante en un almacenamiento privado (Cloudflare R2).
-- **Módulo Airbnb / alquiler corto.** Propiedades, checklist de inversión **CAPEX** (presupuestado vs. real), reservas con estado de cobro, gastos fijos recurrentes, **Estado de Resultados (PyG)** y KPIs de ocupación, tarifa media (ADR) y RevPAR.
+- **Módulo Airbnb / alquiler corto.** Propiedades, checklist de inversión **CAPEX** (presupuestado vs. real), gastos fijos recurrentes y **Estado de Resultados (PyG)**. Las reservas se manejan en la app de Airbnb; aquí solo se registran los ingresos cuando se cobran.
 - **Estadísticas** por día, semana, mes y año con comparación contra el periodo anterior, pendientes por pagar y por cobrar, presupuesto por categoría, lista de deseos.
 - **Importación desde CSV/Excel** de ítems CAPEX y gastos fijos.
 - **Privacidad.** Eliminación de negocios y de la cuenta del usuario (incluye los comprobantes almacenados).

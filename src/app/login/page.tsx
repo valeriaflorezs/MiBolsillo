@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <Logo tone="onDark" height={40} />
         <div className="space-y-3">
           <p className="text-4xl font-semibold leading-tight">Tus finanzas y tus negocios, en un solo lugar.</p>
-          <p className="text-white/70">Gastos con foto de factura, estado de resultados, CAPEX y reservas de tu Airbnb.</p>
+          <p className="text-white/70">Gastos con foto de factura, estado de resultados, CAPEX de tu Airbnb.</p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center text-sm">
           {["EBITDA", "Presupuesto", "Flujo de caja"].map((t) => <span key={t} className="rounded-2xl bg-white/10 px-3 py-3 backdrop-blur">{t}</span>)}

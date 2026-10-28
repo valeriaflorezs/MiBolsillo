@@ -10,7 +10,7 @@ export const metadata = { title: "Propiedades" };
 export default async function Properties({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
   await pageCtx(workspaceId, "airbnb:manage");
-  const props = await prisma.property.findMany({ where: { workspaceId }, orderBy: [{ active: "desc" }, { createdAt: "asc" }], include: { _count: { select: { reservations: true, capexItems: true, fixedExpenses: true } } } });
+  const props = await prisma.property.findMany({ where: { workspaceId }, orderBy: [{ active: "desc" }, { createdAt: "asc" }], include: { _count: { select: { capexItems: true, fixedExpenses: true } } } });
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Propiedades</h1>
@@ -18,7 +18,7 @@ export default async function Properties({ params }: { params: Promise<{ workspa
         {props.map((p) => (
           <section key={p.id} className={p.active ? "card space-y-3" : "card space-y-3 opacity-60"}>
             <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-medium">{p.name}</h2><p className="text-sm text-muted">{p.address ?? "Sin dirección"}</p></div>{!p.active && <Chip>Inactiva</Chip>}</div>
-            <p className="text-sm text-muted">{p._count.reservations} reservas · {p._count.capexItems} ítems CAPEX · {p._count.fixedExpenses} gastos fijos</p>
+            <p className="text-sm text-muted">{p._count.capexItems} ítems CAPEX · {p._count.fixedExpenses} gastos fijos</p>
             <details><summary className="cursor-pointer text-sm underline">Editar</summary>
               <ActionForm action={updatePropertyAction} submitLabel="Guardar" resetOnSuccess={false} className="mt-3 space-y-3">
                 <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="propertyId" value={p.id} />

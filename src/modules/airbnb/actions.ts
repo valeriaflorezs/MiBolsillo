@@ -83,39 +83,6 @@ export async function updateCapexAction(_: ActionState, fd: FormData): Promise<A
   });
 }
 
-export async function createReservationAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const i = z.object({
-      workspaceId: id, propertyId: id, channel: z.enum(["AIRBNB", "BOOKING", "DIRECT", "OTHER"]),
-      guestName: optText(80), externalCode: optText(40), checkIn: dateStr, checkOut: dateStr,
-      grossAmount: money, cleaningFeeCharged: money, platformCommission: money, payoutStatus: z.enum(["PENDING", "RECEIVED"]),
-    }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "airbnb:manage");
-    await ownProperty(i.workspaceId, i.propertyId);
-    if (i.checkOut <= i.checkIn) throw userError("La salida debe ser posterior a la entrada.");
-    try {
-      await prisma.reservation.create({ data: { ...i, payoutDate: i.payoutStatus === "RECEIVED" ? new Date() : null } });
-    } catch {
-      throw userError("Ya existe una reserva con ese código en esta propiedad.");
-    }
-    refresh(i.workspaceId);
-    return "Reserva guardada";
-  });
-}
-
-export async function reservationStatusAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const i = z.object({ workspaceId: id, reservationId: id, intent: z.enum(["received", "cancel"]) }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "airbnb:manage");
-    const r = await prisma.reservation.updateMany({
-      where: { id: i.reservationId, workspaceId: i.workspaceId },
-      data: i.intent === "received" ? { payoutStatus: "RECEIVED", payoutDate: new Date() } : { status: "CANCELLED" },
-    });
-    if (!r.count) throw new Error("NOT_FOUND");
-    refresh(i.workspaceId);
-  });
-}
-
 export async function createFixedExpenseAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({

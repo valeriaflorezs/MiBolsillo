@@ -52,43 +52,6 @@ export async function deleteCapexItemAction(_: ActionState, fd: FormData): Promi
   });
 }
 
-export async function updateReservationAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const i = z.object({
-      workspaceId: id, reservationId: id, propertyId: id, channel: z.enum(["AIRBNB", "BOOKING", "DIRECT", "OTHER"]),
-      guestName: optText(80), externalCode: optText(40), checkIn: dateStr, checkOut: dateStr,
-      grossAmount: money, cleaningFeeCharged: money, platformCommission: money, payoutStatus: z.enum(["PENDING", "RECEIVED"]),
-      status: z.enum(["CONFIRMED", "COMPLETED", "CANCELLED"]),
-    }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "airbnb:manage");
-    await ownProperty(i.workspaceId, i.propertyId);
-    if (i.checkOut <= i.checkIn) throw userError("La salida debe ser posterior a la entrada.");
-    const { reservationId, workspaceId, ...data } = i;
-    try {
-      const r = await prisma.reservation.updateMany({
-        where: { id: reservationId, workspaceId },
-        data: { ...data, guestName: i.guestName ?? null, externalCode: i.externalCode ?? null, payoutDate: i.payoutStatus === "RECEIVED" ? new Date() : null },
-      });
-      if (!r.count) throw new Error("NOT_FOUND");
-    } catch (e) {
-      if (e instanceof Error && e.message === "NOT_FOUND") throw e;
-      throw userError("Ya existe una reserva con ese código en esta propiedad.");
-    }
-    refresh(workspaceId);
-    redirect(`/w/${workspaceId}/reservations?sel=${reservationId}`);
-  });
-}
-
-export async function deleteReservationAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const i = z.object({ workspaceId: id, reservationId: id }).parse(Object.fromEntries(fd));
-    await requireWorkspace(i.workspaceId, "airbnb:manage");
-    await prisma.reservation.deleteMany({ where: { id: i.reservationId, workspaceId: i.workspaceId } });
-    refresh(i.workspaceId);
-    redirect(`/w/${i.workspaceId}/reservations`);
-  });
-}
-
 export async function updateFixedExpenseAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({

@@ -32,7 +32,7 @@ Servicio web desde GitHub (Dockerfile) + servicio PostgreSQL. El contenedor ejec
 | Crear gasto, comprobantes, lista de deseos, marcar CAPEX | `transaction:create` / `capex:update` (ADMIN y OPERATOR). OPERATOR solo crea GASTOS y solo ve los suyos |
 | Ingresos, transferencias, cuentas, resumen | `dashboard:full` (ADMIN) |
 | PyG | `pyg:read` (ADMIN) |
-| Reservas, gastos fijos, propiedades, ítems CAPEX | `airbnb:manage` (ADMIN) |
+| Gastos fijos, propiedades, ítems CAPEX | `airbnb:manage` (ADMIN) |
 | Presupuesto | `budget:write` (ADMIN) |
 | Miembros, invitaciones, eliminar negocio | `member:manage` (ADMIN) |
 
@@ -52,7 +52,7 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 - *OCR falla:* revisar `ANTHROPIC_API_KEY`; el formulario sigue funcionando a mano. Guía de configuración paso a paso: `docs/comprobantes-ocr.md`.
 
 ## Rutas (v2.0)
-`/w/[id]`: resumen · `transactions` (lista+detalle, `[txId]/edit`, `export` CSV) · `expenses/new` · `pending` · `stats` · `accounts` (módulo «Cuentas y deudas»: pestañas cuentas, tarjetas y créditos; `/debt` redirige a `?t=creditos`) · `categories` · `budget` · `wishlist` · `settings` · `more` · Airbnb: `capex` (+`[itemId]/edit`), `pyg`, `reservations` (+`[resId]/edit`), `fixed` (+`[fixedId]/edit`), `properties`. Globales: `/login`, `/workspaces/new`, `/invite/[token]`, `/account`, `/privacidad`, `/terminos`, `/api/health`.
+`/w/[id]`: resumen · `transactions` (lista+detalle, `[txId]/edit`, `export` CSV) · `expenses/new` · `pending` · `stats` · `accounts` (módulo «Cuentas y deudas»: pestañas cuentas, tarjetas y créditos; `/debt` redirige a `?t=creditos`) · `categories` · `budget` · `wishlist` · `settings` · `more` · Airbnb: `capex` (+`[itemId]/edit`), `pyg`, `fixed` (+`[fixedId]/edit`), `properties`. Globales: `/login`, `/workspaces/new`, `/invite/[token]`, `/account`, `/privacidad`, `/terminos`, `/api/health`.
 
 ## Acciones del servidor
 `modules/core/{actions,finance-actions,crud-actions,receipt-actions}.ts` y `modules/airbnb/{actions,crud-actions}.ts`. Reglas comunes: zod → `requireWorkspace(permiso)` → verificación de pertenencia de cada ID relacionado → operación filtrada por `workspaceId`. `canMutateTx` (en `lib/auth/rbac.ts`) decide quién edita/elimina un movimiento (ADMIN todo; OPERATOR sus gastos < 48 h).
@@ -60,7 +60,7 @@ Backups programados de Postgres en Railway y prueba de restauración antes de pu
 ## Pruebas
 - Unitarias: `rbac.test.ts`, `pyg.test.ts`, `period.test.ts`.
 - Integración (Postgres): `queries.int.test.ts` (PyG, filtros, alcance del operador, aislamiento entre negocios).
-- Verificación end-to-end (manual con Playwright contra Postgres local y sesiones JWT firmadas): creación/edición/eliminación de movimientos, transferencias, reservas, CAPEX, gastos fijos, categorías, cuentas, presupuesto, invitaciones, estadísticas por periodo, exportación CSV, degradación del OCR sin R2 y restricciones del Operador.
+- Verificación end-to-end (manual con Playwright contra Postgres local y sesiones JWT firmadas): creación/edición/eliminación de movimientos, transferencias, CAPEX, gastos fijos, categorías, cuentas, presupuesto, invitaciones, estadísticas por periodo, exportación CSV, degradación del OCR sin R2 y restricciones del Operador.
 
 ## Importación CSV
 `src/lib/csv.ts` (lector sin dependencias; detecta `,`/`;` y montos es-CO/en-US) → `src/modules/airbnb/import.ts` (validación por fila, idempotente por descripción/nombre) → `import-actions.ts` (permiso `airbnb:manage`, 300 KB y 500 filas máx., 10/h por usuario). Pruebas: `csv.test.ts`, `import.int.test.ts`.

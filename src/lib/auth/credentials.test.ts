@@ -19,7 +19,7 @@ describe("credenciales", () => {
     expect(pw).not.toMatch(/[0O1lI]/);
   });
   it("valida el formato de usuario", () => {
-    expect(USERNAME_RE.test("hermano.tania")).toBe(true);
+    expect(USERNAME_RE.test("nombre.apellido")).toBe(true);
     for (const bad of ["ab", "Con Espacio", "MAYUS", "x@y.co", "-guion"]) expect(USERNAME_RE.test(bad)).toBe(false);
   });
 });
