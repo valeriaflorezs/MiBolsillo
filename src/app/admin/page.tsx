@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth/config";
 import { ROLE_LABEL } from "@/lib/auth/rbac";
 import { fmtDateTime } from "@/lib/admin-range";
 import { WORKSPACE_TYPE_LABEL } from "@/modules/core/defaults";
-import { createPlatformUserAction, resetPlatformPasswordAction, setUserActiveAction } from "@/modules/admin/actions";
+import { changePlatformMemberRoleAction, createPlatformUserAction, createPlatformWorkspaceAction, resetPlatformPasswordAction, setUserActiveAction } from "@/modules/admin/actions";
 
 export const metadata = { title: "Administración · Empresas y usuarios" };
 
@@ -15,7 +15,7 @@ export default async function AdminHome() {
   const me = (await auth())?.user?.id;
   const [workspaces, users] = await Promise.all([
     prisma.workspace.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true, type: true, archived: true, createdAt: true, _count: { select: { members: true, transactions: true } } } }),
-    prisma.user.findMany({ orderBy: { createdAt: "asc" }, take: 500, select: { id: true, username: true, email: true, name: true, active: true, memberships: { select: { role: true, workspace: { select: { name: true } } } } } }),
+    prisma.user.findMany({ orderBy: { createdAt: "asc" }, take: 500, select: { id: true, username: true, email: true, name: true, active: true, memberships: { select: { id: true, role: true, workspace: { select: { name: true } } } } } }),
   ]);
   const initial = generatePassword(11);
 
@@ -42,6 +42,17 @@ export default async function AdminHome() {
             </tbody>
           </table>
         </div>
+        <ActionForm action={createPlatformWorkspaceAction} submitLabel="Crear empresa" className="space-y-4">
+          <fieldset className="space-y-3 rounded-xl border border-line p-4">
+            <legend className="px-2 font-medium">Nueva empresa</legend>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div><label className="label" htmlFor="wn">Nombre</label><input id="wn" name="name" required className="input" /></div>
+              <div><label className="label" htmlFor="wt">Tipo</label><select id="wt" name="type" className="input" defaultValue="AIRBNB">{Object.entries(WORKSPACE_TYPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+              <div><label className="label" htmlFor="wa">Administrador inicial</label><select id="wa" name="adminUserId" className="input" defaultValue={me}>{users.filter((u) => !u.username && u.active).map((u) => <option key={u.id} value={u.id}>{u.name ? `${u.name} · ` : ""}{u.email}</option>)}</select></div>
+            </div>
+            <p className="text-sm text-muted">Se crea con las categorías y la cuenta de efectivo por defecto. El administrador inicial es una persona que ingresa con Google.</p>
+          </fieldset>
+        </ActionForm>
       </section>
 
       <section className="card space-y-3">
@@ -54,13 +65,31 @@ export default async function AdminHome() {
                 <tr key={u.id} className={u.active ? "" : "opacity-60"}>
                   <td className="td">{u.username ?? (u.email.endsWith(CRED_DOMAIN) ? u.email : u.email)}</td>
                   <td className="td">{u.name ?? "—"}</td>
-                  <td className="td">{u.memberships.length ? u.memberships.map((m) => `${m.workspace.name} (${ROLE_LABEL[m.role]})`).join(", ") : "—"}</td>
+                  <td className="td">
+                    <ul className="space-y-1.5">
+                      {u.memberships.map((m) => (
+                        <li key={m.id}>
+                          {u.username ? <span>{m.workspace.name} ({ROLE_LABEL[m.role]})</span> : (
+                            <ActionForm action={changePlatformMemberRoleAction} submitLabel="Cambiar" variant="ghost" className="flex flex-wrap items-center gap-2" resetOnSuccess={false}>
+                              <input type="hidden" name="memberId" value={m.id} />
+                              <span>{m.workspace.name}</span>
+                              <select name="role" defaultValue={m.role} aria-label={`Rol en ${m.workspace.name}`} className="input !w-auto !py-1">
+                                <option value="ADMIN">Administrador</option><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option>
+                              </select>
+                            </ActionForm>
+                          )}
+                        </li>
+                      ))}
+                      {u.memberships.length === 0 && <li>—</li>}
+                    </ul>
+                  </td>
                   <td className="td">{u.active ? "Activo" : "Desactivado"}</td>
                   <td className="td">
                     <div className="flex flex-wrap items-start justify-end gap-2">
                       {u.username && (
-                        <ActionForm action={resetPlatformPasswordAction} submitLabel="Nueva clave" variant="ghost" className="inline-flex" resetOnSuccess={false}>
+                        <ActionForm action={resetPlatformPasswordAction} submitLabel="Cambiar clave" variant="ghost" className="flex flex-wrap items-center gap-2" resetOnSuccess>
                           <input type="hidden" name="userId" value={u.id} />
+                          <input name="password" type="text" minLength={8} autoComplete="off" spellCheck={false} aria-label={`Nueva clave de ${u.username}`} placeholder="Nueva clave (vacío = generar)" className="input !w-52 !py-1.5 font-mono" />
                         </ActionForm>
                       )}
                       {u.id !== me && (

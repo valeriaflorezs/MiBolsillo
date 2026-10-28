@@ -11,7 +11,7 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { deleteObjects } from "@/lib/storage/r2";
 import { CRED_DOMAIN, credentialEmail } from "@/lib/auth/credentials-shared";
 import { generatePassword, hashPassword, USERNAME_RE } from "@/lib/auth/credentials";
-import { DEFAULT_CATEGORIES, FINANCIAL_CATEGORIES } from "./defaults";
+import { provisionWorkspace } from "./provision";
 
 const id = z.string().cuid();
 
@@ -29,25 +29,7 @@ export async function createWorkspaceAction(_: ActionState, fd: FormData): Promi
       .parse(Object.fromEntries(fd));
     if ((await prisma.workspaceMember.count({ where: { userId: user.id } })) >= 20) throw userError("Alcanzaste el máximo de negocios.");
 
-    const ws = await prisma.$transaction(async (tx) => {
-      const w = await tx.workspace.create({
-        data: { name: input.name, type: input.type, members: { create: { userId: user.id, role: "ADMIN" } } },
-      });
-      await tx.category.createMany({
-        data: [...DEFAULT_CATEGORIES[input.type], ...FINANCIAL_CATEGORIES].map((c) => ({
-          workspaceId: w.id,
-          name: c.name,
-          emoji: c.emoji,
-          expenseKind: c.income ? null : c.kind,
-          pygLine: c.pygLine,
-        })),
-      });
-      await tx.financialAccount.create({ data: { workspaceId: w.id, name: "Efectivo", type: "CASH", emoji: "💵" } });
-      if (input.type === "AIRBNB") {
-        await tx.property.create({ data: { workspaceId: w.id, name: input.propertyName || input.name } });
-      }
-      return w;
-    });
+    const ws = await prisma.$transaction((tx) => provisionWorkspace(tx, { name: input.name, type: input.type, adminUserId: user.id, propertyName: input.propertyName }));
     redirect(`/w/${ws.id}`);
   });
 }

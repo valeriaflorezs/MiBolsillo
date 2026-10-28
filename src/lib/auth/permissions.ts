@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth/config";
 import { noteAction } from "@/lib/audit";
+import { isPlatformAdmin } from "@/lib/auth/platform";
 
 export { can, type Permission } from "./rbac";
 import { can, type Permission } from "./rbac";
@@ -10,12 +11,17 @@ import { can, type Permission } from "./rbac";
 const getMembership = cache(async (workspaceId: string) => {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) return { status: "unauth" as const };
+  if (!userId || !session) return { status: "unauth" as const };
   const m = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
     select: { role: true, user: { select: { active: true } }, workspace: { select: { id: true, name: true, type: true, archived: true } } },
   });
   if (m && !m.user.active) return { status: "unauth" as const }; // cuenta desactivada: se trata como sesión vencida
+  if (!m && isPlatformAdmin(session.user?.email)) {
+    // El superusuario de la plataforma entra a cualquier negocio con permisos de administrador.
+    const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { id: true, name: true, type: true, archived: true } });
+    return workspace ? { status: "ok" as const, userId, role: "ADMIN" as const, workspace } : { status: "none" as const };
+  }
   return m ? { status: "ok" as const, userId, role: m.role, workspace: m.workspace } : { status: "none" as const };
 });
 
