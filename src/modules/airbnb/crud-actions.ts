@@ -1,5 +1,6 @@
 "use server";
 
+import { syncCapexPurchase } from "./capex-link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -35,8 +36,12 @@ export async function updateCapexItemAction(_: ActionState, fd: FormData): Promi
     await requireWorkspace(i.workspaceId, "airbnb:manage");
     await ownProperty(i.workspaceId, i.propertyId);
     const { itemId, workspaceId, ...data } = i;
-    const r = await prisma.capexItem.updateMany({ where: { id: itemId, workspaceId }, data: { ...data, store: i.store ?? null } });
-    if (!r.count) throw new Error("NOT_FOUND");
+    // Si el ítem ya tiene gastos, su precio real se recalcula con la nueva cantidad.
+    await prisma.$transaction(async (tx) => {
+      const r = await tx.capexItem.updateMany({ where: { id: itemId, workspaceId }, data: { ...data, store: i.store ?? null } });
+      if (!r.count) throw new Error("NOT_FOUND");
+      if (await tx.transaction.count({ where: { capexItemId: itemId } })) await syncCapexPurchase(tx, itemId);
+    });
     refresh(workspaceId);
     redirect(`/w/${workspaceId}/capex`);
   });
