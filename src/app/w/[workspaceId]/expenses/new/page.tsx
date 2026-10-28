@@ -16,14 +16,14 @@ export default async function NewExpense({ params, searchParams }: { params: Pro
   const [accounts, categories, pendingCapex] = await Promise.all([
     accountOptions(workspaceId),
     categoryOptions(workspaceId),
-    prisma.capexItem.findMany({ where: { workspaceId, status: "PENDING" }, orderBy: [{ sortOrder: "asc" }, { itemDescription: "asc" }] }),
+    prisma.capexItem.findMany({ where: { workspaceId }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { itemDescription: "asc" }] }),
   ]);
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Registrar movimiento</h1>
       <section className="card max-w-3xl">
         <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} receipts={receiptCapabilities()} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts}
-          capexItems={pendingCapex.map((c) => ({ id: c.id, name: `${c.itemDescription} (x${c.quantity})`, total: Math.round(c.quantity * num(c.budgetedUnitPrice) * 100) / 100 }))} action={createTransactionAction}
+          capexItems={pendingCapex.map((c) => ({ id: c.id, name: `${c.itemDescription} (x${c.quantity})${c.status === "PURCHASED" ? " · ya con gastos" : ""}`, total: c.status === "PURCHASED" ? 0 : Math.round(c.quantity * num(c.budgetedUnitPrice) * 100) / 100 }))} action={createTransactionAction}
           categories={categories.filter((c) => isAdmin || c.expenseKind !== null)} />
       </section>
     </>

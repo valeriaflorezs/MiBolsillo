@@ -8,6 +8,7 @@ import { run, userError, type ActionState } from "@/lib/actions";
 import { requireUser, requireWorkspace } from "@/lib/auth/permissions";
 import { canMutateTx } from "@/lib/auth/rbac";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { syncCapexPurchase } from "@/modules/airbnb/capex-link";
 import { deleteObjects } from "@/lib/storage/r2";
 import { bool, dateStr, id, opt, optId, optText, positive, quantity, signedMoney } from "@/lib/validation";
 
@@ -41,9 +42,15 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
     if (i.type === "TRANSFER" && (!i.transferAccountId || i.transferAccountId === i.accountId)) throw userError("Elige una cuenta destino distinta.");
     await assertOwned(i.workspaceId, { account: i.accountId, transfer: i.transferAccountId, category: i.categoryId });
     const { transactionId, workspaceId, ...data } = i;
-    await prisma.transaction.update({
-      where: { id: transactionId },
-      data: { ...data, transferAccountId: i.type === "TRANSFER" ? i.transferAccountId ?? null : null, quantity: i.quantity ?? null, categoryId: i.categoryId ?? null, paidAt: i.status === "PAID" ? tx.paidAt ?? i.date : null },
+    await prisma.$transaction(async (db) => {
+      await db.transaction.update({
+        where: { id: transactionId },
+        data: {
+          ...data, transferAccountId: i.type === "TRANSFER" ? i.transferAccountId ?? null : null, quantity: i.quantity ?? null, categoryId: i.categoryId ?? null, paidAt: i.status === "PAID" ? tx.paidAt ?? i.date : null,
+          ...(i.type !== "EXPENSE" ? { capexItemId: null } : {}),
+        },
+      });
+      if (tx.capexItemId) await syncCapexPurchase(db, tx.capexItemId);
     });
     refresh(workspaceId);
     return "Cambios guardados";
@@ -57,7 +64,11 @@ export async function deleteTransactionAction(_: ActionState, fd: FormData): Pro
     const tx = await prisma.transaction.findFirst({ where: { id: i.transactionId, workspaceId: i.workspaceId }, include: { attachments: { select: { storageKey: true } } } });
     if (!tx || !canMutateTx(role, tx, userId)) throw new Error("FORBIDDEN");
     await deleteObjects(tx.attachments.map((a) => a.storageKey));
-    await prisma.$transaction([prisma.attachment.deleteMany({ where: { transactionId: tx.id } }), prisma.transaction.delete({ where: { id: tx.id } })]);
+    await prisma.$transaction(async (db) => {
+      await db.attachment.deleteMany({ where: { transactionId: tx.id } });
+      await db.transaction.delete({ where: { id: tx.id } });
+      if (tx.capexItemId) await syncCapexPurchase(db, tx.capexItemId);
+    });
     refresh(i.workspaceId);
     redirect(`/w/${i.workspaceId}/transactions`);
   });

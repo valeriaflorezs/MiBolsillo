@@ -7,7 +7,7 @@ import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { monthRange } from "@/lib/format";
 import { dateStr, id, intBetween, money, opt, optId, optText, positive } from "@/lib/validation";
-import { markCapexPurchased } from "./capex-link";
+import { syncCapexPurchase } from "./capex-link";
 
 const refresh = (w: string) => revalidatePath(`/w/${w}`, "layout");
 
@@ -42,30 +42,28 @@ export async function addCapexAction(_: ActionState, fd: FormData): Promise<Acti
 }
 
 /**
- * Vincula un ítem CAPEX con un gasto ya registrado en Movimientos (precio real = monto / cantidad, tienda = proveedor),
- * o deshace el vínculo. Deshacer no borra el movimiento. Permitido al OPERATOR.
+ * Vincula un ítem CAPEX con uno o varios gastos ya registrados en Movimientos (precio real = suma de los montos / cantidad,
+ * tienda = proveedores), quita uno de ellos o deshace todos los vínculos. Nunca borra movimientos. Permitido al OPERATOR.
  */
 export async function updateCapexAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
-    const i = z.object({ workspaceId: id, itemId: id, intent: z.enum(["link", "undo"]), transactionId: optId }).parse(Object.fromEntries(fd));
+    const i = z.object({
+      workspaceId: id, itemId: id, intent: z.enum(["link", "unlink", "undo"]),
+      transactionIds: z.array(id).max(100).default([]),
+    }).parse({ ...Object.fromEntries(fd), transactionIds: fd.getAll("transactionId") });
     await requireWorkspace(i.workspaceId, "capex:update");
     const item = await prisma.capexItem.findFirst({ where: { id: i.itemId, workspaceId: i.workspaceId } });
     if (!item) throw new Error("NOT_FOUND");
     if (i.intent === "link") {
-      if (!i.transactionId) throw userError("Elige el gasto con el que se compró.");
-      const t = await prisma.transaction.findFirst({ where: { id: i.transactionId, workspaceId: i.workspaceId, type: "EXPENSE", capexItemId: null } });
-      if (!t) throw userError("Ese gasto ya no está disponible.");
-      await prisma.$transaction(async (tx) => {
-        await tx.transaction.update({ where: { id: t.id }, data: { capexItemId: item.id } });
-        await markCapexPurchased(tx, item.id, Number(t.amount), item.quantity, t.date);
-        if (t.vendor) await tx.capexItem.update({ where: { id: item.id }, data: { store: t.vendor } });
-      });
-    } else {
-      await prisma.$transaction([
-        prisma.transaction.updateMany({ where: { workspaceId: i.workspaceId, capexItemId: item.id }, data: { capexItemId: null } }),
-        prisma.capexItem.update({ where: { id: item.id }, data: { status: "PENDING", purchasedAt: null, actualUnitPrice: null } }),
-      ]);
+      if (!i.transactionIds.length) throw userError("Elige al menos un gasto.");
+      const n = await prisma.transaction.count({ where: { id: { in: i.transactionIds }, workspaceId: i.workspaceId, type: "EXPENSE", capexItemId: null } });
+      if (n !== i.transactionIds.length) throw userError("Alguno de esos gastos ya no está disponible.");
     }
+    await prisma.$transaction(async (tx) => {
+      if (i.intent === "link") await tx.transaction.updateMany({ where: { id: { in: i.transactionIds }, workspaceId: i.workspaceId }, data: { capexItemId: item.id } });
+      else await tx.transaction.updateMany({ where: { workspaceId: i.workspaceId, capexItemId: item.id, ...(i.intent === "unlink" ? { id: { in: i.transactionIds } } : {}) }, data: { capexItemId: null } });
+      await syncCapexPurchase(tx, item.id);
+    });
     refresh(i.workspaceId);
   });
 }

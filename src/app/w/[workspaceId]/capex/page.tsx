@@ -22,7 +22,7 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
   const canBuy = can(ctx.role, "capex:update");
   const admin = can(ctx.role, "airbnb:manage");
   const [items, properties, expenses] = await Promise.all([
-    prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } } }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { capexCategory: "asc" }] }),
+    prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } }, transactions: { where: { type: "EXPENSE" }, select: { id: true, description: true, vendor: true, amount: true }, orderBy: { date: "asc" } } }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { capexCategory: "asc" }] }),
     prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true } }),
     canBuy ? prisma.transaction.findMany({ where: { workspaceId, type: "EXPENSE", capexItemId: null }, select: { id: true, description: true, vendor: true, amount: true, date: true }, orderBy: { date: "desc" }, take: 300 }) : Promise.resolve([]),
   ]);
@@ -50,23 +50,27 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
             <tbody className="divide-y divide-line">
               {rows.map((r) => (
                 <tr key={r.id} className={r.status === "PURCHASED" ? "bg-canvas/50" : ""}>
-                  <td className="td"><p className="font-medium">{r.itemDescription}{admin && <> <Link href={`/w/${workspaceId}/capex/${r.id}/edit`} className="text-xs font-normal text-brand-text underline">Editar</Link></>}</p><p className="text-xs text-muted">{CAT[r.capexCategory]} · {r.property.name}{r.store ? ` · ${r.store}` : ""}</p></td>
+                  <td className="td"><p className="font-medium">{r.itemDescription}{admin && <> <Link href={`/w/${workspaceId}/capex/${r.id}/edit`} className="text-xs font-normal text-brand-text underline">Editar</Link></>}</p><p className="text-xs text-muted">{CAT[r.capexCategory]} · {r.property.name}{r.store ? ` · ${r.store}` : ""}</p>
+                    {r.transactions.length > 0 && <ul className="mt-1 space-y-0.5 text-xs text-muted">{r.transactions.map((t) => <li key={t.id} className="flex items-center gap-2"><span>↳ {t.description || t.vendor || "Gasto"} · {cop(num(t.amount))}</span>{canBuy && <ActionForm action={updateCapexAction} submitLabel="Quitar" variant="ghost" className="inline-flex" resetOnSuccess={false}><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="unlink" /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}</li>)}</ul>}</td>
                   <td className="td">{r.quantity}</td>
                   <td className="td text-right">{cop(num(r.budgetedUnitPrice))}</td>
                   <td className="td text-right">{cop(r.v.budgeted)}</td>
                   <td className="td text-right">{r.v.actual == null ? "—" : cop(r.v.actual)}</td>
                   <td className={`td text-right font-medium ${r.v.variance == null ? "" : r.v.variance < 0 ? "text-negative" : "text-positive"}`}>{r.v.variance == null ? "—" : cop(r.v.variance)}</td>
                   <td className="td">
-                    {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : r.status === "PURCHASED" ? (
-                      <ActionForm action={updateCapexAction} submitLabel="Deshacer" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
-                        <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="undo" />
-                        <span className="text-sm text-muted">Comprado ✓</span>
-                      </ActionForm>
-                    ) : (
-                      <ActionForm action={updateCapexAction} submitLabel="Asignar" className="flex items-center gap-2" resetOnSuccess={false}>
-                        <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
-                        <ExpensePicker name="transactionId" options={expenseOptions} />
-                      </ActionForm>
+                    {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : (
+                      <div className="space-y-2">
+                        <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Agregar" : "Asignar"} className="flex items-center gap-2" resetOnSuccess={false}>
+                          <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
+                          <ExpensePicker name="transactionId" options={expenseOptions} placeholder={r.status === "PURCHASED" ? "Agregar más gastos…" : "Asignar a gastos…"} />
+                        </ActionForm>
+                        {r.status === "PURCHASED" && (
+                          <ActionForm action={updateCapexAction} submitLabel="Deshacer todo" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
+                            <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="undo" />
+                            <span className="text-sm text-muted">Comprado ✓</span>
+                          </ActionForm>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { run, userError, type ActionState } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
-import { capexCategoryFor, markCapexPurchased } from "@/modules/airbnb/capex-link";
+import { capexCategoryFor, syncCapexPurchase } from "@/modules/airbnb/capex-link";
 import { dateStr, id, money, opt, optId, optText, positive, quantity, signedMoney } from "@/lib/validation";
 
 
@@ -65,12 +65,12 @@ export async function createTransactionAction(_: ActionState, fd: FormData): Pro
       if (item) {
         data.categoryId ??= (await capexCategoryFor(tx, w, item.categoryId)) ?? undefined;
         data.propertyId ??= item.propertyId;
-        await markCapexPurchased(tx, item.id, i.amount, item.quantity, new Date(i.date));
       }
       const t = await tx.transaction.create({
         data: { ...data, createdById: userId, paidAt: i.status === "PAID" ? i.date : null },
       });
       if (attachmentId) await tx.attachment.update({ where: { id: attachmentId }, data: { transactionId: t.id } });
+      if (item) await syncCapexPurchase(tx, item.id);
     });
     revalidatePath(`/w/${w}`, "layout");
     return "Guardado";

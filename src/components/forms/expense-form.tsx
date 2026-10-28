@@ -132,7 +132,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, capexI
           <div className="sm:col-span-2">
             <label className="label" htmlFor="capexItemId">¿Es la compra de un ítem de CAPEX? <span className="font-normal text-muted">(opcional)</span></label>
             <select id="capexItemId" name="capexItemId" className="input" value={vals.capexItemId}
-              onChange={(e) => { const it = capexItems.find((c) => c.id === e.target.value); setVals((v) => ({ ...v, capexItemId: e.target.value, amount: it && !v.amount ? String(it.total) : v.amount })); }}>
+              onChange={(e) => { const it = capexItems.find((c) => c.id === e.target.value); setVals((v) => ({ ...v, capexItemId: e.target.value, amount: it && it.total && !v.amount ? String(it.total) : v.amount })); }}>
               <option value="">No, es un gasto normal</option>
               {capexItems.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
