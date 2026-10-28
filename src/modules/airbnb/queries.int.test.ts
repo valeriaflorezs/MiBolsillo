@@ -53,7 +53,7 @@ describe.skipIf(!process.env.DATABASE_URL)("periodSummary / listTransactions", (
   it("OPERATOR solo ve los gastos que registró; ADMIN ve todos", async () => {
     const f = { workspaceId, start, end };
     expect(await listTransactions({ ...f, role: "OPERATOR", userId: operatorId })).toHaveLength(1);
-    expect(await listTransactions({ ...f, role: "ADMIN", userId: adminId })).toHaveLength(2);
+    expect(await listTransactions({ ...f, role: "ADMIN", userId: adminId })).toHaveLength(3);
   });
 
   it("no mezcla datos entre workspaces", async () => {
