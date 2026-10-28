@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Option = { id: string; label: string; detail: string };
 
@@ -9,13 +10,28 @@ export function ExpensePicker({ name, options, placeholder = "Asignar a gastosâ€
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<Option[]>([]);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
+
+  // El panel va en un portal con posiciÃ³n fija para que la tabla con scroll no lo recorte.
+  const toggle = () => {
+    if (!open) {
+      const b = btn.current?.getBoundingClientRect();
+      if (b) setPos({ top: Math.min(b.bottom + 4, window.innerHeight - 360), left: Math.max(12, Math.min(b.left, window.innerWidth - 332)) });
+    }
+    setOpen((o) => !o);
+  };
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
+    const onDoc = (e: MouseEvent) => { const t = e.target as Node; if (!root.current?.contains(t) && !pop.current?.contains(t)) setOpen(false); };
+    const close = () => setOpen(false);
+    const onScroll = (e: Event) => { if (!pop.current?.contains(e.target as Node)) setOpen(false); };
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", onDoc); document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+    window.addEventListener("scroll", onScroll, true); window.addEventListener("resize", close);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); window.removeEventListener("scroll", onScroll, true); window.removeEventListener("resize", close); };
   }, [open]);
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -25,11 +41,11 @@ export function ExpensePicker({ name, options, placeholder = "Asignar a gastosâ€
   return (
     <div ref={root} className="relative">
       {sel.map((o) => <input key={o.id} type="hidden" name={name} value={o.id} />)}
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="input !w-56 truncate text-left">
+      <button ref={btn} type="button" aria-expanded={open} onClick={toggle} className="input !w-56 truncate text-left">
         {sel.length === 0 ? <span className="text-muted">{placeholder}</span> : sel.length === 1 ? sel[0].label : `${sel.length} gastos elegidos`}
       </button>
-      {open && (
-        <div className="absolute right-0 z-30 mt-1 w-80 rounded-2xl border border-line bg-surface p-2 shadow-lg">
+      {open && pos && createPortal(
+        <div ref={pop} style={{ position: "fixed", top: pos.top, left: pos.left }} className="z-[100] w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-line bg-surface p-2 shadow-lg">
           <p className="mb-1 px-1 text-xs text-muted">Puedes elegir varios.</p>
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por descripciÃ³n, tienda o monto" aria-label="Buscar gasto" className="input mb-2" />
           <ul className="max-h-60 overflow-auto" role="listbox">
@@ -42,8 +58,7 @@ export function ExpensePicker({ name, options, placeholder = "Asignar a gastosâ€
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        </div>, document.body)}
     </div>
   );
 }
