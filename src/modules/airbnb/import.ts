@@ -2,7 +2,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { norm, parseMoney, toObjects, parseCsv } from "@/lib/csv";
 import { numericInput } from "@/lib/validation";
-import type { CapexCategory, FixedExpenseConcept, Frequency, Prisma } from "@/generated/prisma/client";
+import { ensureCapexCategories } from "./capex-link";
+import type { FixedExpenseConcept, Frequency, Prisma } from "@/generated/prisma/client";
 
 const MAX_ROWS = 500;
 export type ImportResult = { created: number; skipped: number; errors: string[] };
@@ -11,14 +12,16 @@ export type RowIssue = { row: number; msg: string };
 export type Parsed<T> = { data: T[]; skipped: number; errors: RowIssue[]; warnings: RowIssue[] };
 type Obj = Record<string, string>;
 
-const CAPEX: Record<string, CapexCategory> = {
-  furniture: "FURNITURE", muebles: "FURNITURE", mueble: "FURNITURE",
-  appliances: "APPLIANCES", electrodomesticos: "APPLIANCES", electrodomestico: "APPLIANCES",
-  renovation: "RENOVATION", reformas: "RENOVATION", reforma: "RENOVATION", remodelacion: "RENOVATION",
-  decor: "DECOR", decoracion: "DECOR",
-  linens_kitchenware: "LINENS_KITCHENWARE", ropa_de_cama_y_cocina: "LINENS_KITCHENWARE", menaje: "LINENS_KITCHENWARE", cocina: "LINENS_KITCHENWARE",
-  tech: "TECH", tecnologia: "TECH", otros: "OTHER", otro: "OTHER", other: "OTHER",
+/** Nombres alternativos (inglés, singular, sinónimos) → nombre de la categoría CAPEX habitual. */
+const CAPEX: Record<string, string> = {
+  furniture: "Muebles", muebles: "Muebles", mueble: "Muebles",
+  appliances: "Electrodomésticos", electrodomesticos: "Electrodomésticos", electrodomestico: "Electrodomésticos",
+  renovation: "Reformas", reformas: "Reformas", reforma: "Reformas", remodelacion: "Reformas",
+  decor: "Decoración", decoracion: "Decoración",
+  linens_kitchenware: "Ropa de cama y cocina", ropa_de_cama_y_cocina: "Ropa de cama y cocina", menaje: "Ropa de cama y cocina", cocina: "Ropa de cama y cocina",
+  tech: "Tecnología", tecnologia: "Tecnología", otros: "Otros", otro: "Otros", other: "Otros",
 };
+
 const CONCEPT: Record<string, FixedExpenseConcept> = {
   hoa: "HOA", administracion: "HOA", utilities: "UTILITIES", servicios: "UTILITIES", servicios_publicos: "UTILITIES",
   subscriptions: "SUBSCRIPTIONS", suscripciones: "SUBSCRIPTIONS", mantenimiento: "MAINTENANCE", maintenance: "MAINTENANCE", otro: "OTHER", otros: "OTHER", other: "OTHER",
@@ -27,7 +30,6 @@ const FREQ: Record<string, Frequency> = {
   mensual: "MONTHLY", monthly: "MONTHLY", bimestral: "BIMONTHLY", trimestral: "QUARTERLY", semestral: "SEMIANNUAL", anual: "ANNUAL",
   bimonthly: "BIMONTHLY", quarterly: "QUARTERLY", semiannual: "SEMIANNUAL", annual: "ANNUAL",
 };
-
 const money = (v: string | undefined) => (v && v.trim() ? parseMoney(v) : undefined);
 /** ¿`n` tiene como máximo `k` decimales? */
 const maxDec = (n: number, k: number) => Math.abs(n * 10 ** k - Math.round(n * 10 ** k)) < 1e-6;
@@ -40,34 +42,37 @@ function rowsOf(text: string) {
 }
 
 /** Deduce la categoría de CAPEX por palabras del ítem (para hojas de Excel que usan otras categorías). */
-const INFER: [RegExp, CapexCategory][] = [
-  [/nevera|lavadora|secadora de ropa|freidora|cafetera|microhond|licuadora|secador|aire acond|estufa|horno|ventilador|plancha|hervidor|tostadora/, "APPLIANCES"],
-  [/\btv\b|televis|router|camara|parlante|telefono|computador|tablet/, "TECH"],
-  [/toalla|protector|sabana|almohada|cobija|edredon|vaso|pocillo|plato|vajilla|cubierto|cuchillo|olla|sarten|menaje|bateria/, "LINENS_KITCHENWARE"],
-  [/cama|colchon|comedor|sofa|butaca|mesedora|silla|mesa|escritorio|closet|armario|nochero|estante|mueble de sala/, "FURNITURE"],
-  [/persiana|cortina|cuadro|espejo|lampara|tapete|planta|decor/, "DECOR"],
-  [/puerta|grifo|lavamanos|lavaplatos|sifon|arreglo|pintura|piso|mudanza|instalaci|ducha|sanitario|cocina|bano|patio|reforma|remodel/, "RENOVATION"],
+const INFER: [RegExp, string][] = [
+  [/nevera|lavadora|secadora de ropa|freidora|cafetera|microhond|licuadora|secador|aire acond|estufa|horno|ventilador|plancha|hervidor|tostadora/, "Electrodomésticos"],
+  [/\btv\b|televis|router|camara|parlante|telefono|computador|tablet/, "Tecnología"],
+  [/toalla|protector|sabana|almohada|cobija|edredon|vaso|pocillo|plato|vajilla|cubierto|cuchillo|olla|sarten|menaje|bateria/, "Ropa de cama y cocina"],
+  [/cama|colchon|comedor|sofa|butaca|mesedora|silla|mesa|escritorio|closet|armario|nochero|estante|mueble de sala/, "Muebles"],
+  [/persiana|cortina|cuadro|espejo|lampara|tapete|planta|decor/, "Decoración"],
+  [/puerta|grifo|lavamanos|lavaplatos|sifon|arreglo|pintura|piso|mudanza|instalaci|ducha|sanitario|cocina|bano|patio|reforma|remodel/, "Reformas"],
 ];
-export const inferCapexCategory = (desc: string): CapexCategory | undefined => {
+export const inferCapexCategory = (desc: string): string | undefined => {
   const n = desc.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   return INFER.find(([re]) => re.test(n))?.[1];
 };
 
-type CapexOpts = { lenientCategory?: boolean };
+/** `categoryNames`: categorías CAPEX que ya tiene el negocio (también se aceptan por su nombre). */
+type CapexOpts = { lenientCategory?: boolean; categoryNames?: string[] };
+export type CapexRow = { categoryName: string; itemDescription: string; quantity: number; budgetedUnitPrice: number; actualUnitPrice: number | null; status: "PURCHASED" | "PENDING"; store: string | null };
 /** Columnas: categoria, descripcion, cantidad, precio_unitario_presupuestado, precio_unitario_real (opcional), tienda (opcional). Con precio real → comprado. */
-export function parseCapex(objs: Obj[], existing: Set<string>, opts: CapexOpts = {}): Parsed<Omit<Prisma.CapexItemCreateManyInput, "workspaceId" | "propertyId">> {
-  const out: Parsed<Omit<Prisma.CapexItemCreateManyInput, "workspaceId" | "propertyId">> = { data: [], skipped: 0, errors: [], warnings: [] };
+export function parseCapex(objs: Obj[], existing: Set<string>, opts: CapexOpts = {}): Parsed<CapexRow> {
+  const out: Parsed<CapexRow> = { data: [], skipped: 0, errors: [], warnings: [] };
   const seen = new Set(existing);
+  const own = new Map((opts.categoryNames ?? []).map((n) => [norm(n), n]));
   objs.forEach((o, row) => {
     const desc = z.string().trim().min(2).max(120).safeParse(o.descripcion ?? o.item ?? "");
-    let cat = CAPEX[norm(o.categoria ?? "")] ?? (o.categoria ? undefined : "OTHER");
+    let cat = own.get(norm(o.categoria ?? "")) ?? CAPEX[norm(o.categoria ?? "")] ?? (o.categoria ? undefined : "Otros");
     const qty = o.cantidad?.trim() ? numericInput(o.cantidad) : 1;
     const budget = money(o.precio_unitario_presupuestado ?? o.presupuesto);
     const actual = money(o.precio_unitario_real ?? o.real);
     if (!desc.success) return out.errors.push({ row, msg: "falta la descripción." });
     if (!cat && opts.lenientCategory) {
-      cat = inferCapexCategory(desc.data) ?? "OTHER";
-      out.warnings.push({ row, msg: `categoría “${o.categoria}” no reconocida; se usará ${CAPEX_LABEL[cat]}.` });
+      cat = inferCapexCategory(desc.data) ?? "Otros";
+      out.warnings.push({ row, msg: `categoría “${o.categoria}” no reconocida; se usará ${cat}.` });
     }
     if (!cat) return out.errors.push({ row, msg: `categoría “${o.categoria}” no reconocida.` });
     if (!Number.isInteger(qty) || qty < 1 || qty > 10_000) return out.errors.push({ row, msg: "cantidad inválida (número entero entre 1 y 10000)." });
@@ -76,11 +81,10 @@ export function parseCapex(objs: Obj[], existing: Set<string>, opts: CapexOpts =
     if (seen.has(norm(desc.data))) { out.skipped++; return; } // idempotente: no duplica ítems ya cargados
     seen.add(norm(desc.data));
     const bought = actual !== undefined && actual > 0;
-    out.data.push({ capexCategory: cat, itemDescription: desc.data, quantity: qty, budgetedUnitPrice: budget, actualUnitPrice: bought ? actual : null, status: bought ? "PURCHASED" : "PENDING", store: o.tienda || null });
+    out.data.push({ categoryName: cat, itemDescription: desc.data, quantity: qty, budgetedUnitPrice: budget, actualUnitPrice: bought ? actual : null, status: bought ? "PURCHASED" : "PENDING", store: o.tienda || null });
   });
   return out;
 }
-const CAPEX_LABEL: Record<CapexCategory, string> = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION: "Reformas", DECOR: "Decoración", LINENS_KITCHENWARE: "Ropa de cama y cocina", TECH: "Tecnología", OTHER: "Otros" };
 
 /** Columnas: nombre, concepto, monto, frecuencia (opcional, mensual por defecto), dia (opcional). */
 export function parseFixed(objs: Obj[], existing: Set<string>): Parsed<Omit<Prisma.FixedExpenseCreateManyInput, "workspaceId" | "propertyId">> {
@@ -168,11 +172,18 @@ function issues(label: string, list: RowIssue[], offset: number) {
   return list.map((e) => `${label} ${e.row + offset}: ${e.msg}`);
 }
 
+/** Guarda ítems CAPEX ya validados: resuelve (o crea) la categoría de cada uno en la lista de categorías del negocio. */
+export async function createCapexRows(workspaceId: string, propertyId: string, rows: CapexRow[]) {
+  const cats = await ensureCapexCategories(workspaceId, rows.map((r) => r.categoryName));
+  await prisma.capexItem.createMany({ data: rows.map(({ categoryName, ...d }) => ({ ...d, workspaceId, propertyId, categoryId: cats.get(norm(categoryName)) })) });
+}
+
 export async function importCapex(workspaceId: string, propertyId: string, text: string): Promise<ImportResult> {
   const objs = rowsOf(text);
   const existing = new Set((await prisma.capexItem.findMany({ where: { workspaceId, propertyId }, select: { itemDescription: true } })).map((i) => norm(i.itemDescription)));
-  const p = parseCapex(objs, existing);
-  if (p.data.length) await prisma.capexItem.createMany({ data: p.data.map((d) => ({ ...d, workspaceId, propertyId })) });
+  const own = await prisma.category.findMany({ where: { workspaceId, expenseKind: "CAPEX", parentId: null, archived: false }, select: { name: true } });
+  const p = parseCapex(objs, existing, { categoryNames: own.map((c) => c.name) });
+  if (p.data.length) await createCapexRows(workspaceId, propertyId, p.data);
   return { created: p.data.length, skipped: p.skipped, errors: issues("Fila", p.errors, 2) };
 }
 

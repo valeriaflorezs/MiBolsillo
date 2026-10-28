@@ -14,7 +14,7 @@ type Props = {
   /** Propiedades del negocio: el gasto o ingreso puede ser de una en particular o general. */
   properties?: Opt[];
   /** Ítems de CAPEX pendientes de compra: al elegir uno, el gasto lo marca comprado (no se digita dos veces). */
-  capexItems?: { id: string; name: string; total: number }[];
+  capexItems?: { id: string; name: string; total: number; categoryId: string | null }[];
   defaultType?: "EXPENSE" | "INCOME" | "TRANSFER";
   receipts: { upload: boolean; ocr: boolean };
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
@@ -144,7 +144,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
           <div className="sm:col-span-2">
             <label className="label" htmlFor="capexItemId">¿Es la compra de un ítem de CAPEX? <span className="font-normal text-muted">(opcional)</span></label>
             <select id="capexItemId" name="capexItemId" className="input" value={vals.capexItemId}
-              onChange={(e) => { const it = capexItems.find((c) => c.id === e.target.value); setVals((v) => ({ ...v, capexItemId: e.target.value, amount: it && it.total && !v.amount ? String(it.total) : v.amount })); }}>
+              onChange={(e) => { const it = capexItems.find((c) => c.id === e.target.value); setVals((v) => ({ ...v, capexItemId: e.target.value, amount: it && it.total && !v.amount ? String(it.total) : v.amount, categoryId: it?.categoryId ?? v.categoryId })); }}>
               <option value="">No, es un gasto normal</option>
               {capexItems.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>

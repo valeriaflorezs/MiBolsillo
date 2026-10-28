@@ -17,7 +17,6 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { Segmented } from "@/components/ui/filters";
 
 export const metadata = { title: "CAPEX" };
-const CAT = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION: "Reformas", DECOR: "Decoración", LINENS_KITCHENWARE: "Ropa de cama y cocina", TECH: "Tecnología", OTHER: "Otros" } as const;
 
 type SP = { vista?: string; q?: string; cat?: string; prop?: string };
 
@@ -28,9 +27,10 @@ export default async function Capex({ params, searchParams }: { params: Promise<
   const canBuy = can(ctx.role, "capex:update");
   const admin = can(ctx.role, "airbnb:manage");
   const done = sp.vista === "comprados";
-  const [items, properties, expenses] = await Promise.all([
-    prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } }, transactions: { where: { type: "EXPENSE" }, select: { id: true, description: true, vendor: true, amount: true }, orderBy: { date: "asc" } } }, orderBy: [{ sortOrder: "asc" }, { capexCategory: "asc" }, { itemDescription: "asc" }] }),
+  const [items, properties, categories, expenses] = await Promise.all([
+    prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } }, category: { select: { name: true } }, transactions: { where: { type: "EXPENSE" }, select: { id: true, description: true, vendor: true, amount: true }, orderBy: { date: "asc" } } }, orderBy: [{ sortOrder: "asc" }, { category: { name: "asc" } }, { itemDescription: "asc" }] }),
     prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true } }),
+    prisma.category.findMany({ where: { workspaceId, expenseKind: "CAPEX", archived: false }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     canBuy ? prisma.transaction.findMany({ where: { workspaceId, type: "EXPENSE", capexItemId: null }, select: { id: true, description: true, vendor: true, amount: true, date: true }, orderBy: { date: "desc" }, take: 300 }) : Promise.resolve([]),
   ]);
   const expenseOptions = expenses.map((e) => ({ id: e.id, label: e.description || e.vendor || "Gasto sin descripción", detail: `${e.date.toISOString().slice(0, 10)}${e.vendor && e.description ? ` · ${e.vendor}` : ""} · ${cop(num(e.amount))}` }));
@@ -49,7 +49,7 @@ export default async function Capex({ params, searchParams }: { params: Promise<
 
   const q = sp.q?.trim().toLowerCase();
   const filter = (r: (typeof rows)[number]) =>
-    (!q || `${r.itemDescription} ${r.store ?? ""}`.toLowerCase().includes(q)) && (!sp.cat || r.capexCategory === sp.cat) && (!sp.prop || r.propertyId === sp.prop);
+    (!q || `${r.itemDescription} ${r.store ?? ""}`.toLowerCase().includes(q)) && (!sp.cat || r.categoryId === sp.cat) && (!sp.prop || r.propertyId === sp.prop);
   const list = (done ? [...bought].sort((a, b) => a.itemDescription.localeCompare(b.itemDescription, "es", { numeric: true, sensitivity: "base" })) : pending).filter(filter);
   const sumBudget = list.reduce((a, r) => a + r.v.budgeted, 0);
   const sumActual = list.reduce((a, r) => a + (r.v.actual ?? 0), 0);
@@ -67,7 +67,7 @@ export default async function Capex({ params, searchParams }: { params: Promise<
                 <input type="hidden" name="workspaceId" value={workspaceId} />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-                  <div><label className="label" htmlFor="capexCategory">Categoría</label><select id="capexCategory" name="capexCategory" className="input">{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                  <div><label className="label" htmlFor="categoryId">Categoría</label><select id="categoryId" name="categoryId" required className="input">{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
                   <div className="sm:col-span-2"><label className="label" htmlFor="itemDescription">Descripción</label><input id="itemDescription" name="itemDescription" required className="input" placeholder="Nevera 300 L" /></div>
                   <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" max="10000" step="1" defaultValue={1} className="input" /></div>
                   <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" max="1000000000000" min="0" step="0.01" required className="input" /></div>
@@ -93,7 +93,7 @@ export default async function Capex({ params, searchParams }: { params: Promise<
       <form className="card grid grid-cols-2 gap-3 lg:grid-cols-5" role="search" aria-label="Filtrar ítems">
         {done && <input type="hidden" name="vista" value="comprados" />}
         <div className="col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Ítem o tienda" className="input" /></div>
-        <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+        <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         {properties.length > 1 ? <div><label className="label" htmlFor="prop">Propiedad</label><select id="prop" name="prop" defaultValue={sp.prop ?? ""} className="input"><option value="">Todas</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div> : <div className="hidden lg:block" />}
         <div className="col-span-2 flex items-end gap-2 lg:col-span-1"><button className="btn btn-dark flex-1">Filtrar</button>{(sp.q || sp.cat || sp.prop) && <Link href={href(done ? "comprados" : "")} className="btn btn-ghost">Limpiar</Link>}</div>
       </form>
@@ -110,7 +110,7 @@ export default async function Capex({ params, searchParams }: { params: Promise<
               {list.map((r) => (
                 <tr key={r.id}>
                   <td className="td"><p className="font-medium">{r.itemDescription}{admin && <> <Link href={`/w/${workspaceId}/capex/${r.id}/edit`} className="text-xs font-normal text-brand-text underline">Editar</Link></>}</p><p className="text-xs text-muted">{r.property.name}{r.store ? ` · ${r.store}` : ""}</p></td>
-                  <td className="td text-sm">{CAT[r.capexCategory]}</td>
+                  <td className="td text-sm">{r.category?.name ?? "—"}</td>
                   <td className="td text-right">{r.quantity}</td>
                   {done ? (
                     <>

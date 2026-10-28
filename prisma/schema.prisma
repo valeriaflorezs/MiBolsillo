@@ -107,16 +107,6 @@ enum Frequency {
   ANNUAL
 }
 
-enum CapexCategory {
-  FURNITURE
-  APPLIANCES
-  RENOVATION
-  DECOR
-  LINENS_KITCHENWARE
-  TECH
-  OTHER
-}
-
 enum OcrStatus {
   NOT_REQUIRED
   QUEUED
@@ -399,8 +389,7 @@ model CapexItem {
   id                String         @id @default(cuid())
   workspaceId       String
   propertyId        String
-  categoryId        String?
-  capexCategory     CapexCategory
+  categoryId        String? // categoría de Movimientos (tipo CAPEX): la misma lista, no una aparte
   itemDescription   String
   quantity          Int            @default(1)
   budgetedUnitPrice Decimal        @db.Decimal(14, 2)

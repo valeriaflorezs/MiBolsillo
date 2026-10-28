@@ -1,4 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { norm } from "@/lib/csv";
+import { prisma } from "@/lib/db";
 
 type Tx = Prisma.TransactionClient;
 
@@ -33,4 +35,19 @@ export async function syncCapexPurchase(tx: Tx, itemId: string) {
       ...(vendors.length ? { store: vendors.join(", ").slice(0, 120) } : {}),
     },
   });
+}
+
+/** Icono con el que se crean las categorías CAPEX habituales cuando una carga las necesita. */
+const CAPEX_ICON: Record<string, string> = { Muebles: "chair", "Electrodomésticos": "laundry", Reformas: "build", "Decoración": "gift", "Ropa de cama y cocina": "hotel", "Tecnología": "laptop", Otros: "inventory" };
+
+/** Categorías CAPEX del negocio por nombre normalizado; crea las que falten (las cargas por CSV o lote pueden traer nombres nuevos). */
+export async function ensureCapexCategories(workspaceId: string, names: string[]) {
+  const existing = await prisma.category.findMany({ where: { workspaceId, expenseKind: "CAPEX", parentId: null }, select: { id: true, name: true } });
+  const byNorm = new Map(existing.map((c) => [norm(c.name), c.id]));
+  for (const name of new Set(names)) {
+    if (byNorm.has(norm(name))) continue;
+    const c = await prisma.category.create({ data: { workspaceId, name, emoji: CAPEX_ICON[name] ?? "category", expenseKind: "CAPEX", pygLine: "CAPEX" }, select: { id: true } });
+    byNorm.set(norm(name), c.id);
+  }
+  return byNorm;
 }

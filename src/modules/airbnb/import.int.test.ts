@@ -21,8 +21,8 @@ describe.skipIf(!process.env.DATABASE_URL)("importadores CSV", () => {
     const r1 = await importCapex(workspaceId, propertyId, capex);
     expect(r1.created).toBe(2);
     expect(r1.errors).toHaveLength(1);
-    const items = await prisma.capexItem.findMany({ where: { workspaceId }, orderBy: { itemDescription: "asc" } });
-    expect(items.find((i) => i.itemDescription === "Nevera 470L")).toMatchObject({ status: "PURCHASED", capexCategory: "APPLIANCES" });
+    const items = await prisma.capexItem.findMany({ where: { workspaceId }, include: { category: true }, orderBy: { itemDescription: "asc" } });
+    expect(items.find((i) => i.itemDescription === "Nevera 470L")).toMatchObject({ status: "PURCHASED", category: { name: "Electrodomésticos", expenseKind: "CAPEX", pygLine: "CAPEX" } });
     expect(items.find((i) => i.itemDescription === "Cama de 1.40")).toMatchObject({ status: "PENDING", quantity: 2, store: "Homecenter" });
     const r2 = await importCapex(workspaceId, propertyId, capex);
     expect(r2.created).toBe(0);

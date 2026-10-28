@@ -24,7 +24,7 @@ export default async function NewExpense({ params, searchParams }: { params: Pro
       <h1 className="text-3xl font-semibold tracking-tight">Registrar movimiento</h1>
       <section className="card max-w-3xl">
         <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} receipts={receiptCapabilities()} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts} properties={properties}
-          capexItems={pendingCapex.map((c) => ({ id: c.id, name: `${c.itemDescription} (x${c.quantity})${c.status === "PURCHASED" ? " · ya con gastos" : ""}`, total: c.status === "PURCHASED" ? 0 : Math.round(c.quantity * num(c.budgetedUnitPrice) * 100) / 100 }))} action={createTransactionAction}
+          capexItems={pendingCapex.map((c) => ({ id: c.id, name: `${c.itemDescription} (x${c.quantity})${c.status === "PURCHASED" ? " · ya con gastos" : ""}`, categoryId: c.categoryId, total: c.status === "PURCHASED" ? 0 : Math.round(c.quantity * num(c.budgetedUnitPrice) * 100) / 100 }))} action={createTransactionAction}
           categories={categories.filter((c) => isAdmin || c.expenseKind !== null)} />
       </section>
     </>
