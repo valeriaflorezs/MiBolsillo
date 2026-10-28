@@ -27,6 +27,8 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
   const [ocr, setOcr] = useState<{ msg: string; kind: "info" | "error" | "ok" } | null>(null);
   const [drag, setDrag] = useState(false);
   const [vals, setVals] = useState({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "", capexItemId: "" });
+  const [type, setType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">(defaultType);
+  const isExpense = type === "EXPENSE", isTransfer = type === "TRANSFER";
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
     const r = await action(prev, fd);
@@ -93,7 +95,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
         {isAdmin && (
           <div>
             <label className="label" htmlFor="type">Tipo</label>
-            <select id="type" name="type" className="input" defaultValue={defaultType}>
+            <select id="type" name="type" className="input" value={type} onChange={(e) => setType(e.target.value as typeof type)}>
               <option value="EXPENSE">Gasto</option><option value="INCOME">Ingreso</option><option value="TRANSFER">Transferencia</option>
             </select>
           </div>
@@ -102,26 +104,32 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
           <label className="label" htmlFor="amount">Monto (COP)</label>
           <input id="amount" name="amount" type="number" max="1000000000000" inputMode="decimal" min="0.01" step="0.01" required className="input" value={vals.amount} onChange={(e) => setVals({ ...vals, amount: e.target.value })} />
         </div>
-        <div>
+        {isExpense && (
+          <div>
           <label className="label" htmlFor="quantity">Cantidad (opcional)</label>
           <input id="quantity" name="quantity" type="number" max="10000000" inputMode="decimal" min="0.001" step="0.001" className="input" placeholder="Unidades compradas" value={vals.quantity} onChange={(e) => setVals({ ...vals, quantity: e.target.value })} />
         </div>
+        )}
         <div>
           <label className="label" htmlFor="date">Fecha</label>
           <input id="date" name="date" type="date" required className="input" value={vals.date} onChange={(e) => setVals({ ...vals, date: e.target.value })} />
         </div>
-        <div>
+        {isExpense && (
+          <div>
           <label className="label" htmlFor="vendor">Proveedor</label>
           <input id="vendor" name="vendor" maxLength={80} className="input" value={vals.vendor} onChange={(e) => setVals({ ...vals, vendor: e.target.value })} />
         </div>
-        <div>
+        )}
+        {!isTransfer && (
+          <div>
           <label className="label" htmlFor="categoryId">Categoría</label>
           <select id="categoryId" name="categoryId" className="input" value={vals.categoryId} onChange={(e) => setVals({ ...vals, categoryId: e.target.value })}>
             <option value="">Sin categoría</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
           </select>
         </div>
-        {capexItems.length > 0 && (
+        )}
+        {isExpense && capexItems.length > 0 && (
           <div className="sm:col-span-2">
             <label className="label" htmlFor="capexItemId">¿Es la compra de un ítem de CAPEX? <span className="font-normal text-muted">(opcional)</span></label>
             <select id="capexItemId" name="capexItemId" className="input" value={vals.capexItemId}
@@ -133,20 +141,20 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
           </div>
         )}
         <div>
-          <label className="label" htmlFor="accountId">Cuenta</label>
+          <label className="label" htmlFor="accountId">{isTransfer ? "Cuenta origen" : "Cuenta"}</label>
           <select id="accountId" name="accountId" required className="input">
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
-        {isAdmin && (
+        {isAdmin && isTransfer && (
           <div>
-            <label className="label" htmlFor="transferAccountId">Cuenta destino <span className="font-normal text-muted">(transferencias)</span></label>
-            <select id="transferAccountId" name="transferAccountId" className="input" defaultValue="">
+            <label className="label" htmlFor="transferAccountId">Cuenta destino</label>
+            <select id="transferAccountId" name="transferAccountId" required className="input" defaultValue="">
               <option value="">—</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
         )}
-        {properties.length > 0 && (
+        {!isTransfer && properties.length > 0 && (
           <div>
             <label className="label" htmlFor="propertyId">Propiedad</label>
             <select id="propertyId" name="propertyId" className="input" defaultValue={properties[0].id}>
