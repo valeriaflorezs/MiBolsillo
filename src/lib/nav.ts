@@ -22,6 +22,6 @@ export function tabsFor(workspaceId: string, type: WorkspaceType, role: Role): {
   if (admin) more.push({ href: `${b}/budget`, label: "Presupuesto", icon: "budget" }, { href: `${b}/categories`, label: "Categorías", icon: "cats" });
   if (admin) more.push({ href: `${b}/batch`, label: "Carga en lote", icon: "batch" });
   if (writer) more.push({ href: `${b}/wishlist`, label: "Lista de deseos", icon: "wish" });
-  if (can(role, "member:manage")) more.push({ href: `${b}/settings`, label: "Miembros y ajustes", icon: "settings" });
+  if (can(role, "member:invite")) more.push({ href: `${b}/settings`, label: can(role, "member:manage") ? "Miembros y ajustes" : "Invitar personas", icon: "settings" });
   return { primary, more };
 }

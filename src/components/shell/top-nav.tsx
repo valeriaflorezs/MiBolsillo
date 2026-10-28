@@ -15,10 +15,11 @@ type Props = {
   pending: number;
   canWrite: boolean;
   canCreateWorkspace: boolean;
+  platformAdmin?: boolean;
   signOutAction: () => Promise<void>;
 };
 
-export function TopNav({ workspaces, currentId, user, pending, canWrite, canCreateWorkspace, signOutAction }: Props) {
+export function TopNav({ workspaces, currentId, user, pending, canWrite, canCreateWorkspace, platformAdmin, signOutAction }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const base = `/w/${currentId}`;
@@ -45,6 +46,7 @@ export function TopNav({ workspaces, currentId, user, pending, canWrite, canCrea
             <div className="absolute right-0 top-full z-30 mt-2 w-64 space-y-3 rounded-2xl bg-surface p-4 text-ink shadow-card">
               <div><p className="truncate font-medium">{user.name || "Mi cuenta"}</p><p className="truncate text-sm text-muted">{user.email.endsWith(CRED_DOMAIN) ? `@${user.email.slice(0, -CRED_DOMAIN.length)}` : user.email}</p></div>
               <ThemeToggle />
+              {platformAdmin && <Link href="/admin" className="btn btn-ghost w-full">Administración</Link>}
               <Link href="/account" className="btn btn-ghost w-full">Mi cuenta y privacidad</Link>
               <form action={signOutAction}><button type="submit" className="btn btn-dark w-full">Cerrar sesión</button></form>
             </div>

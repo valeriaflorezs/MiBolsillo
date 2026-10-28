@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { can, requireWorkspace } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { getOcrProvider } from "@/lib/ocr";
+import { ocrUsage } from "@/lib/ocr/usage";
+import { logActivity } from "@/lib/audit";
 import { receiptCapabilities } from "@/lib/ocr/config";
 import { createReceiptUpload, deleteObjects, readObject, signedReadUrl } from "@/lib/storage/r2";
 
@@ -62,16 +64,22 @@ export async function processReceiptAction(raw: unknown) {
     }
     const categories = await prisma.category.findMany({ where: { workspaceId, archived: false, expenseKind: { not: null } }, select: { id: true, name: true } });
     await prisma.attachment.update({ where: { id: att.id }, data: { ocrStatus: "PROCESSING", fileType: mime } });
+    let providerName = process.env.OCR_PROVIDER ?? "claude";
     try {
       const provider = await getOcrProvider();
+      providerName = provider.name;
       const { data, raw: rawOcr } = await provider.extract({ bytes, mimeType: mime, categoryNames: categories.map((c) => c.name) });
+      await prisma.aiUsage.create({ data: { userId, workspaceId, provider: provider.name, ...ocrUsage(rawOcr) } }).catch(() => {});
+      await logActivity({ kind: "AI", userId, workspaceId, summary: "Analizó un comprobante con IA", detail: `Proveedor: ${provider.name}` });
       await prisma.attachment.update({
         where: { id: att.id },
         data: { ocrStatus: "DONE", ocrProvider: provider.name, ocrConfidence: data.confidence, rawOcrData: JSON.parse(JSON.stringify(rawOcr)) },
       });
       const cat = categories.find((c) => c.name.toLowerCase() === data.suggestedCategory?.toLowerCase());
       return { ok: true as const, data: { vendor: data.vendor, date: data.date, total: data.total, categoryId: cat?.id ?? null, confidence: data.confidence } };
-    } catch {
+    } catch (e) {
+      await prisma.aiUsage.create({ data: { userId, workspaceId, provider: providerName, ok: false, error: (e instanceof Error ? e.message : "ERROR").slice(0, 200) } }).catch(() => {});
+      await logActivity({ kind: "AI", ok: false, userId, workspaceId, summary: "Falló el análisis de un comprobante con IA", detail: providerName });
       await prisma.attachment.update({ where: { id: att.id }, data: { ocrStatus: "FAILED" } });
       return { ok: false as const, error: "No pudimos leer el comprobante. Completa los datos a mano." };
     }

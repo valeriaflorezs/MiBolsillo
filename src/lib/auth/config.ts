@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "./credentials";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { logActivity } from "@/lib/audit";
 
 // Sesión JWT (cookie HttpOnly): el usuario se persiste en `User` al iniciar sesión.
 // Google para dueños/operadores; usuario + contraseña solo para cuentas de solo lectura que crea un ADMIN.
@@ -24,19 +25,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch {
           return null;
         }
-        const u = await prisma.user.findUnique({ where: { username }, select: { id: true, email: true, name: true, image: true, passwordHash: true } });
+        const meta = { ip, userAgent: request.headers.get("user-agent") };
+        const u = await prisma.user.findUnique({ where: { username }, select: { id: true, email: true, name: true, image: true, passwordHash: true, active: true } });
         const ok = await verifyPassword(password, u?.passwordHash);
-        if (!u || !ok) return null;
+        if (!u || !ok) {
+          await logActivity({ kind: "LOGIN", ok: false, userId: u?.id, username, summary: "Intento de ingreso rechazado", detail: u ? "Contraseña incorrecta" : "Usuario inexistente" }, meta);
+          return null;
+        }
+        if (!u.active) {
+          await logActivity({ kind: "LOGIN", ok: false, userId: u.id, username, summary: "Intento de ingreso con cuenta desactivada" }, meta);
+          return null;
+        }
+        await logActivity({ kind: "LOGIN", userId: u.id, username, summary: "Ingresó a la plataforma" }, meta);
         return { id: u.id, email: u.email, name: u.name, image: u.image };
       },
     }),
   ],
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 14 },
   pages: { signIn: "/login" },
+  events: {
+    async signOut(message) {
+      const uid = "token" in message ? (message.token?.uid as string | undefined) : undefined;
+      if (uid) await logActivity({ kind: "LOGOUT", userId: uid, summary: "Cerró sesión" });
+    },
+  },
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "credentials") return Boolean(user.id);
-      return Boolean(user.email) && profile?.email_verified !== false;
+      if (!user.email || profile?.email_verified === false) return false;
+      const u = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() }, select: { active: true } });
+      if (u && !u.active) {
+        await logActivity({ kind: "LOGIN", ok: false, username: user.email.toLowerCase(), summary: "Intento de ingreso con cuenta desactivada" });
+        return false;
+      }
+      return true;
     },
     async jwt({ token, user, account }) {
       if (account?.provider === "credentials" && user?.id) {
@@ -50,6 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: { id: true },
         });
         token.uid = u.id;
+        if (account) await logActivity({ kind: "LOGIN", userId: u.id, username: email, summary: "Ingresó a la plataforma" });
       }
       return token;
     },

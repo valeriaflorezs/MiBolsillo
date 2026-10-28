@@ -4,7 +4,7 @@ import { DeleteButton } from "@/components/forms/delete-button";
 import { Avatar } from "@/components/ui/avatar";
 import { revokeInviteAction } from "@/modules/core/crud-actions";
 import { prisma } from "@/lib/db";
-import { pageCtx } from "@/lib/auth/permissions";
+import { can, pageCtx } from "@/lib/auth/permissions";
 import { changeMemberRoleAction, createInviteAction, createViewerAction, deleteWorkspaceAction, removeMemberAction, resetViewerPasswordAction } from "@/modules/core/actions";
 import { ROLE_LABEL } from "@/lib/auth/rbac";
 
@@ -12,18 +12,19 @@ export const metadata = { title: "Miembros" };
 
 export default async function SettingsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
-  const { userId, workspace } = await pageCtx(workspaceId, "member:manage");
+  const { userId, role, workspace } = await pageCtx(workspaceId, "member:invite");
+  const manage = can(role, "member:manage"); // el Operador solo invita (Operador o Solo lectura); el resto es del Administrador
   const [members, invites, h] = await Promise.all([
     prisma.workspaceMember.findMany({ where: { workspaceId }, include: { user: { select: { name: true, email: true, image: true, username: true } } }, orderBy: { createdAt: "asc" } }),
-    prisma.workspaceInvite.findMany({ where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } } }),
+    prisma.workspaceInvite.findMany({ where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() }, ...(manage ? {} : { invitedById: userId }) } }),
     headers(),
   ]);
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
 
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">Miembros</h1>
-      <section className="card space-y-3">
+      <h1 className="text-3xl font-semibold tracking-tight">{manage ? "Miembros" : "Invitar personas"}</h1>
+      {manage && <section className="card space-y-3">
         <h2 className="font-medium">Equipo</h2>
         <ul className="divide-y divide-line">
           {members.map((m) => (
@@ -59,7 +60,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
             </li>
           ))}
         </ul>
-      </section>
+      </section>}
 
       <section className="card space-y-4">
         <h2 className="font-medium">Dar acceso de solo lectura</h2>
@@ -78,7 +79,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
           <input type="hidden" name="workspaceId" value={workspaceId} />
           <div><label className="label" htmlFor="email">Correo (Google)</label><input id="email" name="email" type="email" required className="input" /></div>
           <div><label className="label" htmlFor="role">Rol</label>
-            <select id="role" name="role" className="input" defaultValue="OPERATOR"><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option><option value="ADMIN">Administrador</option></select></div>
+            <select id="role" name="role" className="input" defaultValue="OPERATOR"><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option>{manage && <option value="ADMIN">Administrador</option>}</select></div>
         </ActionForm>
         {invites.length > 0 && (
           <ul className="space-y-2 text-sm">
@@ -86,14 +87,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
               <li key={i.id} className="rounded-xl bg-canvas p-3">
                 <span className="font-medium">{i.email}</span> · {ROLE_LABEL[i.role]}
                 <code className="mt-1 block break-all text-xs text-muted">{origin}/invite/{i.token}</code>
-                <div className="mt-2"><DeleteButton action={revokeInviteAction} fields={{ workspaceId, inviteId: i.id }} label="Revocar" confirmText="¿Revocar esta invitación?" /></div>
+                {manage && <div className="mt-2"><DeleteButton action={revokeInviteAction} fields={{ workspaceId, inviteId: i.id }} label="Revocar" confirmText="¿Revocar esta invitación?" /></div>}
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <section className="card space-y-3 border border-negative/30">
+      {manage && <section className="card space-y-3 border border-negative/30">
         <h2 className="font-medium text-negative">Eliminar este negocio</h2>
         <p className="text-sm text-muted">Borra definitivamente movimientos, CAPEX, miembros y comprobantes. No se puede deshacer.</p>
         <ActionForm action={deleteWorkspaceAction} submitLabel="Eliminar definitivamente" variant="ghost" resetOnSuccess={false}>
@@ -101,7 +102,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
           <label className="label" htmlFor="confirm">Escribe «{workspace.name}» para confirmar</label>
           <input id="confirm" name="confirm" required autoComplete="off" className="input max-w-sm" />
         </ActionForm>
-      </section>
+      </section>}
     </>
   );
 }

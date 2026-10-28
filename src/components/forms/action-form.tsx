@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { ActionState } from "@/lib/actions";
+import { SecretDialog } from "./secret-dialog";
 
 type Props = {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
@@ -15,6 +16,7 @@ type Props = {
 export function ActionForm({ action, submitLabel, children, className = "space-y-4", resetOnSuccess = true, variant = "primary" }: Props) {
   const [state, formAction, pending] = useActionState(action, null);
   const ref = useRef<HTMLFormElement>(null);
+  const [closed, setClosed] = useState<ActionState>(null); // el resultado cuya ventana ya se cerró
   useEffect(() => {
     if (state?.ok && resetOnSuccess) ref.current?.reset();
   }, [state, resetOnSuccess]);
@@ -27,6 +29,7 @@ export function ActionForm({ action, submitLabel, children, className = "space-y
           {pending ? "Guardando…" : submitLabel}
         </button>
         {state?.error && <p role="alert" className="text-sm text-negative">{state.error}</p>}
+        {state?.secret && closed !== state && <SecretDialog secret={state.secret} onClose={() => setClosed(state)} />}
         {state?.ok && <p role="status" className="text-sm text-positive">{state.message ?? "Listo"}</p>}
       </div>
     </form>

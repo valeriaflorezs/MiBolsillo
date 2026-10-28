@@ -10,12 +10,13 @@ export type Permission =
   | "pyg:read"
   | "airbnb:manage" // gastos fijos, propiedades
   | "budget:write"
-  | "member:manage";
+  | "member:manage" // cambiar roles, quitar miembros, eliminar el negocio (solo ADMIN)
+  | "member:invite"; // invitar o dar acceso de solo lectura: ADMIN a cualquier rol, OPERATOR solo a Operador y Solo lectura
 
 const MATRIX: Record<Role, Permission[]> = {
-  ADMIN: ["transaction:create", "capex:update", "dashboard:full", "finance:read", "data:read", "pyg:read", "airbnb:manage", "budget:write", "member:manage"],
-  // OPERATOR registra gastos/insumos/aseo y marca CAPEX; nunca ve EBITDA, PyG ni ingresos.
-  OPERATOR: ["transaction:create", "capex:update", "data:read"],
+  ADMIN: ["transaction:create", "capex:update", "dashboard:full", "finance:read", "data:read", "pyg:read", "airbnb:manage", "budget:write", "member:manage", "member:invite"],
+  // OPERATOR registra gastos/insumos/aseo y marca CAPEX; nunca ve EBITDA, PyG ni ingresos. Puede invitar, pero no administradores.
+  OPERATOR: ["transaction:create", "capex:update", "data:read", "member:invite"],
   // VIEWER: solo lectura de todo el negocio; ninguna escritura.
   VIEWER: ["finance:read", "data:read", "pyg:read"],
 };

@@ -22,9 +22,9 @@ enum WorkspaceType {
 }
 
 enum Role {
-  ADMIN    // acceso total (incluye EBITDA, PyG, presupuestos, miembros)
+  ADMIN // acceso total (incluye EBITDA, PyG, presupuestos, miembros)
   OPERATOR // registra gastos/insumos/aseo; sin acceso a EBITDA ni PyG
-  VIEWER   // solo lectura de todo el negocio; no registra, edita ni borra nada
+  VIEWER // solo lectura de todo el negocio; no registra, edita ni borra nada
 }
 
 enum AccountType {
@@ -42,7 +42,7 @@ enum TransactionType {
 }
 
 enum TransactionStatus {
-  PAID    // pagado / cobrado
+  PAID // pagado / cobrado
   PENDING // por pagar / por cobrar
 }
 
@@ -59,12 +59,12 @@ enum PygLine {
   CLEANING
   AMENITIES
   OTHER_VARIABLE
-  ADMIN        // HOA / administración
+  ADMIN // HOA / administración
   UTILITIES
   SUBSCRIPTIONS
   MAINTENANCE
   OTHER_FIXED
-  CAPEX        // fuera del EBITDA
+  CAPEX // fuera del EBITDA
   NON_OPERATING
 }
 
@@ -135,14 +135,15 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String? // scrypt; null en cuentas de Google
+  active        Boolean   @default(true) // false = no puede iniciar sesión (lo decide el administrador de la plataforma)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   authAccounts AuthAccount[]
   sessions     Session[]
   memberships  WorkspaceMember[]
-  transactions Transaction[]    @relation("TransactionCreatedBy")
-  attachments  Attachment[]     @relation("AttachmentUploadedBy")
+  transactions Transaction[]     @relation("TransactionCreatedBy")
+  attachments  Attachment[]      @relation("AttachmentUploadedBy")
   invitesSent  WorkspaceInvite[]
 }
 
@@ -228,15 +229,15 @@ model WorkspaceMember {
 }
 
 model WorkspaceInvite {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   email       String
-  role        Role     @default(OPERATOR)
-  token       String   @unique
+  role        Role      @default(OPERATOR)
+  token       String    @unique
   invitedById String
   expiresAt   DateTime
   acceptedAt  DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   invitedBy User      @relation(fields: [invitedById], references: [id])
@@ -247,12 +248,12 @@ model WorkspaceInvite {
 // ───────────────────── CORE FINANZAS / MULTI-WALLET ─────────────────────
 
 model FinancialAccount {
-  id             String      @id @default(cuid())
-  workspaceId    String
-  name           String // "Nequi", "Bancolombia ahorros", "Efectivo"
-  type           AccountType
-  openingBalance Decimal     @default(0) @db.Decimal(14, 2)
-  creditLimit    Decimal?    @db.Decimal(14, 2) // solo CREDIT_CARD
+  id                   String        @id @default(cuid())
+  workspaceId          String
+  name                 String // "Nequi", "Bancolombia ahorros", "Efectivo"
+  type                 AccountType
+  openingBalance       Decimal       @default(0) @db.Decimal(14, 2)
+  creditLimit          Decimal?      @db.Decimal(14, 2) // solo CREDIT_CARD
   // Datos de la tarjeta de crédito (CREDIT_CARD): corte, pago, tasa y cargos mensuales
   cutoffDay            Int? // día del mes en que cierra el extracto
   paymentDay           Int? // día límite de pago
@@ -260,9 +261,9 @@ model FinancialAccount {
   ratePct              Decimal?      @db.Decimal(7, 4)
   insuranceMonthly     Decimal?      @db.Decimal(14, 2)
   managementFeeMonthly Decimal?      @db.Decimal(14, 2)
-  emoji          String?
-  archived       Boolean     @default(false)
-  createdAt      DateTime    @default(now())
+  emoji                String?
+  archived             Boolean       @default(false)
+  createdAt            DateTime      @default(now())
 
   workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   transactions Transaction[] @relation("TxAccount")
@@ -273,15 +274,15 @@ model FinancialAccount {
 }
 
 model Category {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   workspaceId String
   parentId    String? // subcategorías
   name        String
   emoji       String? // "🧹", "💡"
   expenseKind ExpenseKind? // null para categorías de ingreso
-  pygLine     PygLine     @default(OTHER_VARIABLE)
-  archived    Boolean     @default(false)
-  createdAt   DateTime    @default(now())
+  pygLine     PygLine      @default(OTHER_VARIABLE)
+  archived    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
 
   workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parent       Category?     @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
@@ -295,40 +296,40 @@ model Category {
 }
 
 model Transaction {
-  id                   String            @id @default(cuid())
-  workspaceId          String
-  type                 TransactionType
-  status               TransactionStatus @default(PAID)
-  amount               Decimal           @db.Decimal(14, 2) // siempre positivo; el signo lo da `type`
-  quantity             Decimal?          @db.Decimal(12, 3) // unidades compradas (informativo; el monto es el total)
-  date                 DateTime // fecha contable (devengo)
-  dueDate              DateTime? // vencimiento si está PENDING
-  paidAt               DateTime? // fecha real de pago/cobro (flujo de caja)
-  accountId            String
-  transferAccountId    String? // destino cuando type = TRANSFER
-  categoryId           String?
-  vendor               String? // proveedor / contraparte
-  description          String?
-  receiptUrl           String? // acceso rápido al comprobante principal
+  id                String            @id @default(cuid())
+  workspaceId       String
+  type              TransactionType
+  status            TransactionStatus @default(PAID)
+  amount            Decimal           @db.Decimal(14, 2) // siempre positivo; el signo lo da `type`
+  quantity          Decimal?          @db.Decimal(12, 3) // unidades compradas (informativo; el monto es el total)
+  date              DateTime // fecha contable (devengo)
+  dueDate           DateTime? // vencimiento si está PENDING
+  paidAt            DateTime? // fecha real de pago/cobro (flujo de caja)
+  accountId         String
+  transferAccountId String? // destino cuando type = TRANSFER
+  categoryId        String?
+  vendor            String? // proveedor / contraparte
+  description       String?
+  receiptUrl        String? // acceso rápido al comprobante principal
   // Vínculos opcionales con el módulo Airbnb
-  propertyId           String?
-  reservationId        String?
-  fixedExpenseId       String? // pago de un gasto fijo recurrente
-  capexItemId          String? // compra que cierra un ítem CAPEX
-  createdById          String
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  propertyId        String?
+  reservationId     String?
+  fixedExpenseId    String? // pago de un gasto fijo recurrente
+  capexItemId       String? // compra que cierra un ítem CAPEX
+  createdById       String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  account          FinancialAccount  @relation("TxAccount", fields: [accountId], references: [id])
-  transferAccount  FinancialAccount? @relation("TxTransferDestination", fields: [transferAccountId], references: [id])
-  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  property         Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  reservation      Reservation?      @relation(fields: [reservationId], references: [id], onDelete: SetNull)
-  fixedExpense     FixedExpense?     @relation(fields: [fixedExpenseId], references: [id], onDelete: SetNull)
-  capexItem        CapexItem?        @relation(fields: [capexItemId], references: [id], onDelete: SetNull)
-  createdBy        User              @relation("TransactionCreatedBy", fields: [createdById], references: [id])
-  attachments      Attachment[]
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account         FinancialAccount  @relation("TxAccount", fields: [accountId], references: [id])
+  transferAccount FinancialAccount? @relation("TxTransferDestination", fields: [transferAccountId], references: [id])
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  property        Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  reservation     Reservation?      @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  fixedExpense    FixedExpense?     @relation(fields: [fixedExpenseId], references: [id], onDelete: SetNull)
+  capexItem       CapexItem?        @relation(fields: [capexItemId], references: [id], onDelete: SetNull)
+  createdBy       User              @relation("TransactionCreatedBy", fields: [createdById], references: [id])
+  attachments     Attachment[]
 
   @@index([workspaceId, date])
   @@index([workspaceId, status, date])
@@ -395,19 +396,19 @@ model Property {
 }
 
 model CapexItem {
-  id                  String         @id @default(cuid())
-  workspaceId         String
-  propertyId          String
-  categoryId          String?
-  capexCategory       CapexCategory
-  itemDescription     String
-  quantity            Int            @default(1)
-  budgetedUnitPrice   Decimal        @db.Decimal(14, 2)
-  actualUnitPrice     Decimal?       @db.Decimal(14, 2)
-  status              PurchaseStatus @default(PENDING)
-  store               String?
-  purchasedAt         DateTime?
-  sortOrder           Int            @default(0)
+  id                String         @id @default(cuid())
+  workspaceId       String
+  propertyId        String
+  categoryId        String?
+  capexCategory     CapexCategory
+  itemDescription   String
+  quantity          Int            @default(1)
+  budgetedUnitPrice Decimal        @db.Decimal(14, 2)
+  actualUnitPrice   Decimal?       @db.Decimal(14, 2)
+  status            PurchaseStatus @default(PENDING)
+  store             String?
+  purchasedAt       DateTime?
+  sortOrder         Int            @default(0)
   // Calculados en lectura (no persistidos):
   //   budgetedTotal = quantity * budgetedUnitPrice
   //   actualTotal   = quantity * actualUnitPrice
@@ -496,31 +497,31 @@ model Attachment {
 
 enum LoanRateType {
   EFFECTIVE_ANNUAL // tasa efectiva anual (E.A.)
-  MONTHLY          // tasa mensual
+  MONTHLY // tasa mensual
 }
 
 enum LoanPaymentKind {
   INSTALLMENT // cuota del plan
-  EXTRA       // abono extra a capital
+  EXTRA // abono extra a capital
 }
 
 // Crédito con un banco: monitoreo de saldo, cuotas pagadas y destino de los fondos.
 model Loan {
-  id               String       @id @default(cuid())
-  workspaceId      String
-  name             String
-  lender           String?
-  principal        Decimal      @db.Decimal(14, 2)
-  rateType         LoanRateType @default(EFFECTIVE_ANNUAL)
-  ratePct          Decimal      @db.Decimal(7, 4)
-  termMonths       Int
-  firstPaymentDate DateTime
-  monthlyPayment   Decimal?     @db.Decimal(14, 2) // cuota informada por el banco; si es null se calcula
-  insuranceMonthly     Decimal? @db.Decimal(14, 2) // seguro mensual (de vida/deudores, tarjetas): se suma a cada cuota
-  managementFeeMonthly Decimal? @db.Decimal(14, 2) // cuota de manejo mensual (tarjetas de crédito)
-  notes            String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id                   String       @id @default(cuid())
+  workspaceId          String
+  name                 String
+  lender               String?
+  principal            Decimal      @db.Decimal(14, 2)
+  rateType             LoanRateType @default(EFFECTIVE_ANNUAL)
+  ratePct              Decimal      @db.Decimal(7, 4)
+  termMonths           Int
+  firstPaymentDate     DateTime
+  monthlyPayment       Decimal?     @db.Decimal(14, 2) // cuota informada por el banco; si es null se calcula
+  insuranceMonthly     Decimal?     @db.Decimal(14, 2) // seguro mensual (de vida/deudores, tarjetas): se suma a cada cuota
+  managementFeeMonthly Decimal?     @db.Decimal(14, 2) // cuota de manejo mensual (tarjetas de crédito)
+  notes                String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   payments    LoanPayment[]
@@ -562,4 +563,53 @@ model LoanAllocation {
 
   @@index([loanId])
   @@index([workspaceId])
+}
+
+// ───────────────────── ADMINISTRACIÓN DE LA PLATAFORMA ─────────────────────
+
+enum ActivityKind {
+  LOGIN // ingresos (también intentos fallidos)
+  LOGOUT
+  QUERY // consultas: abrir secciones
+  CHANGE // altas, ediciones y borrados
+  AI // análisis con IA (comprobantes)
+  ADMIN // acciones de administración (miembros, usuarios)
+}
+
+// Bitácora de actividad. Sin FK a propósito: el registro sobrevive al borrado de usuarios y negocios.
+model ActivityLog {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  kind        ActivityKind
+  ok          Boolean      @default(true)
+  userId      String?
+  username    String? // lo que se vio en el momento (usuario o correo), por si luego se borra
+  workspaceId String?
+  summary     String
+  detail      String?
+  ip          String?
+  userAgent   String?
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([workspaceId, createdAt])
+}
+
+// Consumo de IA (lectura de comprobantes): una fila por solicitud.
+model AiUsage {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  userId       String?
+  workspaceId  String?
+  provider     String
+  model        String?
+  purpose      String   @default("receipt_ocr")
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  ok           Boolean  @default(true)
+  error        String?
+
+  @@index([createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
 }

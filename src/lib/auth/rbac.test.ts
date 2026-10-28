@@ -9,11 +9,13 @@ describe("permisos", () => {
     expect(can("OPERATOR", "dashboard:full")).toBe(false);
     expect(can("OPERATOR", "pyg:read")).toBe(false);
     expect(can("OPERATOR", "transaction:create")).toBe(true);
+    expect(can("OPERATOR", "member:invite")).toBe(true);
+    expect(can("OPERATOR", "member:manage")).toBe(false);
     expect(can("ADMIN", "pyg:read")).toBe(true);
   });
   it("VIEWER ve todo pero no puede escribir nada", () => {
     for (const p of ["finance:read", "data:read", "pyg:read"] as const) expect(can("VIEWER", p)).toBe(true);
-    for (const p of ["transaction:create", "capex:update", "dashboard:full", "airbnb:manage", "budget:write", "member:manage"] as const) expect(can("VIEWER", p)).toBe(false);
+    for (const p of ["transaction:create", "capex:update", "dashboard:full", "airbnb:manage", "budget:write", "member:manage", "member:invite"] as const) expect(can("VIEWER", p)).toBe(false);
     expect(canMutateTx("VIEWER", tx({ createdById: "u1" }), "u1")).toBe(false);
   });
   it("ADMIN modifica cualquier movimiento", () => {
