@@ -40,7 +40,7 @@ export default async function WorkspaceLayout({ children, params }: { children: 
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-4 py-6 pb-44 md:pb-8">
         <TopNav
           pending={pending} canWrite={canWrite} canCreateWorkspace={!managed} platformAdmin={isPlatformAdmin(session?.user?.email)}
-          workspaces={memberships.map((m) => m.workspace)} currentId={workspaceId}
+          workspaces={[...memberships.map((m) => m.workspace), ...(memberships.some((m) => m.workspace.id === workspaceId) ? [] : [{ id: workspaceId, name: ctx.workspace.name }])]} currentId={workspaceId}
           user={{ name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null }}
           signOutAction={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}
         />
