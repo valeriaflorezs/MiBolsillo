@@ -12,26 +12,40 @@ import { importCapexAction } from "@/modules/airbnb/import-actions";
 import { ExpensePicker } from "@/components/forms/expense-picker";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
+import { Segmented } from "@/components/ui/filters";
 
 export const metadata = { title: "CAPEX" };
 const CAT = { FURNITURE: "Muebles", APPLIANCES: "Electrodomésticos", RENOVATION: "Reformas", DECOR: "Decoración", LINENS_KITCHENWARE: "Ropa de cama y cocina", TECH: "Tecnología", OTHER: "Otros" } as const;
 
-export default async function Capex({ params }: { params: Promise<{ workspaceId: string }> }) {
+type SP = { vista?: string; q?: string; cat?: string; prop?: string };
+
+export default async function Capex({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<SP> }) {
   const { workspaceId } = await params;
+  const sp = await searchParams;
   const ctx = await pageCtx(workspaceId, "data:read");
   const canBuy = can(ctx.role, "capex:update");
   const admin = can(ctx.role, "airbnb:manage");
+  const done = sp.vista === "comprados";
   const [items, properties, expenses] = await Promise.all([
-    prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } }, transactions: { where: { type: "EXPENSE" }, select: { id: true, description: true, vendor: true, amount: true }, orderBy: { date: "asc" } } }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { capexCategory: "asc" }] }),
+    prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } }, transactions: { where: { type: "EXPENSE" }, select: { id: true, description: true, vendor: true, amount: true }, orderBy: { date: "asc" } } }, orderBy: [{ sortOrder: "asc" }, { capexCategory: "asc" }, { itemDescription: "asc" }] }),
     prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true } }),
     canBuy ? prisma.transaction.findMany({ where: { workspaceId, type: "EXPENSE", capexItemId: null }, select: { id: true, description: true, vendor: true, amount: true, date: true }, orderBy: { date: "desc" }, take: 300 }) : Promise.resolve([]),
   ]);
   const expenseOptions = expenses.map((e) => ({ id: e.id, label: e.description || e.vendor || "Gasto sin descripción", detail: `${e.date.toISOString().slice(0, 10)}${e.vendor && e.description ? ` · ${e.vendor}` : ""} · ${cop(num(e.amount))}` }));
   const rows = items.map((i) => ({ ...i, v: capexVariance({ quantity: i.quantity, budgetedUnitPrice: num(i.budgetedUnitPrice), actualUnitPrice: i.actualUnitPrice == null ? null : num(i.actualUnitPrice) }) }));
   const bought = rows.filter((r) => r.status === "PURCHASED");
+  const pending = rows.filter((r) => r.status !== "PURCHASED");
   const totalBudget = rows.reduce((a, r) => a + r.v.budgeted, 0);
   const spent = bought.reduce((a, r) => a + (r.v.actual ?? 0), 0);
   const varianceBought = bought.reduce((a, r) => a + (r.v.variance ?? 0), 0);
+
+  const q = sp.q?.trim().toLowerCase();
+  const filter = (r: (typeof rows)[number]) =>
+    (!q || `${r.itemDescription} ${r.store ?? ""}`.toLowerCase().includes(q)) && (!sp.cat || r.capexCategory === sp.cat) && (!sp.prop || r.propertyId === sp.prop);
+  const list = (done ? bought : pending).filter(filter);
+  const sumBudget = list.reduce((a, r) => a + r.v.budgeted, 0);
+  const sumActual = list.reduce((a, r) => a + (r.v.actual ?? 0), 0);
+  const href = (vista: string) => `/w/${workspaceId}/capex${vista ? `?vista=${vista}` : ""}`;
 
   return (
     <>
@@ -43,39 +57,83 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
         <KpiCard info={EXPLAIN.capexVariance} title="Variación en lo comprado" value={cop(varianceBought)} tone={varianceBought < 0 ? "negative" : "positive"} hint={varianceBought < 0 ? "Sobre el presupuesto" : "Ahorro vs presupuesto"} />
       </div>
 
+      <Segmented label="Estado de los ítems" current={done ? "comprados" : "pendientes"} items={[
+        { key: "pendientes", label: `Por comprar (${pending.length})`, href: href("") },
+        { key: "comprados", label: `Comprados (${bought.length})`, href: href("comprados") },
+      ]} />
+
+      <form className="card grid grid-cols-2 gap-3 lg:grid-cols-5" role="search" aria-label="Filtrar ítems">
+        {done && <input type="hidden" name="vista" value="comprados" />}
+        <div className="col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Ítem o tienda" className="input" /></div>
+        <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+        {properties.length > 1 ? <div><label className="label" htmlFor="prop">Propiedad</label><select id="prop" name="prop" defaultValue={sp.prop ?? ""} className="input"><option value="">Todas</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div> : <div className="hidden lg:block" />}
+        <div className="col-span-2 flex items-end gap-2 lg:col-span-1"><button className="btn btn-dark flex-1">Filtrar</button>{(sp.q || sp.cat || sp.prop) && <Link href={href(done ? "comprados" : "")} className="btn btn-ghost">Limpiar</Link>}</div>
+      </form>
+
       <section className="card overflow-x-auto !p-2">
-        {rows.length === 0 ? <p className="p-6 text-center text-muted">Aún no hay ítems. {admin ? "Agrega el primero abajo." : ""}</p> : (
+        {list.length === 0 ? <p className="p-6 text-center text-muted">{rows.length === 0 ? `Aún no hay ítems. ${admin ? "Agrega el primero abajo." : ""}` : sp.q || sp.cat || sp.prop ? "Ningún ítem coincide con el filtro." : done ? "Todavía no hay ítems comprados." : "¡No quedan ítems por comprar!"}</p> : (
           <table className="w-full">
-            <thead><tr><th className="th">Ítem</th><th className="th">Cant.</th><th className="th text-right">P. unit. presup.</th><th className="th text-right">Presupuestado</th><th className="th text-right">Real</th><th className="th text-right">Variación <InfoTip {...EXPLAIN.capexVariance} /></th><th className="th">Compra</th></tr></thead>
+            <thead><tr>
+              <th className="th">Ítem</th><th className="th">Categoría</th><th className="th text-right">Cant.</th>
+              {done ? <><th className="th text-right">Presupuestado</th><th className="th text-right">Real</th><th className="th text-right">Variación <InfoTip {...EXPLAIN.capexVariance} /></th><th className="th">Gastos</th></>
+                : <><th className="th text-right">P. unit. presup.</th><th className="th text-right">Presupuestado</th>{canBuy && <th className="th">Asignar a gastos</th>}</>}
+            </tr></thead>
             <tbody className="divide-y divide-line">
-              {rows.map((r) => (
-                <tr key={r.id} className={r.status === "PURCHASED" ? "bg-canvas/50" : ""}>
-                  <td className="td"><p className="font-medium">{r.itemDescription}{admin && <> <Link href={`/w/${workspaceId}/capex/${r.id}/edit`} className="text-xs font-normal text-brand-text underline">Editar</Link></>}</p><p className="text-xs text-muted">{CAT[r.capexCategory]} · {r.property.name}{r.store ? ` · ${r.store}` : ""}</p>
-                    {r.transactions.length > 0 && <ul className="mt-1 space-y-0.5 text-xs text-muted">{r.transactions.map((t) => <li key={t.id} className="flex items-center gap-2"><span>↳ {t.description || t.vendor || "Gasto"} · {cop(num(t.amount))}</span>{canBuy && <ActionForm action={updateCapexAction} submitLabel="Quitar" variant="ghost" className="inline-flex" resetOnSuccess={false}><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="unlink" /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}</li>)}</ul>}</td>
-                  <td className="td">{r.quantity}</td>
-                  <td className="td text-right">{cop(num(r.budgetedUnitPrice))}</td>
-                  <td className="td text-right">{cop(r.v.budgeted)}</td>
-                  <td className="td text-right">{r.v.actual == null ? "—" : cop(r.v.actual)}</td>
-                  <td className={`td text-right font-medium ${r.v.variance == null ? "" : r.v.variance < 0 ? "text-negative" : "text-positive"}`}>{r.v.variance == null ? "—" : cop(r.v.variance)}</td>
-                  <td className="td">
-                    {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : (
-                      <div className="space-y-2">
-                        <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Agregar" : "Asignar"} className="flex items-center gap-2" resetOnSuccess={false}>
+              {list.map((r) => (
+                <tr key={r.id}>
+                  <td className="td"><p className="font-medium">{r.itemDescription}{admin && <> <Link href={`/w/${workspaceId}/capex/${r.id}/edit`} className="text-xs font-normal text-brand-text underline">Editar</Link></>}</p><p className="text-xs text-muted">{r.property.name}{r.store ? ` · ${r.store}` : ""}</p></td>
+                  <td className="td text-sm">{CAT[r.capexCategory]}</td>
+                  <td className="td text-right">{r.quantity}</td>
+                  {done ? (
+                    <>
+                      <td className="td text-right">{cop(r.v.budgeted)}</td>
+                      <td className="td text-right">{r.v.actual == null ? "—" : cop(r.v.actual)}</td>
+                      <td className={`td text-right font-medium ${r.v.variance == null ? "" : r.v.variance < 0 ? "text-negative" : "text-positive"}`}>{r.v.variance == null ? "—" : cop(r.v.variance)}</td>
+                      <td className="td">
+                        <details className="group">
+                          <summary className="cursor-pointer text-sm text-brand-text underline-offset-2 hover:underline">{r.transactions.length} {r.transactions.length === 1 ? "gasto" : "gastos"}{canBuy ? " · gestionar" : ""}</summary>
+                          <div className="mt-2 min-w-72 space-y-2">
+                            <ul className="space-y-1 text-sm">
+                              {r.transactions.map((t) => (
+                                <li key={t.id} className="flex items-center justify-between gap-3">
+                                  <span>{t.description || t.vendor || "Gasto"} · {cop(num(t.amount))}</span>
+                                  {canBuy && <ActionForm action={updateCapexAction} submitLabel="Quitar" variant="ghost" className="inline-flex" resetOnSuccess={false}><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="unlink" /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}
+                                </li>
+                              ))}
+                            </ul>
+                            {canBuy && (
+                              <>
+                                <ActionForm action={updateCapexAction} submitLabel="Agregar" className="flex items-center gap-2" resetOnSuccess={false}>
+                                  <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
+                                  <ExpensePicker name="transactionId" options={expenseOptions} placeholder="Agregar más gastos…" />
+                                </ActionForm>
+                                <ActionForm action={updateCapexAction} submitLabel="Deshacer todo" variant="ghost" className="flex" resetOnSuccess={false}><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="undo" /></ActionForm>
+                              </>
+                            )}
+                          </div>
+                        </details>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="td text-right">{cop(num(r.budgetedUnitPrice))}</td>
+                      <td className="td text-right">{cop(r.v.budgeted)}</td>
+                      {canBuy && <td className="td">
+                        <ActionForm action={updateCapexAction} submitLabel="Asignar" className="flex items-center gap-2" resetOnSuccess={false}>
                           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
-                          <ExpensePicker name="transactionId" options={expenseOptions} placeholder={r.status === "PURCHASED" ? "Agregar más gastos…" : "Asignar a gastos…"} />
+                          <ExpensePicker name="transactionId" options={expenseOptions} />
                         </ActionForm>
-                        {r.status === "PURCHASED" && (
-                          <ActionForm action={updateCapexAction} submitLabel="Deshacer todo" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
-                            <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="undo" />
-                            <span className="text-sm text-muted">Comprado ✓</span>
-                          </ActionForm>
-                        )}
-                      </div>
-                    )}
-                  </td>
+                      </td>}
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
+            <tfoot><tr className="border-t border-line font-medium">
+              <td className="td" colSpan={3}>{list.length} {list.length === 1 ? "ítem" : "ítems"}</td>
+              {done ? <><td className="td text-right">{cop(sumBudget)}</td><td className="td text-right">{cop(sumActual)}</td><td className={`td text-right ${sumBudget - sumActual < 0 ? "text-negative" : "text-positive"}`}>{cop(sumBudget - sumActual)}</td><td className="td" /></>
+                : <><td className="td" /><td className="td text-right">{cop(sumBudget)}</td>{canBuy && <td className="td" />}</>}
+            </tr></tfoot>
           </table>
         )}
       </section>
