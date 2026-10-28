@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { ActionForm } from "@/components/forms/action-form";
-import { DeleteButton } from "@/components/forms/delete-button";
+import { FormDialog } from "@/components/forms/form-dialog";
+import { IconAction } from "@/components/forms/icon-action";
 import { Avatar } from "@/components/ui/avatar";
 import { revokeInviteAction } from "@/modules/core/crud-actions";
 import { prisma } from "@/lib/db";
@@ -23,7 +24,32 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
 
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">{manage ? "Miembros" : "Invitar personas"}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">{manage ? "Miembros" : "Invitar personas"}</h1>
+        <div className="flex items-center gap-2">
+          <FormDialog label="Dar acceso de solo lectura" icon="key" tone="default" title="Dar acceso de solo lectura">
+            <ActionForm action={createViewerAction} submitLabel="Crear acceso">
+              <p className="text-sm text-muted">Crea un usuario y una contraseña para que otra persona <strong>vea</strong> la información de este negocio (resumen, movimientos, CAPEX, PyG) sin poder agregar, editar ni borrar nada. No necesita cuenta de Google. La contraseña se muestra una sola vez: compártela por un canal privado.</p>
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div><label className="label" htmlFor="vname">Nombre</label><input id="vname" name="name" required className="input" placeholder="Nombre de la persona" /></div>
+                <div><label className="label" htmlFor="vuser">Usuario</label><input id="vuser" name="username" required autoCapitalize="none" spellCheck={false} className="input" placeholder="nombre.apellido" /></div>
+              </div>
+            </ActionForm>
+          </FormDialog>
+          <FormDialog label="Invitar con Google" icon="person_add" title="Invitar a alguien">
+            <ActionForm action={createInviteAction} submitLabel="Crear invitación">
+              <p className="text-sm text-muted">El <strong>Operador</strong> registra gastos, insumos y facturas de aseo, pero no ve ingresos, EBITDA ni PyG. Comparte el enlace; solo funciona con el correo invitado.</p>
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <div><label className="label" htmlFor="email">Correo (Google)</label><input id="email" name="email" type="email" required className="input" /></div>
+                <div><label className="label" htmlFor="role">Rol</label>
+                  <select id="role" name="role" className="input" defaultValue="OPERATOR"><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option>{manage && <option value="ADMIN">Administrador</option>}</select></div>
+              </div>
+            </ActionForm>
+          </FormDialog>
+        </div>
+      </div>
       {manage && <section className="card space-y-3">
         <h2 className="font-medium">Equipo</h2>
         <ul className="divide-y divide-line">
@@ -36,25 +62,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
               </div></div>
               {m.userId === userId ? <span className="text-sm text-muted">Tú · {ROLE_LABEL[m.role]}</span> : (
                 <div className="flex flex-wrap items-center gap-2">
-                  {m.user.username && (
-                    <ActionForm action={resetViewerPasswordAction} submitLabel="Nueva contraseña" variant="ghost" className="flex flex-wrap items-center gap-2" resetOnSuccess={false}>
-                      <input type="hidden" name="workspaceId" value={workspaceId} />
-                      <input type="hidden" name="memberId" value={m.id} />
-                    </ActionForm>
+                  {m.user.username && <IconAction action={resetViewerPasswordAction} icon="key" label="Nueva contraseña" confirm={`¿Generar una contraseña nueva para ${m.user.username}? La anterior dejará de funcionar.`} fields={{ workspaceId, memberId: m.id }} />}
+                  {!m.user.username && (
+                    <IconAction action={changeMemberRoleAction} icon="manage_accounts" label="Cambiar rol" submitLabel="Guardar rol" fields={{ workspaceId, memberId: m.id }}>
+                      <div><label className="label" htmlFor={`role${m.id}`}>Rol de {m.user.name ?? m.user.email}</label>
+                        <select id={`role${m.id}`} name="role" defaultValue={m.role} className="input"><option value="ADMIN">Administrador</option><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option></select></div>
+                    </IconAction>
                   )}
-                  {!m.user.username && <ActionForm action={changeMemberRoleAction} submitLabel="Cambiar" variant="ghost" className="flex items-center gap-2" resetOnSuccess={false}>
-                    <input type="hidden" name="workspaceId" value={workspaceId} />
-                    <input type="hidden" name="memberId" value={m.id} />
-                    <select name="role" defaultValue={m.role} aria-label="Rol" className="input !w-auto">
-                      <option value="ADMIN">Administrador</option>
-                      <option value="OPERATOR">Operador</option>
-                      <option value="VIEWER">Solo lectura</option>
-                    </select>
-                  </ActionForm>}
-                  <ActionForm action={removeMemberAction} submitLabel="Quitar" variant="ghost" className="flex items-center gap-2">
-                    <input type="hidden" name="workspaceId" value={workspaceId} />
-                    <input type="hidden" name="memberId" value={m.id} />
-                  </ActionForm>
+                  <IconAction action={removeMemberAction} icon="delete" tone="danger" label="Quitar del negocio" confirm={`¿Quitar a ${m.user.name ?? m.user.email} de este negocio?`} fields={{ workspaceId, memberId: m.id }} />
                 </div>
               )}
             </li>
@@ -62,47 +77,32 @@ export default async function SettingsPage({ params }: { params: Promise<{ works
         </ul>
       </section>}
 
-      <section className="card space-y-4">
-        <h2 className="font-medium">Dar acceso de solo lectura</h2>
-        <p className="text-sm text-muted">Crea un usuario y una contraseña para que otra persona <strong>vea</strong> la información de este negocio (resumen, movimientos, CAPEX, PyG) sin poder agregar, editar ni borrar nada. No necesita cuenta de Google. La contraseña se muestra una sola vez: compártela por un canal privado.</p>
-        <ActionForm action={createViewerAction} submitLabel="Crear acceso" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          <input type="hidden" name="workspaceId" value={workspaceId} />
-          <div><label className="label" htmlFor="vname">Nombre</label><input id="vname" name="name" required className="input" placeholder="Nombre de la persona" /></div>
-          <div><label className="label" htmlFor="vuser">Usuario</label><input id="vuser" name="username" required autoCapitalize="none" spellCheck={false} className="input" placeholder="nombre.apellido" /></div>
-        </ActionForm>
-      </section>
-
-      <section className="card space-y-4">
-        <h2 className="font-medium">Invitar a alguien</h2>
-        <p className="text-sm text-muted">El <strong>Operador</strong> registra gastos, insumos y facturas de aseo, pero no ve ingresos, EBITDA ni PyG. Comparte el enlace; solo funciona con el correo invitado.</p>
-        <ActionForm action={createInviteAction} submitLabel="Crear invitación" className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-          <input type="hidden" name="workspaceId" value={workspaceId} />
-          <div><label className="label" htmlFor="email">Correo (Google)</label><input id="email" name="email" type="email" required className="input" /></div>
-          <div><label className="label" htmlFor="role">Rol</label>
-            <select id="role" name="role" className="input" defaultValue="OPERATOR"><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option>{manage && <option value="ADMIN">Administrador</option>}</select></div>
-        </ActionForm>
+      {invites.length > 0 && (
+      <section className="card space-y-3">
+        <h2 className="font-medium">Invitaciones pendientes</h2>
         {invites.length > 0 && (
           <ul className="space-y-2 text-sm">
             {invites.map((i) => (
               <li key={i.id} className="rounded-xl bg-canvas p-3">
                 <span className="font-medium">{i.email}</span> · {ROLE_LABEL[i.role]}
                 <code className="mt-1 block break-all text-xs text-muted">{origin}/invite/{i.token}</code>
-                {manage && <div className="mt-2"><DeleteButton action={revokeInviteAction} fields={{ workspaceId, inviteId: i.id }} label="Revocar" confirmText="¿Revocar esta invitación?" /></div>}
+                {manage && <div className="mt-2"><IconAction action={revokeInviteAction} fields={{ workspaceId, inviteId: i.id }} icon="delete" tone="danger" label="Revocar" confirm="¿Revocar esta invitación?" /></div>}
               </li>
             ))}
           </ul>
         )}
       </section>
+      )}
 
-      {manage && <section className="card space-y-3 border border-negative/30">
-        <h2 className="font-medium text-negative">Eliminar este negocio</h2>
-        <p className="text-sm text-muted">Borra definitivamente movimientos, CAPEX, miembros y comprobantes. No se puede deshacer.</p>
-        <ActionForm action={deleteWorkspaceAction} submitLabel="Eliminar definitivamente" variant="ghost" resetOnSuccess={false}>
-          <input type="hidden" name="workspaceId" value={workspaceId} />
-          <label className="label" htmlFor="confirm">Escribe «{workspace.name}» para confirmar</label>
-          <input id="confirm" name="confirm" required autoComplete="off" className="input max-w-sm" />
-        </ActionForm>
-      </section>}
+      {manage && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-negative/30 p-4">
+          <p className="text-sm text-muted">Eliminar este negocio borra movimientos, CAPEX, miembros y comprobantes. No se puede deshacer.</p>
+          <IconAction action={deleteWorkspaceAction} icon="delete" tone="danger" label="Eliminar este negocio" submitLabel="Eliminar definitivamente" fields={{ workspaceId }}>
+            <label className="label" htmlFor="confirm">Escribe «{workspace.name}» para confirmar</label>
+            <input id="confirm" name="confirm" required autoComplete="off" className="input" />
+          </IconAction>
+        </div>
+      )}
     </>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/icons";
 import { useActionState, useRef, useState } from "react";
 import type { ActionState } from "@/lib/actions";
 import { createReceiptUploadAction, processReceiptAction } from "@/modules/core/receipt-actions";
@@ -124,7 +125,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, capexI
           <label className="label" htmlFor="categoryId">Categoría</label>
           <select id="categoryId" name="categoryId" className="input" value={vals.categoryId} onChange={(e) => setVals({ ...vals, categoryId: e.target.value })}>
             <option value="">Sin categoría</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         )}
@@ -166,7 +167,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, capexI
       <div className="flex items-center gap-3">
         <button type="submit" disabled={pending} className="btn btn-primary">{pending ? "Guardando…" : "Guardar"}</button>
         {state?.error && <p role="alert" className="text-sm text-negative">{state.error}</p>}
-        {state?.ok && <p role="status" className="text-sm text-positive">Guardado ✓</p>}
+        {state?.ok && <p role="status" className="text-sm text-positive"><span className="inline-flex items-center gap-1">Guardado <Icon name="check" size={16} /></span></p>}
       </div>
     </form>
   );

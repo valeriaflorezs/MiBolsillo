@@ -1,7 +1,9 @@
 import { CalendarClock, Landmark, Percent, PiggyBank } from "lucide-react";
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
-import { DeleteButton } from "@/components/forms/delete-button";
+import { FormDialog } from "@/components/forms/form-dialog";
+import { IconAction } from "@/components/forms/icon-action";
+import { Icon } from "@/components/ui/icons";
 import { AmortizationChart } from "@/components/ui/amortization-chart";
 import { Chip } from "@/components/ui/chip";
 import { FolderCard } from "@/components/ui/folder-card";
@@ -43,13 +45,11 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
   if (!loans.length) {
     return (
       <>
-        <p className="text-muted">Monitorea el saldo, las cuotas y el destino del dinero de tu crédito.</p>
-        {canEdit ? (
-          <section className="card space-y-4">
-            <h2 className="font-medium">Registrar el crédito</h2>
-            <ActionForm action={createLoanAction} submitLabel="Crear crédito"><input type="hidden" name="workspaceId" value={workspaceId} /><LoanFields /></ActionForm>
-          </section>
-        ) : <p className="card text-muted">Aún no hay créditos registrados.</p>}
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-muted">Monitorea el saldo, las cuotas y el destino del dinero de tu crédito.</p>
+          {canEdit && <FormDialog label="Registrar el crédito" title="Registrar el crédito" wide><ActionForm action={createLoanAction} submitLabel="Crear crédito"><input type="hidden" name="workspaceId" value={workspaceId} /><LoanFields /></ActionForm></FormDialog>}
+        </div>
+        <p className="card text-muted">Aún no hay créditos registrados.</p>
       </>
     );
   }
@@ -76,7 +76,7 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
       </div>
 
       <section className="hero" aria-label="Saldo pendiente">
-        <p className="flex items-center gap-1.5 text-sm text-white/80">{paidOff ? "Crédito saldado 🎉" : "Saldo pendiente"} <InfoTip {...EXPLAIN.loanProgress} /></p>
+        <p className="flex items-center gap-1.5 text-sm text-white/80">{paidOff ? <><span>Crédito saldado</span><Icon name="celebration" size={16} /></> : "Saldo pendiente"} <InfoTip {...EXPLAIN.loanProgress} /></p>
         <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{cop(s.balance)}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <span className="chip-outline">{pct(s.pctPaid)} del capital pagado</span>
@@ -116,7 +116,7 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
               <li key={p.id} className="rounded-2xl inset px-4 py-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">{fmtDate(p.date)} {p.date.getUTCFullYear()} · {cop(p.amount)} <Chip tone={p.kind === "EXTRA" ? "brand" : "neutral"}>{p.kind === "EXTRA" ? "Abono extra" : "Cuota"}</Chip></span>
-                  {canEdit && p.id && <DeleteButton action={deletePaymentAction} fields={{ workspaceId, paymentId: p.id }} label="Quitar" confirmText="¿Quitar este pago?" />}
+                  {canEdit && p.id && <IconAction action={deletePaymentAction} fields={{ workspaceId, paymentId: p.id }} icon="delete" tone="danger" label="Quitar" confirm="¿Quitar este pago?" />}
                 </div>
                 <p className="mt-1 text-muted">Capital {cop(p.principal)} · Intereses {cop(p.interest)}{p.fees > 0 && <> · Seguro/manejo {cop(p.fees)}</>} · Saldo después {cop(p.balanceAfter)}</p>
               </li>
@@ -146,7 +146,7 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
                   <span className="shrink-0 text-right"><span className="block font-medium">{cop(num(a.amount))}</span><span className="text-xs text-muted">{pct(terms.principal ? num(a.amount) / terms.principal : 0)} del crédito</span></span>
                 </div>
                 <div className="mt-1.5"><ProgressBar value={terms.principal ? num(a.amount) / terms.principal : 0} label={a.name} /></div>
-                {canEdit && <div className="mt-1"><DeleteButton action={deleteAllocationAction} fields={{ workspaceId, allocationId: a.id }} label="Quitar" confirmText="¿Quitar este destino?" /></div>}
+                {canEdit && <div className="mt-1"><IconAction action={deleteAllocationAction} fields={{ workspaceId, allocationId: a.id }} icon="delete" tone="danger" label="Quitar" confirm="¿Quitar este destino?" /></div>}
               </li>
             ))}
           </ul>
@@ -176,11 +176,10 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
               <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="loanId" value={loan.id} /><LoanFields loan={loan} />
             </ActionForm>
           </details>
-          <details>
-            <summary className="cursor-pointer font-medium">Agregar otro crédito</summary>
-            <ActionForm action={createLoanAction} submitLabel="Crear crédito" className="mt-4 space-y-4"><input type="hidden" name="workspaceId" value={workspaceId} /><LoanFields /></ActionForm>
-          </details>
-          <DeleteButton action={deleteLoanAction} fields={{ workspaceId, loanId: loan.id }} label="Eliminar este crédito" confirmText="¿Eliminar el crédito con sus pagos y destinos? No se puede deshacer." />
+          <div className="flex items-center gap-2">
+            <FormDialog label="Agregar otro crédito" title="Agregar otro crédito" wide><ActionForm action={createLoanAction} submitLabel="Crear crédito"><input type="hidden" name="workspaceId" value={workspaceId} /><LoanFields /></ActionForm></FormDialog>
+            <IconAction action={deleteLoanAction} icon="delete" label="Eliminar este crédito" tone="danger" confirm="¿Eliminar el crédito con sus pagos y destinos? No se puede deshacer." fields={{ workspaceId, loanId: loan.id }} />
+          </div>
         </section>
       )}
     </>

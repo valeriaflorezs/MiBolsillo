@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CategoryIcon, Icon } from "@/components/ui/icons";
 import { ActionForm } from "@/components/forms/action-form";
 import { Chip } from "@/components/ui/chip";
 import { FolderCard } from "@/components/ui/folder-card";
@@ -23,11 +24,11 @@ export default async function Pending({ params }: { params: Promise<{ workspaceI
       <div><h1 className="text-3xl font-semibold tracking-tight">Pendientes</h1><p className="text-muted">Lo que debes pagar y lo que te deben.</p></div>
       <FolderCard tab="Por pagar" meta={<>{cop(pay.reduce((a, r) => a + r.amount, 0))}</>}>
         <div className="space-y-2">
-        {pay.length === 0 && <p className="text-sm text-muted">Nada por pagar 🎉</p>}
+        {pay.length === 0 && <p className="text-sm text-muted"><span className="inline-flex items-center gap-1.5">Nada por pagar <Icon name="celebration" size={16} /></span></p>}
         {pay.map((t) => (
           <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl inset px-4 py-3">
             <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="min-w-0">
-              <p className="truncate font-medium">{t.category?.emoji} {txTitle(t, "Gasto", t.category?.name)}</p>
+              <p className="flex items-center gap-2 truncate font-medium"><CategoryIcon value={t.category?.emoji} size={16} />{txTitle(t, "Gasto", t.category?.name)}</p>
               <p className="text-sm text-muted">{txVendorHint(t) ? `${txVendorHint(t)} · ` : ""}{fmtDate(t.date)} {overdue(t.date) && <Chip tone="negative">Vencido</Chip>}</p>
             </Link>
             <div className="flex items-center gap-3"><strong>{cop(t.amount)}</strong>

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/forms/action-form";
-import { DeleteButton } from "@/components/forms/delete-button";
+import { IconAction } from "@/components/forms/icon-action";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { num } from "@/lib/format";
@@ -31,7 +31,7 @@ export default async function EditFixed({ params }: { params: Promise<{ workspac
           </div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={f.active} />Activo</label>
         </ActionForm>
-        <DeleteButton action={deleteFixedExpenseAction} fields={{ workspaceId, fixedId: f.id }} confirmText="¿Eliminar este gasto fijo? Los movimientos ya generados se conservan." />
+        <IconAction action={deleteFixedExpenseAction} fields={{ workspaceId, fixedId: f.id }} icon="delete" tone="danger" label="Eliminar" confirm="¿Eliminar este gasto fijo? Los movimientos ya generados se conservan." />
       </section>
     </>
   );

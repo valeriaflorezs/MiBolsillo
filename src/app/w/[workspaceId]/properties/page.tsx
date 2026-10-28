@@ -1,4 +1,5 @@
 import { ActionForm } from "@/components/forms/action-form";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Chip } from "@/components/ui/chip";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
@@ -13,7 +14,14 @@ export default async function Properties({ params }: { params: Promise<{ workspa
   const props = await prisma.property.findMany({ where: { workspaceId }, orderBy: [{ active: "desc" }, { createdAt: "asc" }], include: { _count: { select: { capexItems: true, fixedExpenses: true } } } });
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">Propiedades</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">Propiedades</h1>
+        <FormDialog label="Nueva propiedad" title="Nueva propiedad">
+          <ActionForm action={createPropertyAction} submitLabel="Crear propiedad"><input type="hidden" name="workspaceId" value={workspaceId} />
+            <div className="space-y-3"><div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" /></div><div><label className="label" htmlFor="address">Dirección</label><input id="address" name="address" className="input" /></div></div>
+          </ActionForm>
+        </FormDialog>
+      </div>
       <div className="grid gap-5 md:grid-cols-2">
         {props.map((p) => (
           <section key={p.id} className={p.active ? "card space-y-3" : "card space-y-3 opacity-60"}>
@@ -30,10 +38,6 @@ export default async function Properties({ params }: { params: Promise<{ workspa
           </section>
         ))}
       </div>
-      <section className="card max-w-xl space-y-4"><h2 className="font-medium">Nueva propiedad</h2>
-        <ActionForm action={createPropertyAction} submitLabel="Crear propiedad"><input type="hidden" name="workspaceId" value={workspaceId} />
-          <div className="grid gap-3 sm:grid-cols-2"><div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" /></div><div><label className="label" htmlFor="address">Dirección</label><input id="address" name="address" className="input" /></div></div>
-        </ActionForm></section>
     </>
   );
 }

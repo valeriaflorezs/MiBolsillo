@@ -10,8 +10,8 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { id, money, opt, signedMoney } from "@/lib/validation";
 import { accountBalances } from "./queries";
 
-const UP = { name: "Ajuste de saldo a favor", emoji: "⚖️", expenseKind: null } as const;
-const DOWN = { name: "Ajuste de saldo en contra", emoji: "⚖️", expenseKind: "FIXED_OPEX" } as const;
+const UP = { name: "Ajuste de saldo a favor", emoji: "balance", expenseKind: null } as const;
+const DOWN = { name: "Ajuste de saldo en contra", emoji: "balance", expenseKind: "FIXED_OPEX" } as const;
 
 /**
  * Conciliación: iguala el saldo de la app con el saldo real del banco registrando la diferencia como un ajuste

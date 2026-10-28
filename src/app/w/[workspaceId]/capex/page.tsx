@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
+import { FormDialog } from "@/components/forms/form-dialog";
+import { IconAction } from "@/components/forms/icon-action";
 import { ProgressRing } from "@/components/ui/charts";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { prisma } from "@/lib/db";
@@ -55,7 +57,27 @@ export default async function Capex({ params, searchParams }: { params: Promise<
 
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">CAPEX · Adecuación</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">CAPEX · Adecuación</h1>
+        {admin && (
+          <div className="flex items-center gap-2">
+            <FormDialog label="Importar desde CSV / Excel" icon="upload" tone="default" title="Importar ítems desde CSV / Excel"><CsvImport action={importCapexAction} workspaceId={workspaceId} properties={properties} title="Importar ítems" columns="categoria, descripcion, cantidad, precio_unitario_presupuestado, precio_unitario_real, tienda" /></FormDialog>
+            <FormDialog label="Agregar ítem" title="Agregar ítem" wide>
+              <ActionForm action={addCapexAction} submitLabel="Agregar">
+                <input type="hidden" name="workspaceId" value={workspaceId} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+                  <div><label className="label" htmlFor="capexCategory">Categoría</label><select id="capexCategory" name="capexCategory" className="input">{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                  <div className="sm:col-span-2"><label className="label" htmlFor="itemDescription">Descripción</label><input id="itemDescription" name="itemDescription" required className="input" placeholder="Nevera 300 L" /></div>
+                  <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" max="10000" step="1" defaultValue={1} className="input" /></div>
+                  <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" max="1000000000000" min="0" step="0.01" required className="input" /></div>
+                  <div className="sm:col-span-2"><label className="label" htmlFor="store">Tienda</label><input id="store" name="store" className="input" /></div>
+                </div>
+              </ActionForm>
+            </FormDialog>
+          </div>
+        )}
+      </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <section className="card flex items-center gap-4"><ProgressRing value={rows.length ? bought.length / rows.length : 0} label="Ítems comprados" /><div><h2 className="text-sm text-muted">Comprado</h2><p className="font-medium">{bought.length} de {rows.length}</p></div></section>
         <KpiCard info={EXPLAIN.capexBudget} title="Presupuesto total" value={cop(totalBudget)} />
@@ -101,20 +123,21 @@ export default async function Capex({ params, searchParams }: { params: Promise<
                           <div className="mt-2 min-w-72 space-y-2">
                             <ul className="space-y-1 text-sm">
                               {r.transactions.map((t) => (
-                                <li key={t.id} className="flex items-center justify-between gap-3">
-                                  <span>{t.description || t.vendor || "Gasto"} · {cop(num(t.amount))}</span>
-                                  {canBuy && <ActionForm action={updateCapexAction} submitLabel="Quitar" variant="ghost" className="inline-flex" resetOnSuccess={false}><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="unlink" /><input type="hidden" name="transactionId" value={t.id} /></ActionForm>}
+                                <li key={t.id} className="flex items-center gap-3">
+                                  <span className="min-w-0 flex-1 truncate" title={t.description || t.vendor || "Gasto"}>{t.description || t.vendor || "Gasto"}</span>
+                                  <span className="shrink-0 tabular-nums">{cop(num(t.amount))}</span>
+                                  {canBuy && <IconAction action={updateCapexAction} icon="delete" label="Quitar gasto" tone="danger" confirm="¿Quitar este gasto del ítem? El movimiento no se borra." fields={{ workspaceId, itemId: r.id, intent: "unlink", transactionId: t.id }} />}
                                 </li>
                               ))}
                             </ul>
                             {canBuy && (
-                              <>
-                                <ActionForm action={updateCapexAction} submitLabel="Agregar" className="flex items-center gap-2" resetOnSuccess={false}>
+                              <div className="flex items-center gap-2">
+                                <ActionForm action={updateCapexAction} submitLabel="Agregar gastos" submitIcon="add" className="flex items-center gap-2" resetOnSuccess={false}>
                                   <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
                                   <ExpensePicker name="transactionId" options={expenseOptions} placeholder="Agregar más gastos…" />
                                 </ActionForm>
-                                <ActionForm action={updateCapexAction} submitLabel="Deshacer todo" variant="ghost" className="flex" resetOnSuccess={false}><input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="undo" /></ActionForm>
-                              </>
+                                <IconAction action={updateCapexAction} icon="undo" label="Deshacer compra" tone="danger" confirm="¿Desvincular todos los gastos y devolver el ítem a «Por comprar»? Los movimientos no se borran." fields={{ workspaceId, itemId: r.id, intent: "undo" }} />
+                              </div>
                             )}
                           </div>
                         </details>
@@ -125,7 +148,7 @@ export default async function Capex({ params, searchParams }: { params: Promise<
                       <td className="td text-right">{cop(num(r.budgetedUnitPrice))}</td>
                       <td className="td text-right">{cop(r.v.budgeted)}</td>
                       {canBuy && <td className="td">
-                        <ActionForm action={updateCapexAction} submitLabel="Asignar" className="flex items-center gap-2" resetOnSuccess={false}>
+                        <ActionForm action={updateCapexAction} submitLabel="Asignar a los gastos elegidos" submitIcon="check" className="flex items-center gap-2" resetOnSuccess={false}>
                           <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} /><input type="hidden" name="intent" value="link" />
                           <ExpensePicker name="transactionId" options={expenseOptions} />
                         </ActionForm>
@@ -143,24 +166,6 @@ export default async function Capex({ params, searchParams }: { params: Promise<
           </table>
         )}
       </section>
-
-      {admin && <CsvImport action={importCapexAction} workspaceId={workspaceId} properties={properties} title="Importar ítems desde CSV / Excel" columns="categoria, descripcion, cantidad, precio_unitario_presupuestado, precio_unitario_real, tienda" />}
-      {admin && (
-        <section className="card space-y-4">
-          <h2 className="font-medium">Agregar ítem</h2>
-          <ActionForm action={addCapexAction} submitLabel="Agregar">
-            <input type="hidden" name="workspaceId" value={workspaceId} />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" className="input">{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-              <div><label className="label" htmlFor="capexCategory">Categoría</label><select id="capexCategory" name="capexCategory" className="input">{Object.entries(CAT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-              <div><label className="label" htmlFor="itemDescription">Descripción</label><input id="itemDescription" name="itemDescription" required className="input" placeholder="Nevera 300 L" /></div>
-              <div><label className="label" htmlFor="quantity">Cantidad</label><input id="quantity" name="quantity" type="number" min="1" max="10000" step="1" defaultValue={1} className="input" /></div>
-              <div><label className="label" htmlFor="budgetedUnitPrice">Precio unitario presupuestado</label><input id="budgetedUnitPrice" name="budgetedUnitPrice" type="number" max="1000000000000" min="0" step="0.01" required className="input" /></div>
-              <div><label className="label" htmlFor="store">Tienda</label><input id="store" name="store" className="input" /></div>
-            </div>
-          </ActionForm>
-        </section>
-      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { CalendarClock, CreditCard, Percent, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Chip } from "@/components/ui/chip";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ProgressBar } from "@/components/ui/progress";
@@ -50,7 +51,10 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
 
   return (
     <>
+      <div className="flex items-start justify-between gap-3">
       <p className="text-muted">Cada tarjeta es una cuenta: tus compras con ella se registran como gastos en <Link className="underline" href={`/w/${workspaceId}/expenses/new`}>Movimientos</Link> eligiéndola como cuenta, y su pago es una transferencia desde tu banco.</p>
+      {canEdit && <FormDialog label="Agregar tarjeta de crédito" title="Agregar tarjeta de crédito" wide><ActionForm action={createCardAction} submitLabel="Crear tarjeta"><input type="hidden" name="workspaceId" value={workspaceId} /><CardFields idp="new" /></ActionForm></FormDialog>}
+      </div>
       {active.length === 0 && <p className="card text-muted">Aún no has registrado tarjetas de crédito.</p>}
       {rows.map(({ c, s, spent }) => (
         <section key={c.id} className={`space-y-5 ${c.archived ? "opacity-60" : ""}`} aria-label={c.name}>
@@ -127,12 +131,6 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
           )}
         </section>
       ))}
-      {canEdit && (
-        <section className="card space-y-4">
-          <h2 className="font-medium">Agregar tarjeta de crédito</h2>
-          <ActionForm action={createCardAction} submitLabel="Crear tarjeta"><input type="hidden" name="workspaceId" value={workspaceId} /><CardFields idp="new" /></ActionForm>
-        </section>
-      )}
     </>
   );
 }

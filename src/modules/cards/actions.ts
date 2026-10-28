@@ -33,7 +33,7 @@ export async function createCardAction(_: ActionState, fd: FormData): Promise<Ac
     const { userId } = await requireWorkspace(workspaceId, "dashboard:full");
     rateLimit(`card:${userId}`, 30, 3_600_000);
     try {
-      await prisma.financialAccount.create({ data: { workspaceId, type: "CREDIT_CARD", emoji: "💳", openingBalance: -(debt ?? 0), ...f } });
+      await prisma.financialAccount.create({ data: { workspaceId, type: "CREDIT_CARD", emoji: "card", openingBalance: -(debt ?? 0), ...f } });
     } catch { throw nameTaken(); }
     refresh(workspaceId);
     return "Tarjeta creada";
@@ -95,7 +95,7 @@ export async function chargeCardFeesAction(_: ActionState, fd: FormData): Promis
     if (!todo.length) throw userError("Esos cargos ya estaban registrados para ese mes.");
     // Los cargos financieros no son operación: categoría propia fuera del EBITDA.
     const cat = (await prisma.category.findFirst({ where: { workspaceId: i.workspaceId, name: "Intereses y cargos financieros" }, select: { id: true } }))
-      ?? (await prisma.category.create({ data: { workspaceId: i.workspaceId, name: "Intereses y cargos financieros", emoji: "🏦", expenseKind: "FIXED_OPEX", pygLine: "NON_OPERATING" }, select: { id: true } }));
+      ?? (await prisma.category.create({ data: { workspaceId: i.workspaceId, name: "Intereses y cargos financieros", emoji: "bank", expenseKind: "FIXED_OPEX", pygLine: "NON_OPERATING" }, select: { id: true } }));
     await prisma.transaction.createMany({
       data: todo.map((x) => ({ workspaceId: i.workspaceId, type: "EXPENSE" as const, status: "PAID" as const, amount: x.amount, date, paidAt: date, accountId: card.id, categoryId: cat.id, vendor: x.vendor, description: marker(x.vendor), createdById: userId })),
     });

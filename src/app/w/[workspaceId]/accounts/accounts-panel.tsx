@@ -1,5 +1,6 @@
 import { Wallet } from "lucide-react";
 import { ActionForm } from "@/components/forms/action-form";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Chip } from "@/components/ui/chip";
 import { cop, fmtDate } from "@/lib/format";
 import { updateAccountAction } from "@/modules/core/crud-actions";
@@ -19,6 +20,20 @@ export function AccountsPanel({ workspaceId, accounts, canEdit, duplicates }: { 
   const list = accounts.filter((a) => a.type !== "CREDIT_CARD");
   return (
     <>
+      {canEdit && (
+        <div className="flex justify-end">
+          <FormDialog label="Nueva cuenta" title="Nueva cuenta">
+            <ActionForm action={createAccountAction} submitLabel="Crear cuenta">
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <div className="space-y-3">
+                <div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" placeholder="Nequi" /></div>
+                <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" className="input">{Object.entries(TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                <div><label className="label" htmlFor="openingBalance">Saldo inicial</label><input id="openingBalance" name="openingBalance" type="number" min="-1000000000000" max="1000000000000" step="0.01" defaultValue={0} className="input" /></div>
+              </div>
+            </ActionForm>
+          </FormDialog>
+        </div>
+      )}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {list.length === 0 && <p className="card text-muted md:col-span-2 lg:col-span-3">Aún no hay cuentas.</p>}
         {list.map((a) => (
@@ -74,19 +89,6 @@ export function AccountsPanel({ workspaceId, accounts, canEdit, duplicates }: { 
               </li>
             ))}
           </ul>
-        </section>
-      )}
-      {canEdit && (
-        <section className="card max-w-2xl space-y-4">
-          <h2 className="font-medium">Nueva cuenta</h2>
-          <ActionForm action={createAccountAction} submitLabel="Crear cuenta">
-            <input type="hidden" name="workspaceId" value={workspaceId} />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div><label className="label" htmlFor="name">Nombre</label><input id="name" name="name" required className="input" placeholder="Nequi" /></div>
-              <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" className="input">{Object.entries(TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-              <div><label className="label" htmlFor="openingBalance">Saldo inicial</label><input id="openingBalance" name="openingBalance" type="number" min="-1000000000000" max="1000000000000" step="0.01" defaultValue={0} className="input" /></div>
-            </div>
-          </ActionForm>
         </section>
       )}
     </>

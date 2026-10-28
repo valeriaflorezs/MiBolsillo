@@ -1,4 +1,5 @@
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CalendarDays, TrendingUp } from "lucide-react";
+import { CategoryIcon, Icon } from "@/components/ui/icons";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { StackedBars } from "@/components/ui/charts";
@@ -33,7 +34,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
     return (
       <>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <div><h1 className="text-3xl font-semibold tracking-tight">Hola 👋</h1><p className="text-muted">Registra gastos, insumos y facturas de aseo de {ctx.workspace.name}.</p></div>
+          <div><h1 className="text-3xl font-semibold tracking-tight"><span className="inline-flex items-center gap-2">Hola <Icon name="wave" size={30} className="text-accent" /></span></h1><p className="text-muted">Registra gastos, insumos y facturas de aseo de {ctx.workspace.name}.</p></div>
           <Link href={`${base}/expenses/new`} className="btn btn-primary">+ Registrar gasto</Link>
         </div>
         <Filters base={base} month={key} showStatus={false} />
@@ -78,8 +79,8 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
         workspaceId={workspaceId} excluded={excluded} hasParam={sp.x !== undefined}
         base={{ month: key, ...(sp.status ? { status: sp.status } : {}) }}
         groups={[
-          { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })), { id: "none", label: "Sin categoría" }] },
-          { title: "Ingresos", items: cats.filter((c) => !c.expenseKind).map((c) => ({ id: c.id, label: `${c.emoji ?? ""} ${c.name}`.trim() })) },
+          { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: c.name })), { id: "none", label: "Sin categoría" }] },
+          { title: "Ingresos", items: cats.filter((c) => !c.expenseKind).map((c) => ({ id: c.id, label: c.name })) },
         ]}
       />
 
@@ -136,7 +137,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
 
       <div className="grid gap-6 lg:grid-cols-2">
         <FolderCard className="min-w-0" tab="Por pagar" meta={<>{pending.length} pendiente(s)</>}>
-          {pending.length === 0 && <p className="text-sm text-muted">Nada pendiente 🎉</p>}
+          {pending.length === 0 && <p className="text-sm text-muted"><span className="inline-flex items-center gap-1.5">Nada pendiente <Icon name="celebration" size={16} /></span></p>}
           <ul className="space-y-1">
             {pending.map((t) => (
               <li key={t.id}><Link href={`${base}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/30">
@@ -161,8 +162,8 @@ function RecentList({ workspaceId, rows }: { workspaceId: string; rows: Awaited<
         {rows.map((t) => (
           <li key={t.id}>
             <Link href={`/w/${workspaceId}/transactions?sel=${t.id}&month=${t.date.toISOString().slice(0, 7)}`} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm backdrop-blur hover:bg-white/20">
-              <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15">{t.category?.emoji ?? "💳"}</span><span className="min-w-0"><span className="block truncate font-medium">{txTitle(t, "Movimiento", t.category?.name)}</span><span className="block text-xs text-white/65">{txVendorHint(t) ? `${txVendorHint(t)} · ` : ""}{fmtDate(t.date)} · {t.account}</span></span></span>
-              <span className={`shrink-0 font-semibold ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</span>
+              <span className="flex min-w-0 items-center gap-3"><span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-white/15"><CategoryIcon value={t.category?.emoji} /></span><span className="min-w-0"><span className="block truncate font-medium">{txTitle(t, "Movimiento", t.category?.name)}</span><span className="block text-xs text-white/65">{txVendorHint(t) ? `${txVendorHint(t)} · ` : ""}{fmtDate(t.date)} · {t.account}</span></span></span>
+              <span className={`shrink-0 font-semibold ${t.type === "INCOME" ? "text-accent" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : <Icon name="swap" size={16} className="inline align-text-bottom" />} {cop(t.amount)}</span>
             </Link>
           </li>
         ))}

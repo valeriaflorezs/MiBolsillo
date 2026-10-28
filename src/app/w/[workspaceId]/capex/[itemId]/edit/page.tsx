@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/forms/action-form";
-import { DeleteButton } from "@/components/forms/delete-button";
+import { IconAction } from "@/components/forms/icon-action";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { num } from "@/lib/format";
@@ -29,7 +29,7 @@ export default async function EditCapex({ params }: { params: Promise<{ workspac
             <div><label className="label" htmlFor="store">Tienda</label><input id="store" name="store" defaultValue={i.store ?? ""} className="input" /></div>
           </div>
         </ActionForm>
-        <DeleteButton action={deleteCapexItemAction} fields={{ workspaceId, itemId: i.id }} confirmText="¿Eliminar este ítem del CAPEX?" />
+        <IconAction action={deleteCapexItemAction} fields={{ workspaceId, itemId: i.id }} icon="delete" tone="danger" label="Eliminar" confirm="¿Eliminar este ítem del CAPEX?" />
       </section>
     </>
   );

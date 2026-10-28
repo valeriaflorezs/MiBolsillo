@@ -75,7 +75,7 @@ export async function categoryBreakdown(workspaceId: string, start: Date, end: D
   const named = rows
     .map((r) => {
       const c = cats.find((x) => x.id === r.categoryId);
-      return { label: c ? `${c.emoji ?? ""} ${c.name}`.trim() : "Sin categoría", value: num(r._sum.amount) };
+      return { label: c ? c.name : "Sin categoría", value: num(r._sum.amount) };
     })
     .filter((r) => r.value > 0)
     .sort((a, b) => b.value - a.value);

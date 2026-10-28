@@ -1,5 +1,7 @@
-import Link from "next/link";
 import { ActionForm } from "@/components/forms/action-form";
+import { FormDialog } from "@/components/forms/form-dialog";
+import { IconAction } from "@/components/forms/icon-action";
+import { IconButton } from "@/components/ui/icon-button";
 import { prisma } from "@/lib/db";
 import { generatePassword } from "@/lib/auth/credentials";
 import { CRED_DOMAIN } from "@/lib/auth/credentials-shared";
@@ -22,7 +24,19 @@ export default async function AdminHome() {
   return (
     <>
       <section className="card space-y-3">
-        <h2 className="text-lg font-medium">Empresas</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-medium">Empresas</h2>
+          <FormDialog label="Nueva empresa" title="Nueva empresa">
+            <ActionForm action={createPlatformWorkspaceAction} submitLabel="Crear empresa">
+              <div className="space-y-3">
+                <div><label className="label" htmlFor="wn">Nombre</label><input id="wn" name="name" required className="input" /></div>
+                <div><label className="label" htmlFor="wt">Tipo</label><select id="wt" name="type" className="input" defaultValue="AIRBNB">{Object.entries(WORKSPACE_TYPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                <div><label className="label" htmlFor="wa">Administrador inicial</label><select id="wa" name="adminUserId" className="input" defaultValue={me}>{users.filter((u) => !u.username && u.active).map((u) => <option key={u.id} value={u.id}>{u.name ? `${u.name} · ` : ""}{u.email}</option>)}</select></div>
+                <p className="text-sm text-muted">Se crea con las categorías y la cuenta de efectivo por defecto. El administrador inicial es una persona que ingresa con Google.</p>
+              </div>
+            </ActionForm>
+          </FormDialog>
+        </div>
         <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full">
             <thead><tr><th className="th">EMPRESA</th><th className="th">TIPO</th><th className="th text-right">MIEMBROS</th><th className="th text-right">MOVIMIENTOS</th><th className="th">CREADA</th><th className="th">ESTADO</th><th className="th" /></tr></thead>
@@ -35,67 +49,61 @@ export default async function AdminHome() {
                   <td className="td text-right">{w._count.transactions}</td>
                   <td className="td">{fmtDateTime(w.createdAt).split(",")[0]}</td>
                   <td className="td">{w.archived ? "Archivada" : "Activa"}</td>
-                  <td className="td text-right"><Link href={`/w/${w.id}`} className="text-sm underline">Abrir</Link></td>
+                  <td className="td"><div className="flex justify-end"><IconButton href={`/w/${w.id}`} icon="open" label="Abrir empresa" /></div></td>
                 </tr>
               ))}
               {workspaces.length === 0 && <tr><td className="td text-muted" colSpan={7}>Aún no hay empresas.</td></tr>}
             </tbody>
           </table>
         </div>
-        <ActionForm action={createPlatformWorkspaceAction} submitLabel="Crear empresa" className="space-y-4">
-          <fieldset className="space-y-3 rounded-xl border border-line p-4">
-            <legend className="px-2 font-medium">Nueva empresa</legend>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div><label className="label" htmlFor="wn">Nombre</label><input id="wn" name="name" required className="input" /></div>
-              <div><label className="label" htmlFor="wt">Tipo</label><select id="wt" name="type" className="input" defaultValue="AIRBNB">{Object.entries(WORKSPACE_TYPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-              <div><label className="label" htmlFor="wa">Administrador inicial</label><select id="wa" name="adminUserId" className="input" defaultValue={me}>{users.filter((u) => !u.username && u.active).map((u) => <option key={u.id} value={u.id}>{u.name ? `${u.name} · ` : ""}{u.email}</option>)}</select></div>
-            </div>
-            <p className="text-sm text-muted">Se crea con las categorías y la cuenta de efectivo por defecto. El administrador inicial es una persona que ingresa con Google.</p>
-          </fieldset>
-        </ActionForm>
       </section>
 
       <section className="card space-y-3">
-        <h2 className="text-lg font-medium">Usuarios</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-medium">Usuarios</h2>
+          <FormDialog label="Nuevo usuario" title="Nuevo usuario">
+            <ActionForm action={createPlatformUserAction} submitLabel="Crear usuario">
+              <p className="text-sm text-muted">Crea una cuenta con usuario y clave, de solo lectura, en la empresa elegida. Las personas con Google se invitan desde los ajustes de cada empresa.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div><label className="label" htmlFor="nu">Usuario</label><input id="nu" name="username" required autoCapitalize="none" spellCheck={false} className="input" placeholder="nombre.apellido" /></div>
+                <div><label className="label" htmlFor="nn">Nombre</label><input id="nn" name="name" required className="input" /></div>
+                <div><label className="label" htmlFor="nw">Empresa</label><select id="nw" name="workspaceId" required className="input">{workspaces.filter((w) => !w.archived).map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
+                <div><label className="label" htmlFor="np">Clave inicial</label><input id="np" name="password" required minLength={8} defaultValue={initial} autoComplete="off" spellCheck={false} className="input font-mono" /></div>
+              </div>
+            </ActionForm>
+          </FormDialog>
+        </div>
         <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full">
             <thead><tr><th className="th">USUARIO</th><th className="th">NOMBRE</th><th className="th">EMPRESA</th><th className="th">ESTADO</th><th className="th" /></tr></thead>
             <tbody className="divide-y divide-line">
               {users.map((u) => (
                 <tr key={u.id} className={u.active ? "" : "opacity-60"}>
-                  <td className="td">{u.username ?? (u.email.endsWith(CRED_DOMAIN) ? u.email : u.email)}</td>
+                  <td className="td">{u.username ?? u.email}</td>
                   <td className="td">{u.name ?? "—"}</td>
-                  <td className="td">
-                    <ul className="space-y-1.5">
-                      {u.memberships.map((m) => (
-                        <li key={m.id}>
-                          {u.username ? <span>{m.workspace.name} ({ROLE_LABEL[m.role]})</span> : (
-                            <ActionForm action={changePlatformMemberRoleAction} submitLabel="Cambiar" variant="ghost" className="flex flex-wrap items-center gap-2" resetOnSuccess={false}>
-                              <input type="hidden" name="memberId" value={m.id} />
-                              <span>{m.workspace.name}</span>
-                              <select name="role" defaultValue={m.role} aria-label={`Rol en ${m.workspace.name}`} className="input !w-auto !py-1">
-                                <option value="ADMIN">Administrador</option><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option>
-                              </select>
-                            </ActionForm>
-                          )}
-                        </li>
-                      ))}
-                      {u.memberships.length === 0 && <li>—</li>}
-                    </ul>
-                  </td>
+                  <td className="td">{u.memberships.length ? u.memberships.map((m) => `${m.workspace.name} (${ROLE_LABEL[m.role]})`).join(", ") : "—"}</td>
                   <td className="td">{u.active ? "Activo" : "Desactivado"}</td>
                   <td className="td">
-                    <div className="flex flex-wrap items-start justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
+                      {!u.username && u.memberships.length > 0 && (
+                        <IconAction action={changePlatformMemberRoleAction} icon="manage_accounts" label="Cambiar rol" submitLabel="Guardar rol">
+                          <p className="text-sm text-muted">{u.name ?? u.email}</p>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div><label className="label" htmlFor={`m${u.id}`}>Empresa</label><select id={`m${u.id}`} name="memberId" className="input">{u.memberships.map((m) => <option key={m.id} value={m.id}>{m.workspace.name} ({ROLE_LABEL[m.role]})</option>)}</select></div>
+                            <div><label className="label" htmlFor={`r${u.id}`}>Rol</label><select id={`r${u.id}`} name="role" className="input" defaultValue="OPERATOR"><option value="ADMIN">Administrador</option><option value="OPERATOR">Operador</option><option value="VIEWER">Solo lectura</option></select></div>
+                          </div>
+                        </IconAction>
+                      )}
                       {u.username && (
-                        <ActionForm action={resetPlatformPasswordAction} submitLabel="Cambiar clave" variant="ghost" className="flex flex-wrap items-center gap-2" resetOnSuccess>
-                          <input type="hidden" name="userId" value={u.id} />
-                          <input name="password" type="text" minLength={8} autoComplete="off" spellCheck={false} aria-label={`Nueva clave de ${u.username}`} placeholder="Nueva clave (vacío = generar)" className="input !w-52 !py-1.5 font-mono" />
-                        </ActionForm>
+                        <IconAction action={resetPlatformPasswordAction} icon="key" label="Cambiar clave" submitLabel="Cambiar clave" fields={{ userId: u.id }}>
+                          <p className="text-sm text-muted">{u.username}</p>
+                          <div><label className="label" htmlFor={`p${u.id}`}>Nueva clave</label><input id={`p${u.id}`} name="password" minLength={8} autoComplete="off" spellCheck={false} placeholder="Déjala vacía para generar una" className="input font-mono" /></div>
+                        </IconAction>
                       )}
                       {u.id !== me && (
-                        <ActionForm action={setUserActiveAction} submitLabel={u.active ? "Desactivar" : "Activar"} variant="ghost" className="inline-flex" resetOnSuccess={false}>
-                          <input type="hidden" name="userId" value={u.id} /><input type="hidden" name="active" value={u.active ? "false" : "true"} />
-                        </ActionForm>
+                        <IconAction action={setUserActiveAction} icon={u.active ? "person_off" : "person"} label={u.active ? "Desactivar cuenta" : "Activar cuenta"} tone={u.active ? "danger" : "default"}
+                          confirm={u.active ? `¿Desactivar la cuenta de ${u.username ?? u.email}? No podrá ingresar hasta que la actives de nuevo.` : `¿Activar la cuenta de ${u.username ?? u.email}?`}
+                          fields={{ userId: u.id, active: u.active ? "false" : "true" }} />
                       )}
                     </div>
                   </td>
@@ -104,19 +112,6 @@ export default async function AdminHome() {
             </tbody>
           </table>
         </div>
-
-        <ActionForm action={createPlatformUserAction} submitLabel="Crear usuario" className="space-y-4">
-          <fieldset className="space-y-3 rounded-xl border border-line p-4">
-            <legend className="px-2 font-medium">Nuevo usuario</legend>
-            <p className="text-sm text-muted">Crea una cuenta con usuario y clave, de solo lectura, en la empresa elegida. Las personas con Google se invitan desde los ajustes de cada empresa.</p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div><label className="label" htmlFor="nu">Usuario</label><input id="nu" name="username" required autoCapitalize="none" spellCheck={false} className="input" placeholder="nombre.apellido" /></div>
-              <div><label className="label" htmlFor="nn">Nombre</label><input id="nn" name="name" required className="input" /></div>
-              <div><label className="label" htmlFor="nw">Empresa</label><select id="nw" name="workspaceId" required className="input">{workspaces.filter((w) => !w.archived).map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
-              <div><label className="label" htmlFor="np">Clave inicial</label><input id="np" name="password" required minLength={8} defaultValue={initial} autoComplete="off" spellCheck={false} className="input font-mono" /></div>
-            </div>
-          </fieldset>
-        </ActionForm>
       </section>
     </>
   );

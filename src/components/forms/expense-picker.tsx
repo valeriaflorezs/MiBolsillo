@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -53,7 +54,7 @@ export function ExpensePicker({ name, options, placeholder = "Asignar a gastosâ€
             {shown.map((o) => (
               <li key={o.id}>
                 <button type="button" role="option" aria-selected={sel.some((x) => x.id === o.id)} onClick={() => setSel((c) => (c.some((x) => x.id === o.id) ? c.filter((x) => x.id !== o.id) : [...c, o]))} className="w-full rounded-xl px-3 py-2 text-left hover:bg-canvas">
-                  <span className="flex items-center gap-2"><span aria-hidden className="w-4 text-brand-text">{sel.some((x) => x.id === o.id) ? "âœ“" : ""}</span><span className="min-w-0"><span className="block truncate text-sm font-medium">{o.label}</span><span className="block truncate text-xs text-muted">{o.detail}</span></span></span>
+                  <span className="flex items-center gap-2"><span aria-hidden className="w-4 text-brand-text">{sel.some((x) => x.id === o.id) ? <Icon name="check" size={16} /> : null}</span><span className="min-w-0"><span className="block truncate text-sm font-medium">{o.label}</span><span className="block truncate text-xs text-muted">{o.detail}</span></span></span>
                 </button>
               </li>
             ))}
