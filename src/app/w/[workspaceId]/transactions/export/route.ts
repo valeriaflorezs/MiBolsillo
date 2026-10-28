@@ -26,7 +26,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
   const { rows } = await searchTransactions({
     workspaceId, role: ctx.role, userId: ctx.userId, start, end, status,
     type: t === "INCOME" || t === "EXPENSE" || t === "TRANSFER" ? t : undefined,
-    q: sp.get("q") || undefined, categoryId: sp.get("cat") || undefined, accountId: sp.get("acc") || undefined, page: 1, pageSize: 5000,
+    q: sp.get("q") || undefined, categoryId: sp.get("cat") || undefined, accountId: sp.get("acc") || undefined, propertyId: sp.get("prop") || undefined, page: 1, pageSize: 5000,
   });
   const lines = [["Fecha", "Tipo", "Estado", "Monto", "Cantidad", "Proveedor", "Categoría", "Cuenta", "Nota"].map(cell).join(",")];
   for (const r of rows) lines.push([r.date.toISOString().slice(0, 10), r.type, r.status, r.amount, r.quantity ?? "", r.vendor ?? "", r.category?.name ?? "", r.account, r.description ?? ""].map(cell).join(","));

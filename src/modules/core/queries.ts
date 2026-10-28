@@ -16,7 +16,7 @@ export async function accountBalances(workspaceId: string, includeArchived = fal
 
 export type TxFilter = {
   workspaceId: string; role: Role; userId: string; start: Date; end: Date;
-  status?: TransactionStatus; q?: string; categoryId?: string; accountId?: string; type?: TransactionType;
+  status?: TransactionStatus; q?: string; categoryId?: string; accountId?: string; propertyId?: string; type?: TransactionType;
   page?: number; pageSize?: number; exclude?: string[];
 };
 
@@ -24,6 +24,7 @@ const txInclude = {
   category: { select: { name: true, emoji: true } },
   account: { select: { name: true } },
   attachments: { select: { id: true }, take: 1 },
+  property: { select: { name: true } },
 } satisfies Prisma.TransactionInclude;
 
 function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
@@ -33,6 +34,7 @@ function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
     ...(f.status ? { status: f.status } : {}),
     ...(f.type ? { type: f.type } : {}),
     ...(f.categoryId ? { categoryId: f.categoryId } : {}),
+    ...(f.propertyId ? { propertyId: f.propertyId } : {}),
     ...(f.accountId ? { OR: [{ accountId: f.accountId }, { transferAccountId: f.accountId }] } : {}),
     AND: [
       ...(f.q ? [{ OR: [{ vendor: { contains: f.q, mode: "insensitive" as const } }, { description: { contains: f.q, mode: "insensitive" as const } }] }] : []),
@@ -45,7 +47,7 @@ function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
 
 const toRow = (t: Prisma.TransactionGetPayload<{ include: typeof txInclude }>) => ({
   id: t.id, type: t.type, status: t.status, amount: num(t.amount), quantity: t.quantity == null ? null : num(t.quantity), date: t.date, vendor: t.vendor, description: t.description,
-  category: t.category, account: t.account.name, hasReceipt: t.attachments.length > 0, createdById: t.createdById, createdAt: t.createdAt,
+  category: t.category, property: t.property?.name ?? null, account: t.account.name, hasReceipt: t.attachments.length > 0, createdById: t.createdById, createdAt: t.createdAt,
 });
 export type TxRow = ReturnType<typeof toRow>;
 

@@ -13,20 +13,21 @@ export { categoryFilter, parseExclusion, type CategoryExclusion } from "@/lib/ca
 const OPERATING_INCOME = { OR: [{ categoryId: null }, { category: { pygLine: "REVENUE" as const } }] };
 
 /** Resumen de un rango: ingresos, gastos por línea de PyG, flujo de caja y estado de resultados. */
-export async function periodSummary(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion) {
+export async function periodSummary(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion, propertyId?: string) {
+  const prop = propertyId ? { propertyId } : {};
   const [incomeTx, incomeOperating, expenseTx] = await Promise.all([
     // Todo el dinero que entró (para el flujo de caja)…
     prisma.transaction.aggregate({
-      where: { workspaceId, type: "INCOME", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...categoryFilter(exclude) },
+      where: { workspaceId, type: "INCOME", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...prop, ...categoryFilter(exclude) },
       _sum: { amount: true },
     }),
     // …y solo los ingresos de la operación (para el PyG): un desembolso de crédito o un ajuste de saldo no son ventas.
     prisma.transaction.aggregate({
-      where: { workspaceId, type: "INCOME", date: { gte: start, lt: end }, ...(status ? { status } : {}), AND: [categoryFilter(exclude), OPERATING_INCOME] },
+      where: { workspaceId, type: "INCOME", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...prop, AND: [categoryFilter(exclude), OPERATING_INCOME] },
       _sum: { amount: true },
     }),
     prisma.transaction.findMany({
-      where: { workspaceId, type: "EXPENSE", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...categoryFilter(exclude) },
+      where: { workspaceId, type: "EXPENSE", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...prop, ...categoryFilter(exclude) },
       select: { amount: true, categoryId: true, category: { select: { pygLine: true } } },
     }),
   ]);

@@ -11,6 +11,8 @@ type Props = {
   isAdmin: boolean;
   accounts: Opt[];
   categories: Opt[];
+  /** Propiedades del negocio: el gasto o ingreso puede ser de una en particular o general. */
+  properties?: Opt[];
   /** Ítems de CAPEX pendientes de compra: al elegir uno, el gasto lo marca comprado (no se digita dos veces). */
   capexItems?: { id: string; name: string; total: number }[];
   defaultType?: "EXPENSE" | "INCOME" | "TRANSFER";
@@ -21,7 +23,7 @@ type Props = {
 const OK = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, capexItems = [], defaultType = "EXPENSE", receipts, action }: Props) {
+export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties = [], capexItems = [], defaultType = "EXPENSE", receipts, action }: Props) {
   const [attachmentId, setAttachmentId] = useState("");
   const [file, setFile] = useState("");
   const [ocr, setOcr] = useState<{ msg: string; kind: "info" | "error" | "ok" } | null>(null);
@@ -128,6 +130,15 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, capexI
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
+        )}
+        {!isTransfer && properties.length > 0 && (
+          <div>
+            <label className="label" htmlFor="propertyId">Propiedad</label>
+            <select id="propertyId" name="propertyId" className="input" defaultValue={properties.length === 1 ? properties[0].id : ""}>
+              <option value="">General (sin propiedad)</option>
+              {properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
         )}
         {isExpense && capexItems.length > 0 && (
           <div className="sm:col-span-2">
