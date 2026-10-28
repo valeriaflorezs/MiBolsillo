@@ -16,7 +16,7 @@ export default async function EditTransaction({ params }: { params: Promise<{ wo
   if (!tx) notFound();
   if (!canMutateTx(ctx.role, { createdById: tx.createdById, type: tx.type, createdAt: tx.createdAt }, ctx.userId)) redirect(`/w/${workspaceId}/transactions?sel=${txId}`);
   const admin = can(ctx.role, "dashboard:full");
-  const [accounts, categories, properties] = await Promise.all([accountOptions(workspaceId), categoryOptions(workspaceId), prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true } })]);
+  const [accounts, categories] = await Promise.all([accountOptions(workspaceId), categoryOptions(workspaceId)]);
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Editar movimiento</h1>
@@ -35,7 +35,6 @@ export default async function EditTransaction({ params }: { params: Promise<{ wo
             <div><label className="label" htmlFor="categoryId">Categoría</label><select id="categoryId" name="categoryId" defaultValue={tx.categoryId ?? ""} className="input"><option value="">Sin categoría</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}</select></div>
             <div><label className="label" htmlFor="accountId">Cuenta</label><select id="accountId" name="accountId" defaultValue={tx.accountId} className="input">{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
             {admin && <div><label className="label" htmlFor="transferAccountId">Cuenta destino</label><select id="transferAccountId" name="transferAccountId" defaultValue={tx.transferAccountId ?? ""} className="input"><option value="">—</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>}
-            {properties.length > 0 && <div><label className="label" htmlFor="propertyId">Propiedad</label><select id="propertyId" name="propertyId" defaultValue={tx.propertyId ?? ""} className="input"><option value="">—</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>}
           </div>
           <div><label className="label" htmlFor="description">Nota</label><input id="description" name="description" maxLength={300} defaultValue={tx.description ?? ""} className="input" /></div>
         </ActionForm>
