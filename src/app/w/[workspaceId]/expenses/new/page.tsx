@@ -1,5 +1,6 @@
 import { ExpenseForm } from "@/components/forms/expense-form";
 import { prisma } from "@/lib/db";
+import { num } from "@/lib/format";
 import { receiptCapabilities } from "@/lib/ocr/config";
 import { pageCtx } from "@/lib/auth/permissions";
 import { createTransactionAction } from "@/modules/core/finance-actions";
@@ -12,16 +13,18 @@ export default async function NewExpense({ params, searchParams }: { params: Pro
   const { type } = await searchParams;
   const ctx = await pageCtx(workspaceId, "transaction:create");
   const isAdmin = ctx.role === "ADMIN";
-  const [accounts, categories, properties] = await Promise.all([
+  const [accounts, categories, properties, pendingCapex] = await Promise.all([
     accountOptions(workspaceId),
     categoryOptions(workspaceId),
     prisma.property.findMany({ where: { workspaceId, active: true }, select: { id: true, name: true } }),
+    prisma.capexItem.findMany({ where: { workspaceId, status: "PENDING" }, orderBy: [{ sortOrder: "asc" }, { itemDescription: "asc" }] }),
   ]);
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Registrar movimiento</h1>
       <section className="card max-w-3xl">
-        <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} receipts={receiptCapabilities()} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts} properties={properties} action={createTransactionAction}
+        <ExpenseForm workspaceId={workspaceId} isAdmin={isAdmin} receipts={receiptCapabilities()} defaultType={isAdmin && (type === "INCOME" || type === "TRANSFER") ? type : "EXPENSE"} accounts={accounts} properties={properties}
+          capexItems={pendingCapex.map((c) => ({ id: c.id, name: `${c.itemDescription} (x${c.quantity})`, total: Math.round(c.quantity * num(c.budgetedUnitPrice) * 100) / 100 }))} action={createTransactionAction}
           categories={categories.filter((c) => isAdmin || c.expenseKind !== null)} />
       </section>
     </>

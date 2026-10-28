@@ -9,6 +9,7 @@ import { cop, num } from "@/lib/format";
 import { addCapexAction, updateCapexAction } from "@/modules/airbnb/actions";
 import { CsvImport } from "@/components/forms/csv-import";
 import { importCapexAction } from "@/modules/airbnb/import-actions";
+import { accountOptions } from "@/modules/core/queries";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
 
@@ -20,9 +21,10 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
   const ctx = await pageCtx(workspaceId, "data:read");
   const canBuy = can(ctx.role, "capex:update");
   const admin = can(ctx.role, "airbnb:manage");
-  const [items, properties] = await Promise.all([
+  const [items, properties, accounts] = await Promise.all([
     prisma.capexItem.findMany({ where: { workspaceId }, include: { property: { select: { name: true } } }, orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { capexCategory: "asc" }] }),
     prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true } }),
+    canBuy ? accountOptions(workspaceId) : Promise.resolve([]),
   ]);
   const rows = items.map((i) => ({ ...i, v: capexVariance({ quantity: i.quantity, budgetedUnitPrice: num(i.budgetedUnitPrice), actualUnitPrice: i.actualUnitPrice == null ? null : num(i.actualUnitPrice) }) }));
   const bought = rows.filter((r) => r.status === "PURCHASED");
@@ -57,7 +59,8 @@ export default async function Capex({ params }: { params: Promise<{ workspaceId:
                     {!canBuy ? <span className="text-sm text-muted">{r.status === "PURCHASED" ? "Comprado ✓" : "Pendiente"}</span> : <ActionForm action={updateCapexAction} submitLabel={r.status === "PURCHASED" ? "Deshacer" : "Comprado ✓"} variant={r.status === "PURCHASED" ? "ghost" : "primary"} className="flex items-center gap-2" resetOnSuccess={false}>
                       <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="itemId" value={r.id} />
                       <input type="hidden" name="intent" value={r.status === "PURCHASED" ? "undo" : "buy"} />
-                      {r.status === "PENDING" && <><label className="sr-only" htmlFor={`p${r.id}`}>Precio unitario real</label><input id={`p${r.id}`} name="actualUnitPrice" type="number" max="1000000000000" min="0" step="0.01" placeholder="Precio real" className="input !w-28" /></>}
+                      {r.status === "PENDING" && <><label className="sr-only" htmlFor={`p${r.id}`}>Precio unitario real</label><input id={`p${r.id}`} name="actualUnitPrice" type="number" max="1000000000000" min="0" step="0.01" placeholder="Precio real" className="input !w-28" />
+                      {accounts.length > 0 && <><label className="sr-only" htmlFor={`a${r.id}`}>Cuenta con la que se pagó</label><select id={`a${r.id}`} name="accountId" className="input !w-36" defaultValue="" title="Si eliges una cuenta, también se registra el gasto en Movimientos"><option value="">Sin registrar gasto</option>{accounts.map((a) => <option key={a.id} value={a.id}>Pagado con {a.name}</option>)}</select></>}</>}
                     </ActionForm>}
                   </td>
                 </tr>

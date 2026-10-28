@@ -11,6 +11,8 @@ type Props = {
   accounts: Opt[];
   categories: Opt[];
   properties: Opt[];
+  /** Ítems de CAPEX pendientes de compra: al elegir uno, el gasto lo marca comprado (no se digita dos veces). */
+  capexItems?: { id: string; name: string; total: number }[];
   defaultType?: "EXPENSE" | "INCOME" | "TRANSFER";
   receipts: { upload: boolean; ocr: boolean };
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
@@ -19,18 +21,18 @@ type Props = {
 const OK = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties, defaultType = "EXPENSE", receipts, action }: Props) {
+export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, properties, capexItems = [], defaultType = "EXPENSE", receipts, action }: Props) {
   const [attachmentId, setAttachmentId] = useState("");
   const [file, setFile] = useState("");
   const [ocr, setOcr] = useState<{ msg: string; kind: "info" | "error" | "ok" } | null>(null);
   const [drag, setDrag] = useState(false);
-  const [vals, setVals] = useState({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "" });
+  const [vals, setVals] = useState({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "", capexItemId: "" });
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
     const r = await action(prev, fd);
     if (r?.ok) { // limpia el formulario para el siguiente gasto
       setAttachmentId(""); setFile(""); setOcr(null);
-      setVals({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "" });
+      setVals({ vendor: "", date: today(), amount: "", categoryId: "", quantity: "", capexItemId: "" });
       formRef.current?.reset();
     }
     return r;
@@ -57,6 +59,7 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
       amount: d.total != null ? String(d.total) : v.amount,
       categoryId: d.categoryId ?? v.categoryId,
       quantity: v.quantity,
+      capexItemId: v.capexItemId,
     }));
     setOcr({ msg: "Datos sugeridos: revísalos antes de guardar.", kind: "ok" });
   }
@@ -118,6 +121,17 @@ export function ExpenseForm({ workspaceId, isAdmin, accounts, categories, proper
             {categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
           </select>
         </div>
+        {capexItems.length > 0 && (
+          <div className="sm:col-span-2">
+            <label className="label" htmlFor="capexItemId">¿Es la compra de un ítem de CAPEX? <span className="font-normal text-muted">(opcional)</span></label>
+            <select id="capexItemId" name="capexItemId" className="input" value={vals.capexItemId}
+              onChange={(e) => { const it = capexItems.find((c) => c.id === e.target.value); setVals((v) => ({ ...v, capexItemId: e.target.value, amount: it && !v.amount ? String(it.total) : v.amount })); }}>
+              <option value="">No, es un gasto normal</option>
+              {capexItems.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <p className="mt-1 text-xs text-muted">Se marca como comprado en CAPEX con este monto y se clasifica como CAPEX: no tienes que registrarlo dos veces.</p>
+          </div>
+        )}
         <div>
           <label className="label" htmlFor="accountId">Cuenta</label>
           <select id="accountId" name="accountId" required className="input">
