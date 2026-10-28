@@ -118,9 +118,10 @@ export default async function Capex({ params, searchParams }: { params: Promise<
                       <td className="td text-right">{r.v.actual == null ? "—" : cop(r.v.actual)}</td>
                       <td className={`td text-right font-medium ${r.v.variance == null ? "" : r.v.variance < 0 ? "text-negative" : "text-positive"}`}>{r.v.variance == null ? "—" : cop(r.v.variance)}</td>
                       <td className="td">
-                        <details className="group">
-                          <summary className="cursor-pointer text-sm text-brand-text underline-offset-2 hover:underline">{r.transactions.length} {r.transactions.length === 1 ? "gasto" : "gastos"}{canBuy ? " · gestionar" : ""}</summary>
-                          <div className="mt-2 min-w-72 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{r.transactions.length} {r.transactions.length === 1 ? "gasto" : "gastos"}</span>
+                          <FormDialog label={canBuy ? "Gestionar gastos" : "Ver gastos"} icon={canBuy ? "edit" : "receipt"} tone="default" title={`Gastos de ${r.itemDescription}`}>
+                            <div className="space-y-3">
                             <ul className="space-y-1 text-sm">
                               {r.transactions.map((t) => (
                                 <li key={t.id} className="flex items-center gap-3">
@@ -139,8 +140,9 @@ export default async function Capex({ params, searchParams }: { params: Promise<
                                 <IconAction action={updateCapexAction} icon="undo" label="Deshacer compra" tone="danger" confirm="¿Desvincular todos los gastos y devolver el ítem a «Por comprar»? Los movimientos no se borran." fields={{ workspaceId, itemId: r.id, intent: "undo" }} />
                               </div>
                             )}
-                          </div>
-                        </details>
+                            </div>
+                          </FormDialog>
+                        </div>
                       </td>
                     </>
                   ) : (

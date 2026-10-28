@@ -108,26 +108,26 @@ export async function CardsPanel({ workspaceId, accounts, canEdit }: { workspace
               </div>
             </div>
           )}
-          {canEdit && !c.archived && (
-            <details className="card">
-              <summary className="cursor-pointer font-medium">Conciliar con el extracto del banco</summary>
-              <ActionForm action={reconcileAccountAction} submitLabel="Ajustar la deuda" className="mt-4 space-y-3">
+          {canEdit && (
+            <div className="flex items-center gap-2">
+              {!c.archived && (
+                <FormDialog label="Conciliar con el extracto del banco" icon="calculate" tone="default" title="Conciliar con el extracto del banco">
+              <ActionForm action={reconcileAccountAction} submitLabel="Ajustar la deuda" className="space-y-3">
                 <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="accountId" value={c.id} />
                 <p className="text-sm text-muted">La app calcula la deuda como deuda inicial + compras + cargos − pagos. Si el banco dice otra cosa, escribe aquí la deuda real y se registra la diferencia como un ajuste (fuera del PyG).</p>
                 <div className="max-w-xs"><label className="label" htmlFor={`rd${c.id}`}>Deuda real según el banco</label><input id={`rd${c.id}`} name="realDebt" type="number" min="0" max="1000000000000" step="0.01" required className="input" /></div>
               </ActionForm>
-            </details>
-          )}
-          {canEdit && (
-            <details className="card">
-              <summary className="cursor-pointer font-medium">Editar {c.name}</summary>
-              <ActionForm action={updateCardAction} submitLabel="Guardar cambios" resetOnSuccess={false} className="mt-4 space-y-4">
+                </FormDialog>
+              )}
+              <FormDialog label={`Editar ${c.name}`} icon="edit" tone="default" title={`Editar ${c.name}`} wide>
+              <ActionForm action={updateCardAction} submitLabel="Guardar cambios" resetOnSuccess={false} className="space-y-4">
                 <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="cardId" value={c.id} />
                 <CardFields card={c} debt={c.openingBalance ? -num(c.openingBalance) : 0} idp={`e${c.id}`} />
                 <p className="text-xs text-muted">«Deuda actual» es el saldo con el que empezaste a llevar la tarjeta aquí; las compras y pagos se suman encima.</p>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="archived" defaultChecked={c.archived} />Archivar (se oculta de los formularios)</label>
               </ActionForm>
-            </details>
+              </FormDialog>
+            </div>
           )}
         </section>
       ))}

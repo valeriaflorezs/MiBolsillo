@@ -46,7 +46,7 @@ export function ExpensePicker({ name, options, placeholder = "Asignar a gastosâ€
         {sel.length === 0 ? <span className="text-muted">{placeholder}</span> : sel.length === 1 ? sel[0].label : `${sel.length} gastos elegidos`}
       </button>
       {open && pos && createPortal(
-        <div ref={pop} style={{ position: "fixed", top: pos.top, left: pos.left }} className="z-[100] w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-line bg-surface p-2 shadow-lg">
+        <div ref={pop} style={{ position: "fixed", top: pos.top, left: pos.left }} className="z-[250] w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-line bg-surface p-2 shadow-lg">
           <p className="mb-1 px-1 text-xs text-muted">Puedes elegir varios.</p>
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por descripciÃ³n, tienda o monto" aria-label="Buscar gasto" className="input mb-2" />
           <ul className="max-h-60 overflow-auto" role="listbox">

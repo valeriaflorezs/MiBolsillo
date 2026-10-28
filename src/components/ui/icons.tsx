@@ -5,7 +5,7 @@ import {
   MdDownload, MdEdit, MdFilterAlt, MdFolder, MdHome, MdHotel, MdInventory2, MdLaptop, MdLightbulb, MdLocalCarWash, MdLocalGasStation, MdLocalLaundryService, MdLocalParking,
   MdManageAccounts, MdMedicalServices, MdMovie, MdOpenInNew, MdPayments, MdPercent, MdPerson, MdPersonOff, MdReceiptLong, MdRestaurant, MdSavings, MdSchool, MdShield,
   MdShoppingBag, MdShoppingCart, MdStore, MdSwapHoriz, MdTrendingDown, MdTrendingUp, MdUndo, MdUpload, MdVpnKey, MdWavingHand, MdWifi, MdWork, MdFlight, MdPets, MdFitnessCenter,
-  MdChildCare, MdSell, MdPause, MdPlayArrow, MdLinkOff, MdPersonAdd, MdRestartAlt, MdSettings, MdSearch,
+  MdChildCare, MdSell, MdPause, MdPlayArrow, MdCalculate, MdTableChart, MdInfoOutline, MdLinkOff, MdPersonAdd, MdRestartAlt, MdSettings, MdSearch,
 } from "react-icons/md";
 
 /** Iconos de interfaz (Material Icons de Google). Se piden por nombre para poder usarlos también desde componentes de servidor. */
@@ -13,7 +13,7 @@ export const UI_ICONS = {
   add: MdAdd, edit: MdEdit, delete: MdDelete, key: MdVpnKey, person_off: MdPersonOff, person: MdPerson, person_add: MdPersonAdd, manage_accounts: MdManageAccounts, swap: MdSwapHoriz,
   check: MdCheck, close: MdClose, receipt: MdReceiptLong, attach: MdAttachFile, bank: MdAccountBalance, wallet: MdAccountBalanceWallet, card: MdCreditCard, balance: MdBalance,
   celebration: MdCelebration, trending_up: MdTrendingUp, trending_down: MdTrendingDown, wave: MdWavingHand, open: MdOpenInNew, upload: MdUpload, download: MdDownload, copy: MdContentCopy,
-  pause: MdPause, play: MdPlayArrow, undo: MdUndo, unlink: MdLinkOff, restart: MdRestartAlt, settings: MdSettings, search: MdSearch, filter: MdFilterAlt, arrow_right: MdArrowForward, arrow_up: MdArrowUpward, arrow_down: MdArrowDownward,
+  calculate: MdCalculate, table: MdTableChart, info: MdInfoOutline, pause: MdPause, play: MdPlayArrow, undo: MdUndo, unlink: MdLinkOff, restart: MdRestartAlt, settings: MdSettings, search: MdSearch, filter: MdFilterAlt, arrow_right: MdArrowForward, arrow_up: MdArrowUpward, arrow_down: MdArrowDownward,
 } as const satisfies Record<string, IconType>;
 export type UiIcon = keyof typeof UI_ICONS;
 

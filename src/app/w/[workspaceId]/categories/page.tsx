@@ -43,10 +43,10 @@ export default async function Categories({ params }: { params: Promise<{ workspa
         <ul className="divide-y divide-line">
           {cats.map((c) => (
             <li key={c.id} className={`p-3 ${c.archived ? "opacity-60" : ""}`}>
-              <details>
-                <summary className="flex cursor-pointer items-center justify-between gap-3"><span className="flex items-center gap-3"><span aria-hidden className="grid size-9 place-items-center rounded-full bg-canvas/70"><CategoryIcon value={c.emoji} /></span><span className="font-medium">{c.name}</span></span>
-                  <span className="flex items-center gap-2"><Chip tone="brand">{c.expenseKind ? KIND[c.expenseKind] : "Ingreso"}</Chip>{c.archived && <Chip>Archivada</Chip>}<span className="text-xs text-muted">{c._count.transactions} mov.</span></span></summary>
-                <ActionForm action={updateCategoryAction} submitLabel="Guardar" resetOnSuccess={false} className="mt-4 space-y-3">
+              <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-3"><span aria-hidden className="grid size-9 place-items-center rounded-full bg-canvas/70"><CategoryIcon value={c.emoji} /></span><span className="font-medium">{c.name}</span></span>
+                  <span className="flex items-center gap-2"><Chip tone="brand">{c.expenseKind ? KIND[c.expenseKind] : "Ingreso"}</Chip>{c.archived && <Chip>Archivada</Chip>}<span className="text-xs text-muted">{c._count.transactions} mov.</span></span>
+                <FormDialog label="Editar categoría" icon="edit" tone="default" title={`Editar ${c.name}`} wide>
+                <ActionForm action={updateCategoryAction} submitLabel="Guardar" resetOnSuccess={false} className="space-y-3">
                   <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="categoryId" value={c.id} />
                   <div className="grid gap-3 sm:grid-cols-4">
                     <div><label className="label">Nombre</label><input name="name" defaultValue={c.name} required className="input" /></div>
@@ -55,7 +55,8 @@ export default async function Categories({ params }: { params: Promise<{ workspa
                   <div><span className="label">Icono</span><IconPicker defaultValue={c.emoji} /></div>
                   <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="archived" defaultChecked={c.archived} />Archivada (no aparece al registrar movimientos)</label>
                 </ActionForm>
-              </details>
+                </FormDialog>
+              </div>
             </li>
           ))}
         </ul>

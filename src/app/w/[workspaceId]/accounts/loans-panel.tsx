@@ -97,15 +97,14 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
       <section className="card space-y-4" aria-label="Plan de pagos">
         <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="flex items-center gap-2 font-medium">Plan de pagos <InfoTip {...EXPLAIN.amortization} /></h2><p className="text-sm text-muted">Cuota mensual {cop(s.cuota)}{loan.monthlyPayment ? " (informada por el banco)" : " (calculada)"}{s.fees > 0 && <> + seguro/manejo {cop(s.fees)} = <strong>{cop(s.cuotaTotal)}</strong></>}</p></div>
         <AmortizationChart rows={s.plan} paidCount={Math.min(s.installmentsPaid, s.plan.length)} />
-        <details>
-          <summary className="cursor-pointer text-sm font-medium">Ver tabla de amortización</summary>
+        <div className="flex justify-end"><FormDialog label="Ver tabla de amortización" icon="table" tone="default" title="Tabla de amortización" wide>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full"><thead><tr><th className="th">#</th><th className="th">Fecha</th><th className="th text-right">Cuota</th><th className="th text-right">Intereses</th><th className="th text-right">Capital</th>{s.fees > 0 && <th className="th text-right">Seguro/manejo</th>}<th className="th text-right">Saldo</th></tr></thead>
               <tbody className="divide-y divide-line">{s.plan.map((r, i) => (
                 <tr key={r.n} className={i < s.installmentsPaid ? "bg-canvas/60" : ""}><td className="td">{r.n}</td><td className="td">{fmtDate(r.date)} {r.date.getUTCFullYear()}</td><td className="td text-right">{cop(r.payment + r.fees)}</td><td className="td text-right">{cop(r.interest)}</td><td className="td text-right">{cop(r.principal)}</td>{s.fees > 0 && <td className="td text-right">{cop(r.fees)}</td>}<td className="td text-right">{cop(r.balance)}</td></tr>
               ))}</tbody></table>
           </div>
-        </details>
+        </FormDialog></div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -170,13 +169,12 @@ export async function LoansPanel({ workspaceId, loanId, canEdit }: { workspaceId
 
       {canEdit && (
         <section className="card space-y-4">
-          <details>
-            <summary className="cursor-pointer font-medium">Editar los datos del crédito</summary>
-            <ActionForm action={updateLoanAction} submitLabel="Guardar cambios" className="mt-4 space-y-4" resetOnSuccess={false}>
+          <div className="flex items-center gap-2">
+            <FormDialog label="Editar los datos del crédito" icon="edit" tone="default" title="Editar los datos del crédito" wide>
+            <ActionForm action={updateLoanAction} submitLabel="Guardar cambios" className="space-y-4" resetOnSuccess={false}>
               <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="loanId" value={loan.id} /><LoanFields loan={loan} />
             </ActionForm>
-          </details>
-          <div className="flex items-center gap-2">
+            </FormDialog>
             <FormDialog label="Agregar otro crédito" title="Agregar otro crédito" wide><ActionForm action={createLoanAction} submitLabel="Crear crédito"><input type="hidden" name="workspaceId" value={workspaceId} /><LoanFields /></ActionForm></FormDialog>
             <IconAction action={deleteLoanAction} icon="delete" label="Eliminar este crédito" tone="danger" confirm="¿Eliminar el crédito con sus pagos y destinos? No se puede deshacer." fields={{ workspaceId, loanId: loan.id }} />
           </div>

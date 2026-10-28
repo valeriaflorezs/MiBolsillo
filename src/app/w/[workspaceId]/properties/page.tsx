@@ -27,14 +27,14 @@ export default async function Properties({ params }: { params: Promise<{ workspa
           <section key={p.id} className={p.active ? "card space-y-3" : "card space-y-3 opacity-60"}>
             <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-medium">{p.name}</h2><p className="text-sm text-muted">{p.address ?? "Sin dirección"}</p></div>{!p.active && <Chip>Inactiva</Chip>}</div>
             <p className="text-sm text-muted">{p._count.capexItems} ítems CAPEX · {p._count.fixedExpenses} gastos fijos</p>
-            <details><summary className="cursor-pointer text-sm underline">Editar</summary>
-              <ActionForm action={updatePropertyAction} submitLabel="Guardar" resetOnSuccess={false} className="mt-3 space-y-3">
+            <div className="flex justify-end"><FormDialog label="Editar propiedad" icon="edit" tone="default" title={`Editar ${p.name}`}>
+              <ActionForm action={updatePropertyAction} submitLabel="Guardar" resetOnSuccess={false} className="space-y-3">
                 <input type="hidden" name="workspaceId" value={workspaceId} /><input type="hidden" name="propertyId" value={p.id} />
                 <div><label className="label" htmlFor={`pn${p.id}`}>Nombre</label><input id={`pn${p.id}`} name="name" defaultValue={p.name} required className="input" /></div>
                 <div><label className="label" htmlFor={`pa${p.id}`}>Dirección</label><input id={`pa${p.id}`} name="address" defaultValue={p.address ?? ""} className="input" /></div>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={p.active} />Activa (cuenta para la ocupación)</label>
               </ActionForm>
-            </details>
+            </FormDialog></div>
           </section>
         ))}
       </div>
