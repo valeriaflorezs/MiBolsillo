@@ -15,7 +15,7 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { EXPLAIN } from "@/lib/explain";
 
 export const metadata = { title: "Movimientos" };
-type SP = { month?: string; status?: string; q?: string; cat?: string; acc?: string; type?: string; page?: string; sel?: string };
+type SP = { month?: string; status?: string; q?: string; cat?: string; acc?: string; type?: string; page?: string; sel?: string; vista?: string };
 const TYPE = { INCOME: "Ingreso", EXPENSE: "Gasto", TRANSFER: "Transferencia" } as const;
 
 export default async function Transactions({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<SP> }) {
@@ -25,11 +25,12 @@ export default async function Transactions({ params, searchParams }: { params: P
   const admin = can(ctx.role, "finance:read");
   const canWrite = can(ctx.role, "transaction:create");
   const { key, start, end } = monthRange(sp.month);
+  const table = sp.vista === "tabla";
   const status = sp.status === "PENDING" ? "PENDING" : sp.status === "PAID" ? "PAID" : undefined;
   const type = sp.type === "INCOME" || sp.type === "EXPENSE" || sp.type === "TRANSFER" ? sp.type : undefined;
-  const filter = { workspaceId, role: ctx.role, userId: ctx.userId, start, end, status, type, q: sp.q?.trim() || undefined, categoryId: sp.cat || undefined, accountId: sp.acc || undefined, page: Number(sp.page) || 1 } as const;
+  const filter = { workspaceId, role: ctx.role, userId: ctx.userId, start, end, status, type, q: sp.q?.trim() || undefined, categoryId: sp.cat || undefined, accountId: sp.acc || undefined, page: Number(sp.page) || 1, pageSize: table ? 50 : 20 } as const;
   const [data, cats, accs] = await Promise.all([searchTransactions(filter), categoryOptions(workspaceId), accountOptions(workspaceId)]);
-  const selId = sp.sel ?? data.rows[0]?.id; // en escritorio se muestra el primer movimiento por defecto
+  const selId = sp.sel ?? (table ? undefined : data.rows[0]?.id); // en escritorio se muestra el primer movimiento por defecto
   const selected = selId ? await getTransactionDetail(workspaceId, selId, ctx.role, ctx.userId) : null;
   const base = `/w/${workspaceId}/transactions`;
   const qs = (o: Partial<SP>) => { const p = new URLSearchParams(Object.entries({ ...sp, ...o }).filter(([, v]) => v) as [string, string][]); return `${base}?${p}`; };
@@ -48,6 +49,7 @@ export default async function Transactions({ params, searchParams }: { params: P
 
       <form className="card grid grid-cols-2 gap-3 lg:grid-cols-6" role="search" aria-label="Filtrar movimientos">
         <input type="hidden" name="month" value={key} />
+        {table && <input type="hidden" name="vista" value="tabla" />}
         <div className="col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Proveedor o nota" className="input" /></div>
         <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}</select></div>
         {admin && <div><label className="label" htmlFor="acc">Cuenta</label><select id="acc" name="acc" defaultValue={sp.acc ?? ""} className="input"><option value="">Todas</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>}
@@ -57,10 +59,45 @@ export default async function Transactions({ params, searchParams }: { params: P
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <MonthNav base={base} month={key} extra={Object.entries({ status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, type: sp.type }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("")} />
+        <MonthNav base={base} month={key} extra={Object.entries({ status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, type: sp.type, vista: sp.vista }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("")} />
         <p className="text-sm text-muted">{data.total} movimiento(s) <InfoTip {...EXPLAIN.txTotals} />{admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
       </div>
 
+      <div role="tablist" aria-label="Vista de movimientos" className="flex w-fit gap-1 rounded-pill border border-line p-1 text-sm">
+        <Link role="tab" aria-selected={!table} href={qs({ vista: "", sel: "", page: "" })} className={`rounded-pill px-4 py-1.5 ${!table ? "bg-brand on-brand" : "text-muted hover:text-ink"}`}>Lista</Link>
+        <Link role="tab" aria-selected={table} href={qs({ vista: "tabla", sel: "", page: "" })} className={`rounded-pill px-4 py-1.5 ${table ? "bg-brand on-brand" : "text-muted hover:text-ink"}`}>Tabla</Link>
+      </div>
+
+      {table ? (
+        <section className="card overflow-x-auto !p-2" aria-label="Tabla de movimientos">
+          {data.rows.length === 0 ? <p className="p-6 text-center text-muted">Sin movimientos con estos filtros.</p> : (
+            <table className="w-full">
+              <thead><tr><th className="th">Fecha</th><th className="th">Tipo</th><th className="th">Descripción</th><th className="th">Categoría</th><th className="th">Proveedor</th><th className="th">Cuenta</th><th className="th">Estado</th><th className="th text-right">Monto</th></tr></thead>
+              <tbody className="divide-y divide-line">
+                {data.rows.map((t) => (
+                  <tr key={t.id}>
+                    <td className="td whitespace-nowrap">{fmtDate(t.date)}</td>
+                    <td className="td">{TYPE[t.type]}</td>
+                    <td className="td"><Link href={qs({ vista: "", sel: t.id })} className="font-medium underline-offset-2 hover:underline">{t.description?.trim() || t.vendor || t.category?.name || TYPE[t.type]}</Link> {t.hasReceipt && <span aria-label="Con comprobante">📎</span>}{t.quantity != null && <span className="text-xs text-muted"> · {t.quantity} u</span>}</td>
+                    <td className="td">{t.category ? `${t.category.emoji ?? ""} ${t.category.name}` : "—"}</td>
+                    <td className="td">{t.vendor ?? "—"}</td>
+                    <td className="td">{t.account}</td>
+                    <td className="td">{t.status === "PAID" ? "Pagado" : <Chip tone="negative">Pendiente</Chip>}</td>
+                    <td className={`td whitespace-nowrap text-right font-medium ${t.type === "INCOME" ? "text-positive" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : "↔"} {cop(t.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {data.pages > 1 && (
+            <nav aria-label="Paginación" className="flex items-center justify-between px-3 py-3 text-sm">
+              {data.page > 1 ? <Link href={qs({ page: String(data.page - 1) })} className="underline">‹ Anterior</Link> : <span />}
+              <span className="text-muted">Página {data.page} de {data.pages}</span>
+              {data.page < data.pages ? <Link href={qs({ page: String(data.page + 1) })} className="underline">Siguiente ›</Link> : <span />}
+            </nav>
+          )}
+        </section>
+      ) : (
       <div className="grid gap-5 lg:grid-cols-[2fr_3fr]">
         <section className="panel space-y-2 !p-3 sm:!p-4" aria-label="Lista de movimientos">
           {data.rows.length === 0 && <p className="p-6 text-center text-white/70">Sin movimientos con estos filtros.</p>}
@@ -119,6 +156,7 @@ export default async function Transactions({ params, searchParams }: { params: P
           )}
         </FolderCard>
       </div>
+      )}
     </>
   );
 }
