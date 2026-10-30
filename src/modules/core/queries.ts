@@ -47,7 +47,7 @@ function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
 
 const toRow = (t: Prisma.TransactionGetPayload<{ include: typeof txInclude }>) => ({
   id: t.id, type: t.type, status: t.status, amount: num(t.amount), quantity: t.quantity == null ? null : num(t.quantity), date: t.date, vendor: t.vendor, description: t.description,
-  category: t.category, property: t.property?.name ?? null, account: t.account.name, hasReceipt: t.attachments.length > 0, createdById: t.createdById, createdAt: t.createdAt,
+  category: t.category, property: t.property?.name ?? null, account: t.account.name, hasReceipt: t.attachments.length > 0, propertyId: t.propertyId, categoryId: t.categoryId, createdById: t.createdById, createdAt: t.createdAt,
 });
 export type TxRow = ReturnType<typeof toRow>;
 

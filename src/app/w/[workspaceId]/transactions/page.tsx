@@ -5,6 +5,7 @@ import { CategoryIcon, Icon } from "@/components/ui/icons";
 import { ActionForm } from "@/components/forms/action-form";
 import { IconAction } from "@/components/forms/icon-action";
 import { ReceiptLink } from "@/components/forms/receipt-link";
+import { TxBulkTable } from "@/components/forms/tx-bulk-table";
 import { Chip } from "@/components/ui/chip";
 import { FolderCard } from "@/components/ui/folder-card";
 import { MonthNav } from "@/components/ui/filters";
@@ -75,24 +76,8 @@ export default async function Transactions({ params, searchParams }: { params: P
       {table ? (
         <section className="card overflow-x-auto !p-2" aria-label="Tabla de movimientos">
           {data.rows.length === 0 ? <p className="p-6 text-center text-muted">Sin movimientos con estos filtros.</p> : (
-            <table className="w-full">
-              <thead><tr><th className="th">Fecha</th><th className="th">Tipo</th><th className="th">Descripción</th><th className="th">Categoría</th><th className="th">Proveedor</th><th className="th">Cuenta</th>{props.length > 1 && <th className="th">Propiedad</th>}<th className="th">Estado</th><th className="th text-right">Monto</th></tr></thead>
-              <tbody className="divide-y divide-line">
-                {data.rows.map((t) => (
-                  <tr key={t.id}>
-                    <td className="td whitespace-nowrap">{fmtDate(t.date)}</td>
-                    <td className="td">{TYPE[t.type]}</td>
-                    <td className="td"><Link href={qs({ vista: "", sel: t.id })} className="font-medium underline-offset-2 hover:underline">{t.description?.trim() || t.vendor || t.category?.name || TYPE[t.type]}</Link> {t.hasReceipt && <span aria-label="Con comprobante" className="inline-block align-middle"><Icon name="attach" size={14} /></span>}{t.quantity != null && <span className="text-xs text-muted"> · {t.quantity} u</span>}</td>
-                    <td className="td">{t.category ? <span className="inline-flex items-center gap-1.5"><CategoryIcon value={t.category.emoji} size={16} />{t.category.name}</span> : "—"}</td>
-                    <td className="td">{t.vendor ?? "—"}</td>
-                    <td className="td">{t.account}</td>
-                    {props.length > 1 && <td className="td">{t.property ?? "—"}</td>}
-                    <td className="td">{t.status === "PAID" ? "Pagado" : <Chip tone="negative">Pendiente</Chip>}</td>
-                    <td className={`td whitespace-nowrap text-right font-medium ${t.type === "INCOME" ? "text-positive" : ""}`}>{t.type === "INCOME" ? "+" : t.type === "EXPENSE" ? "−" : <Icon name="swap" size={16} className="inline align-text-bottom" />} {cop(t.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <TxBulkTable workspaceId={workspaceId} canBulk={can(ctx.role, "dashboard:full")} cats={cats} props={props} accounts={accs}
+              rows={data.rows.map((t) => ({ id: t.id, href: qs({ vista: "", sel: t.id }), date: fmtDate(t.date), typeLabel: TYPE[t.type], type: t.type, title: t.description?.trim() || t.vendor || t.category?.name || TYPE[t.type], quantity: t.quantity, hasReceipt: t.hasReceipt, categoryId: t.categoryId, propertyId: t.propertyId, vendor: t.vendor, account: t.account, status: t.status, amountLabel: cop(t.amount) }))} />
           )}
           {data.pages > 1 && (
             <nav aria-label="Paginación" className="flex items-center justify-between px-3 py-3 text-sm">
