@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IconButton } from "./icon-button";
 import { monthLabel, shiftMonth } from "@/lib/format";
 
 const STATUS = [
@@ -36,6 +37,27 @@ export function Filters({ base, month, status, showStatus = true, x }: { base: s
     <div className="flex flex-wrap items-center gap-4">
       <MonthNav base={base} month={month} extra={(showStatus ? `&status=${cur}` : "") + xq} />
       {showStatus && <Segmented label="Estado" current={cur} items={STATUS.map((s) => ({ key: s.v, label: s.l, href: `${base}?month=${month}&status=${s.v}${xq}` }))} />}
+    </div>
+  );
+}
+
+type Opt = { id: string; name: string };
+const sel = "input !h-10 !py-0 text-sm";
+
+/** Barra de filtros del resumen en una sola línea: mes, categoría, cuenta, propiedad y estado; el embudo aplica. */
+export function SummaryFilters({ base, month, cat, acc, prop, status, cats, accs, props }: { base: string; month: string; cat?: string; acc?: string; prop?: string; status: string; cats: Opt[]; accs: Opt[]; props: Opt[] }) {
+  const extra = Object.entries({ status, cat, acc, prop }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("");
+  return (
+    <div className="card flex flex-wrap items-center gap-3 !p-3 lg:flex-nowrap">
+      <MonthNav base={base} month={month} extra={extra} />
+      <form action={base} role="search" aria-label="Filtrar resumen" className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:flex-nowrap">
+        <input type="hidden" name="month" value={month} />
+        <select name="cat" defaultValue={cat ?? ""} aria-label="Categoría" className={`${sel} min-w-0 flex-1`}><option value="">Categoría: todas</option><option value="__none">Sin categoría</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <select name="acc" defaultValue={acc ?? ""} aria-label="Cuenta" className={`${sel} min-w-0 flex-1`}><option value="">Cuenta: todas</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
+        {props.length > 0 && <select name="prop" defaultValue={prop ?? ""} aria-label="Propiedad" className={`${sel} min-w-0 flex-1`}><option value="">Propiedad: todas</option><option value="__none">Sin propiedad</option>{props.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>}
+        <select name="status" defaultValue={status} aria-label="Estado" className={`${sel} min-w-0 flex-1`}>{STATUS.map((s) => <option key={s.v} value={s.v}>{s.l}</option>)}</select>
+        <IconButton type="submit" icon="filter" label="Filtrar" tone="primary" />
+      </form>
     </div>
   );
 }

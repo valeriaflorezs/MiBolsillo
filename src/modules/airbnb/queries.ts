@@ -14,7 +14,7 @@ const OPERATING_INCOME = { OR: [{ categoryId: null }, { category: { pygLine: "RE
 
 /** Resumen de un rango: ingresos, gastos por línea de PyG, flujo de caja y estado de resultados. */
 export async function periodSummary(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion, propertyId?: string) {
-  const prop = propertyId ? { propertyId } : {};
+  const prop = propertyId ? { propertyId: propertyId === "__none" ? null : propertyId } : {};
   const [incomeTx, incomeOperating, expenseTx] = await Promise.all([
     // Todo el dinero que entró (para el flujo de caja)…
     prisma.transaction.aggregate({
@@ -53,23 +53,23 @@ export async function budgetExecution(workspaceId: string, month: string, start:
 }
 
 /** Últimos 6 meses (en paralelo): ingresos, gastos, margen, EBITDA y flujo de caja. */
-export async function sixMonthSeries(workspaceId: string, endMonth: string, status: StatusFilter, exclude?: CategoryExclusion) {
+export async function sixMonthSeries(workspaceId: string, endMonth: string, status: StatusFilter, exclude?: CategoryExclusion, propertyId?: string) {
   const months = Array.from({ length: 6 }, (_, i) => shiftMonth(endMonth, i - 5));
   return Promise.all(
     months.map(async (m) => {
       const start = new Date(`${m}-01T00:00:00Z`);
       const end = new Date(`${shiftMonth(m, 1)}-01T00:00:00Z`);
-      const { pyg, cashFlow } = await periodSummary(workspaceId, start, end, status, exclude);
+      const { pyg, cashFlow } = await periodSummary(workspaceId, start, end, status, exclude, propertyId);
       return { month: m, income: pyg.grossRevenue, expense: pyg.variableCosts.total + pyg.fixedOpex.total, margin: pyg.contributionMargin, ebitda: pyg.ebitda, cash: cashFlow };
     }),
   );
 }
 
 /** Gastos por categoría (top 6 + "Otros") para la dona. */
-export async function categoryBreakdown(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion) {
+export async function categoryBreakdown(workspaceId: string, start: Date, end: Date, status: StatusFilter, exclude?: CategoryExclusion, propertyId?: string) {
   const rows = await prisma.transaction.groupBy({
     by: ["categoryId"],
-    where: { workspaceId, type: "EXPENSE", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...categoryFilter(exclude) },
+    where: { workspaceId, type: "EXPENSE", date: { gte: start, lt: end }, ...(status ? { status } : {}), ...(propertyId ? { propertyId: propertyId === "__none" ? null : propertyId } : {}), ...categoryFilter(exclude) },
     _sum: { amount: true },
   });
   const cats = await prisma.category.findMany({ where: { workspaceId, id: { in: rows.flatMap((r) => (r.categoryId ? [r.categoryId] : [])) } }, select: { id: true, name: true, emoji: true } });
