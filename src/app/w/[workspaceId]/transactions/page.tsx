@@ -8,7 +8,7 @@ import { ReceiptLink } from "@/components/forms/receipt-link";
 import { TxBulkTable } from "@/components/forms/tx-bulk-table";
 import { Chip } from "@/components/ui/chip";
 import { FolderCard } from "@/components/ui/folder-card";
-import { MonthNav } from "@/components/ui/filters";
+import { FilterBar, FilterSearch, FilterSelect, MonthNav } from "@/components/ui/filters";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { canMutateTx } from "@/lib/auth/rbac";
 import { cop, fmtDate, monthRange, txTitle, txVendorHint } from "@/lib/format";
@@ -51,22 +51,18 @@ export default async function Transactions({ params, searchParams }: { params: P
         </div>
       </div>
 
-      <form className="card grid grid-cols-2 gap-3 lg:grid-cols-6" role="search" aria-label="Filtrar movimientos">
-        <input type="hidden" name="month" value={key} />
-        {table && <input type="hidden" name="vista" value="tabla" />}
-        <div className="col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Proveedor o nota" className="input" /></div>
-        <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option><option value="__none">Sin categoría</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-        {admin && <div><label className="label" htmlFor="acc">Cuenta</label><select id="acc" name="acc" defaultValue={sp.acc ?? ""} className="input"><option value="">Todas</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>}
-        {props.length > 1 && <div><label className="label" htmlFor="prop">Propiedad</label><select id="prop" name="prop" defaultValue={sp.prop ?? ""} className="input"><option value="">Todas</option><option value="__none">Sin propiedad</option>{props.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>}
-        <div><label className="label" htmlFor="status">Estado</label><select id="status" name="status" defaultValue={sp.status ?? ""} className="input"><option value="">Todos</option><option value="PAID">Pagado / cobrado</option><option value="PENDING">Por pagar / cobrar</option></select></div>
-        {admin && <div><label className="label" htmlFor="type">Tipo</label><select id="type" name="type" defaultValue={sp.type ?? ""} className="input"><option value="">Todos</option><option value="EXPENSE">Gastos</option><option value="INCOME">Ingresos</option><option value="TRANSFER">Transferencias</option></select></div>}
-        <div className="col-span-2 flex items-end lg:col-span-1"><button className="btn btn-dark w-full">Filtrar</button></div>
-      </form>
+      <FilterBar action={base} hidden={{ month: key, vista: table ? "tabla" : undefined }} label="Filtrar movimientos"
+        lead={<MonthNav base={base} month={key} extra={Object.entries({ status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, prop: sp.prop, type: sp.type, vista: sp.vista }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("")} />}
+        clearHref={sp.q || sp.cat || sp.acc || sp.prop || sp.status || sp.type ? `${base}?month=${key}${table ? "&vista=tabla" : ""}` : undefined}>
+        <FilterSearch name="q" value={sp.q} placeholder="Buscar proveedor o nota" />
+        <FilterSelect name="cat" label="Categoría" value={sp.cat} options={cats} all="Categoría: todas" none="Sin categoría" />
+        {admin && <FilterSelect name="acc" label="Cuenta" value={sp.acc} options={accs} all="Cuenta: todas" />}
+        {props.length > 1 && <FilterSelect name="prop" label="Propiedad" value={sp.prop} options={props} all="Propiedad: todas" none="Sin propiedad" />}
+        <FilterSelect name="status" label="Estado" value={sp.status} options={[{ id: "PAID", name: "Pagado / cobrado" }, { id: "PENDING", name: "Por pagar / cobrar" }]} all="Estado: todos" />
+        {admin && <FilterSelect name="type" label="Tipo" value={sp.type} options={[{ id: "EXPENSE", name: "Gastos" }, { id: "INCOME", name: "Ingresos" }, { id: "TRANSFER", name: "Transferencias" }]} all="Tipo: todos" />}
+      </FilterBar>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <MonthNav base={base} month={key} extra={Object.entries({ status: sp.status, q: sp.q, cat: sp.cat, acc: sp.acc, prop: sp.prop, type: sp.type, vista: sp.vista }).filter(([, v]) => v).map(([k, v]) => `&${k}=${encodeURIComponent(v as string)}`).join("")} />
-        <p className="text-sm text-muted">{data.total} movimiento(s) <InfoTip {...EXPLAIN.txTotals} />{admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
-      </div>
+      <p className="text-sm text-muted">{data.total} movimiento(s) <InfoTip {...EXPLAIN.txTotals} />{admin && <> · Ingresos <strong className="text-ink">{cop(data.income)}</strong> · Gastos <strong className="text-ink">{cop(data.expense)}</strong></>}</p>
 
       <div role="tablist" aria-label="Vista de movimientos" className="flex w-fit gap-1 rounded-pill border border-line p-1 text-sm">
         <Link role="tab" aria-selected={!table} href={qs({ vista: "", sel: "", page: "" })} className={`rounded-pill px-4 py-1.5 ${!table ? "bg-brand on-brand" : "text-muted hover:text-ink"}`}>Lista</Link>

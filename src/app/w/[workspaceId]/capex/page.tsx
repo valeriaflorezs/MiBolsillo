@@ -14,7 +14,7 @@ import { importCapexAction } from "@/modules/airbnb/import-actions";
 import { ExpensePicker } from "@/components/forms/expense-picker";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
-import { Segmented } from "@/components/ui/filters";
+import { FilterBar, FilterSearch, FilterSelect, Segmented } from "@/components/ui/filters";
 
 export const metadata = { title: "CAPEX" };
 
@@ -90,13 +90,11 @@ export default async function Capex({ params, searchParams }: { params: Promise<
         { key: "comprados", label: `Comprados (${bought.length})`, href: href("comprados") },
       ]} />
 
-      <form className="card grid grid-cols-2 gap-3 lg:grid-cols-5" role="search" aria-label="Filtrar ítems">
-        {done && <input type="hidden" name="vista" value="comprados" />}
-        <div className="col-span-2"><label className="label" htmlFor="q">Buscar</label><input id="q" name="q" defaultValue={sp.q} placeholder="Ítem o tienda" className="input" /></div>
-        <div><label className="label" htmlFor="cat">Categoría</label><select id="cat" name="cat" defaultValue={sp.cat ?? ""} className="input"><option value="">Todas</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-        {properties.length > 1 ? <div><label className="label" htmlFor="prop">Propiedad</label><select id="prop" name="prop" defaultValue={sp.prop ?? ""} className="input"><option value="">Todas</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div> : <div className="hidden lg:block" />}
-        <div className="col-span-2 flex items-end gap-2 lg:col-span-1"><button className="btn btn-dark flex-1">Filtrar</button>{(sp.q || sp.cat || sp.prop) && <Link href={href(done ? "comprados" : "")} className="btn btn-ghost">Limpiar</Link>}</div>
-      </form>
+      <FilterBar action={`/w/${workspaceId}/capex`} hidden={{ vista: done ? "comprados" : undefined }} label="Filtrar ítems" clearHref={sp.q || sp.cat || sp.prop ? href(done ? "comprados" : "") : undefined}>
+        <FilterSearch name="q" value={sp.q} placeholder="Buscar ítem o tienda" />
+        <FilterSelect name="cat" label="Categoría" value={sp.cat} options={categories} all="Categoría: todas" />
+        {properties.length > 1 && <FilterSelect name="prop" label="Propiedad" value={sp.prop} options={properties} all="Propiedad: todas" />}
+      </FilterBar>
 
       <section className="card overflow-x-auto !p-2">
         {list.length === 0 ? <p className="p-6 text-center text-muted">{rows.length === 0 ? `Aún no hay ítems. ${admin ? "Agrega el primero abajo." : ""}` : sp.q || sp.cat || sp.prop ? "Ningún ítem coincide con el filtro." : done ? "Todavía no hay ítems comprados." : "¡No quedan ítems por comprar!"}</p> : (

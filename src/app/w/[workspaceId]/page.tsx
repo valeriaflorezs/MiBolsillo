@@ -11,6 +11,7 @@ import { RingGauge } from "@/components/ui/ring-gauge";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, monthRange, pct, txTitle, txVendorHint } from "@/lib/format";
 import { prisma } from "@/lib/db";
+import { exclusionFor } from "@/lib/category-filter";
 import { budgetExecution, categoryBreakdown, parseStatus, periodSummary, sixMonthSeries } from "@/modules/airbnb/queries";
 import { accountBalances, accountOptions, categoryOptions, pendingPayables, searchTransactions } from "@/modules/core/queries";
 import { EXPLAIN } from "@/lib/explain";
@@ -53,10 +54,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
   const cat = sp.cat === "__none" || cats.some((c) => c.id === sp.cat) ? sp.cat : undefined;
   const acc = accs.some((a) => a.id === sp.acc) ? sp.acc : undefined;
   const prop = sp.prop === "__none" || props.some((p) => p.id === sp.prop) ? sp.prop : undefined;
-  const excluded = [
-    ...(cat ? [...cats.filter((c) => c.id !== cat).map((c) => c.id), ...(cat === "__none" ? [] : ["none"])] : []),
-    ...(acc ? accs.filter((a) => a.id !== acc).map((a) => `a:${a.id}`) : []),
-  ];
+  const excluded = exclusionFor(cat, acc, cats, accs);
   const [sum, series, budget, breakdown, balances, recent, pending] = await Promise.all([
     periodSummary(workspaceId, start, end, status, excluded, prop),
     sixMonthSeries(workspaceId, key, status, excluded, prop),
