@@ -18,3 +18,11 @@ export function categoryFilter(exclude: CategoryExclusion) {
   const byAccount = { accountId: { notIn: accounts } };
   return Object.keys(byCategory).length ? { AND: [byCategory, byAccount] } : byAccount;
 }
+
+/** Un selector de categoría y otro de cuenta (una opción cada uno) expresados como exclusión: se deja fuera todo lo demás. `cat` puede ser "__none" (sin categoría). */
+export function exclusionFor(cat: string | undefined, acc: string | undefined, cats: { id: string }[], accs: { id: string }[]): string[] {
+  return [
+    ...(cat ? [...cats.filter((c) => c.id !== cat).map((c) => c.id), ...(cat === "__none" ? [] : ["none"])] : []),
+    ...(acc ? accs.filter((a) => a.id !== acc).map((a) => `a:${a.id}`) : []),
+  ];
+}

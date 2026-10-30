@@ -1,4 +1,4 @@
-import { Filters } from "@/components/ui/filters";
+import { FilterBar, FilterSelect, MonthNav } from "@/components/ui/filters";
 import { prisma } from "@/lib/db";
 import { pageCtx } from "@/lib/auth/permissions";
 import { cop, monthRange, pct } from "@/lib/format";
@@ -30,17 +30,9 @@ export default async function Pyg({ params, searchParams }: { params: Promise<{ 
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">Estado de resultados</h1>
-      <div className="flex flex-wrap items-center gap-4">
-        <Filters base={`/w/${workspaceId}/pyg`} month={key} showStatus={false} />
-        {props.length > 1 && (
-          <form className="flex items-center gap-2" aria-label="Filtrar por propiedad">
-            <input type="hidden" name="month" value={key} />
-            <label className="sr-only" htmlFor="prop">Propiedad</label>
-            <select id="prop" name="prop" defaultValue={prop?.id ?? ""} className="input !w-auto"><option value="">Todas las propiedades</option>{props.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
-            <button className="btn btn-ghost">Ver</button>
-          </form>
-        )}
-      </div>
+      <FilterBar action={`/w/${workspaceId}/pyg`} hidden={{ month: key }} label="Filtrar por propiedad" lead={<MonthNav base={`/w/${workspaceId}/pyg`} month={key} extra={prop ? `&prop=${prop.id}` : ""} />}>
+        {props.length > 1 && <FilterSelect name="prop" label="Propiedad" value={prop?.id} options={props} all="Propiedad: todas" />}
+      </FilterBar>
       <section className="card !p-2">
         <table className="w-full">
           <caption className="sr-only">Estado de resultados del mes (base devengo)</caption>
