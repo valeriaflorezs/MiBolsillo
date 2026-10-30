@@ -57,6 +57,33 @@ export async function updateTransactionAction(_: ActionState, fd: FormData): Pro
   });
 }
 
+/** Edición en lote (solo administrador): vacío = no cambia; «__none» = quitar categoría/propiedad. */
+export async function bulkUpdateTransactionsAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const opt1 = z.string().max(40).optional().transform((v) => v || undefined);
+    const i = z.object({ workspaceId: id, ids: z.array(id).min(1, "Selecciona al menos un movimiento.").max(200), categoryId: opt1, propertyId: opt1, accountId: opt1, status: z.enum(["PAID", "PENDING"]).optional().or(z.literal("").transform(() => undefined)) })
+      .parse({ ...Object.fromEntries(fd), ids: fd.getAll("ids") });
+    const { workspaceId } = i;
+    await requireWorkspace(workspaceId, "dashboard:full");
+    const pick = (v?: string) => (v === "__none" ? null : v);
+    const category = pick(i.categoryId), property = pick(i.propertyId);
+    if (i.categoryId === undefined && i.propertyId === undefined && !i.accountId && !i.status) throw userError("Elige qué quieres cambiar.");
+    await assertOwned(workspaceId, { account: i.accountId, category: category ?? undefined, property: property ?? undefined });
+    const where = { workspaceId, id: { in: i.ids } };
+    const n = await prisma.$transaction(async (db) => {
+      const total = await db.transaction.count({ where });
+      if (category !== undefined) await db.transaction.updateMany({ where, data: { categoryId: category } });
+      if (property !== undefined) await db.transaction.updateMany({ where: { ...where, type: { not: "TRANSFER" } }, data: { propertyId: property } });
+      if (i.accountId) await db.transaction.updateMany({ where: { ...where, NOT: { transferAccountId: i.accountId } }, data: { accountId: i.accountId } });
+      if (i.status === "PAID") await db.transaction.updateMany({ where: { ...where, status: "PENDING" }, data: { status: "PAID", paidAt: new Date() } });
+      if (i.status === "PENDING") await db.transaction.updateMany({ where: { ...where, status: "PAID" }, data: { status: "PENDING", paidAt: null } });
+      return total;
+    });
+    refresh(workspaceId);
+    return `${n} movimiento(s) actualizados`;
+  });
+}
+
 export async function deleteTransactionAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const i = z.object({ workspaceId: id, transactionId: id }).parse(Object.fromEntries(fd));
