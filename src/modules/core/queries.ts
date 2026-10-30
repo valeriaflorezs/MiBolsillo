@@ -33,8 +33,8 @@ function whereOf(f: TxFilter): Prisma.TransactionWhereInput {
     date: { gte: f.start, lt: f.end },
     ...(f.status ? { status: f.status } : {}),
     ...(f.type ? { type: f.type } : {}),
-    ...(f.categoryId ? { categoryId: f.categoryId } : {}),
-    ...(f.propertyId ? { propertyId: f.propertyId } : {}),
+    ...(f.categoryId ? { categoryId: f.categoryId === "__none" ? null : f.categoryId } : {}), // «__none» = sin categoría
+    ...(f.propertyId ? { propertyId: f.propertyId === "__none" ? null : f.propertyId } : {}), // «__none» = sin propiedad
     ...(f.accountId ? { OR: [{ accountId: f.accountId }, { transferAccountId: f.accountId }] } : {}),
     AND: [
       ...(f.q ? [{ OR: [{ vendor: { contains: f.q, mode: "insensitive" as const } }, { description: { contains: f.q, mode: "insensitive" as const } }] }] : []),
