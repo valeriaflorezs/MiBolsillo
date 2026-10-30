@@ -3,22 +3,22 @@ import { CategoryIcon, Icon } from "@/components/ui/icons";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { StackedBars } from "@/components/ui/charts";
-import { CategoryFilter } from "@/components/forms/category-filter";
-import { Filters } from "@/components/ui/filters";
+import { Filters, SummaryFilters } from "@/components/ui/filters";
 import { FolderCard } from "@/components/ui/folder-card";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ProgressBar } from "@/components/ui/progress";
 import { RingGauge } from "@/components/ui/ring-gauge";
 import { can, pageCtx } from "@/lib/auth/permissions";
 import { cop, fmtDate, monthRange, pct, txTitle, txVendorHint } from "@/lib/format";
-import { budgetExecution, categoryBreakdown, parseExclusion, parseStatus, periodSummary, sixMonthSeries } from "@/modules/airbnb/queries";
+import { prisma } from "@/lib/db";
+import { budgetExecution, categoryBreakdown, parseStatus, periodSummary, sixMonthSeries } from "@/modules/airbnb/queries";
 import { accountBalances, accountOptions, categoryOptions, pendingPayables, searchTransactions } from "@/modules/core/queries";
 import { EXPLAIN } from "@/lib/explain";
 import { InfoTip } from "@/components/ui/info-tip";
 
 export const metadata = { title: "Resumen" };
 
-export default async function Dashboard({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ month?: string; status?: string; x?: string }> }) {
+export default async function Dashboard({ params, searchParams }: { params: Promise<{ workspaceId: string }>; searchParams: Promise<{ month?: string; status?: string; cat?: string; acc?: string; prop?: string }> }) {
   const { workspaceId } = await params;
   const sp = await searchParams;
   const ctx = await pageCtx(workspaceId);
@@ -48,16 +48,22 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
   }
 
   const status = parseStatus(sp.status);
-  const [cats, accs] = await Promise.all([categoryOptions(workspaceId), accountOptions(workspaceId)]);
-  const known = new Set([...cats.map((c) => c.id), ...accs.map((a) => `a:${a.id}`), "none"]);
-  const excluded = parseExclusion(sp.x).filter((x) => known.has(x));
+  const [cats, accs, props] = await Promise.all([categoryOptions(workspaceId), accountOptions(workspaceId), prisma.property.findMany({ where: { workspaceId }, select: { id: true, name: true }, orderBy: { name: "asc" } })]);
+  // Cada selector elige UNA opción; el resto se excluye de las cifras con el mismo mecanismo de exclusión.
+  const cat = sp.cat === "__none" || cats.some((c) => c.id === sp.cat) ? sp.cat : undefined;
+  const acc = accs.some((a) => a.id === sp.acc) ? sp.acc : undefined;
+  const prop = sp.prop === "__none" || props.some((p) => p.id === sp.prop) ? sp.prop : undefined;
+  const excluded = [
+    ...(cat ? [...cats.filter((c) => c.id !== cat).map((c) => c.id), ...(cat === "__none" ? [] : ["none"])] : []),
+    ...(acc ? accs.filter((a) => a.id !== acc).map((a) => `a:${a.id}`) : []),
+  ];
   const [sum, series, budget, breakdown, balances, recent, pending] = await Promise.all([
-    periodSummary(workspaceId, start, end, status, excluded),
-    sixMonthSeries(workspaceId, key, status, excluded),
+    periodSummary(workspaceId, start, end, status, excluded, prop),
+    sixMonthSeries(workspaceId, key, status, excluded, prop),
     budgetExecution(workspaceId, key, start, end, excluded),
-    categoryBreakdown(workspaceId, start, end, status, excluded),
+    categoryBreakdown(workspaceId, start, end, status, excluded, prop),
     accountBalances(workspaceId),
-    searchTransactions({ workspaceId, role: ctx.role, userId: ctx.userId, start, end, pageSize: 6, exclude: excluded }),
+    searchTransactions({ workspaceId, role: ctx.role, userId: ctx.userId, start, end, pageSize: 6, exclude: excluded, propertyId: prop }),
     pendingPayables(workspaceId, ctx.role, ctx.userId, 5, excluded),
   ]);
   const canWrite = can(ctx.role, "transaction:create");
@@ -74,15 +80,7 @@ export default async function Dashboard({ params, searchParams }: { params: Prom
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><h1 className="text-3xl font-semibold tracking-tight">{ctx.workspace.name}</h1><p className="mt-1 text-muted">Resumen del mes</p></div>
       </div>
-      <Filters base={base} month={key} status={sp.status} x={excluded.length ? excluded.join(",") : undefined} />
-      <CategoryFilter
-        workspaceId={workspaceId} excluded={excluded} hasParam={sp.x !== undefined}
-        base={{ month: key, ...(sp.status ? { status: sp.status } : {}) }}
-        groups={[
-          { title: "Gastos", items: [...cats.filter((c) => c.expenseKind).map((c) => ({ id: c.id, label: c.name })), { id: "none", label: "Sin categoría" }] },
-          { title: "Cuentas", items: accs.map((a) => ({ id: `a:${a.id}`, label: a.name })) },
-        ]}
-      />
+      <SummaryFilters base={base} month={key} status={sp.status ?? "PAID"} cat={cat} acc={acc} prop={prop} cats={cats} accs={accs} props={props} />
 
       <section className="hero" aria-label="Saldo total">
         <p className="flex items-center gap-1.5 text-sm text-white/80">Saldo total en cuentas <InfoTip {...EXPLAIN.balance} /></p>
